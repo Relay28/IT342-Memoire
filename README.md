@@ -1,5 +1,17 @@
 # TEAM MEMBERS:
 
+
+
+## MEMBER 2
+### Name: Rae Addison Duque
+### Course & Year: BSIT - 3
+
+I am Rae Addison Duque, A 21 Year old Third year BSIT student in CITU.
+My friends call me "Duks" or "Rae" and my family call me "Aison".
+I love to spend my time by playing video games and reading comics or novels.
+My friends tell me that I am Noisy, cheerful and joyful at times.
+I dream to be involve and work in the field of Cybersecurity.
+
 ## MEMBER 3
 ### Name: Jeannie Margarett G. Verar
 ### Course & Year: BSIT - 3
