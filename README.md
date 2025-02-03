@@ -1,5 +1,20 @@
 # TEAM MEMBERS:
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## Member 2
 ### Name: Rae Addison P. Duque
 ### Course & Year: BSIT - 3
