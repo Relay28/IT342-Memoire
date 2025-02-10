@@ -1,4 +1,4 @@
-# ⋆ ˚｡⋆୨୧˚ Memoire ⋆ ˚｡⋆୨୧˚
+# ⋆ ˚｡⋆୨୧˚ Memoire ˚｡⋆୨୧˚ ⋆
 Memoire is a digital time capsule system designed to store and share memories over time through both web and mobile applications. It operates through a structured system that enables users to create, manage, and interact with time capsules while maintaining security and accessibility.
 
 # List of Features:
