@@ -18,6 +18,16 @@ Memoire is a digital time capsule system designed to store and share memories ov
 
 # Developers Profile:
 
+## MEMBER 1
+**Name:** Julio Miguel Dumaguing\
+**Course & Year:** BSIT - 3
+ 
+I am Julio Miguel Dumaguing, my friends call me Yong.
+I currently live in Talisay City, Biasong.
+My hobbies are Miniature making, playing video games and I have a collection of miniature cars.  
+I am a hardworker, easy to work with and I try to find ways to be more efficient.
+I really want to open a business.
+
 ## MEMBER 2
 **Name:** Rae Addison Duque\
 **Course & Year:** BSIT - 3
