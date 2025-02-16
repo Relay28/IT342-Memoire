@@ -14,7 +14,7 @@ Memoire is a digital time capsule system designed to store and share memories ov
 
 ## Links
 **Figma:**\
-**ERD Diagrams:**
+**ERD Diagram:** https://bit.ly/41gzwjz
 
 # Developers Profile:
 
