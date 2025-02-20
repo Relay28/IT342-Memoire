@@ -5,20 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f56a435e-b6b5-4a84-902c-c2d9325a7836" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/src/main/java/cit/edu/mmr/entity/CapsuleAccessEntity.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cit/edu/mmr/entity/CommentEntity.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cit/edu/mmr/entity/TimeCapsuleEntity.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/cit/edu/mmr/entity/UserEntity.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/cit/edu/mmr/entity/CommentReactionEntity.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/mmr/.gitattributes" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mmr/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mmr/.mvn/wrapper/maven-wrapper.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mmr/mvnw" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mmr/mvnw.cmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mmr/pom.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mmr/src/main/java/edu/cit/mmr/MmrApplication.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mmr/src/main/resources/application.properties" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mmr/src/test/java/edu/cit/mmr/MmrApplicationTests.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cit/edu/mmr/entity/TimeCapsuleEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cit/edu/mmr/entity/TimeCapsuleEntity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/cit/edu/mmr/entity/UserEntity.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/cit/edu/mmr/entity/UserEntity.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.properties" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,12 +46,19 @@
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
   </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="mavenHomeTypeForPersistence" value="WRAPPER" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="ProjectErrors" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 6
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
   <component name="ProjectId" id="2tG9IplckP3gs6T4nMgMHUT42wY" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -72,7 +70,8 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "android.gradle.sync.needed": "true",
     "git-widget-placeholder": "feature-backend__entities-dumaguing__duque__verar",
-    "last_opened_file_path": "D:/Online Class/College/3RD YEAR/2nd sem/IT342/Projject/IT342-Memoire/backend/mmr"
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Rae Addison Duque/Documents/IT342/IT342-Memoire/backend/mmr"
   }
 }]]></component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />

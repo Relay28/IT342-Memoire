@@ -1,0 +1,38 @@
+package cit.edu.mmr.entity;
+
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import jakarta.persistence.*;
+
+import java.util.Date;
+
+@Entity
+public class CapsuleContentEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name="ccID")
+    private long id;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id",nullable = false)
+    @JsonBackReference("user-capsuleContent")
+    private UserEntity contentUploadedBy;
+
+
+    @ManyToOne
+    @JoinColumn(name = "capsule_id",nullable = false)
+    @JsonBackReference("capsule-content")
+    private TimeCapsuleEntity capsule;
+
+    @Lob
+    private String filePath;
+
+
+    private String contentType;
+
+    private Date uploadedAt;
+
+
+
+}

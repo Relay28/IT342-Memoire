@@ -13,7 +13,7 @@ public class TimeCapsuleEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="capsuleid")
+    @Column(name="capsuleId")
     private Long id;
 
     private String title;
@@ -27,7 +27,7 @@ public class TimeCapsuleEntity {
     private boolean isLocked;
 
     @ManyToOne
-    @JoinColumn(name = "user-id",nullable = false)
+    @JoinColumn(name = "user_id",nullable = false)
     @JsonBackReference("user-capsules")
     private UserEntity createdBy; // but
 
@@ -35,9 +35,15 @@ public class TimeCapsuleEntity {
     @JsonBackReference("capsule-access")
     private List<CapsuleAccessEntity> capsuleAccesses;
 
-    @OneToMany(mappedBy = "capsule", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "timeCapsule", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("capsule-comments")
     private List<CommentEntity> comments;
+
+    @OneToMany(mappedBy = "capsule", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("capsule-content")
+    private List<CapsuleContentEntity> contents;
+
+
 
     private String status;
 

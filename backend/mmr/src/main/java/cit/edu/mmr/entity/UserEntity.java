@@ -51,7 +51,11 @@ public class UserEntity {
     @JsonManagedReference("user-capsuleOwnership")
     private List<CapsuleAccessEntity> uploadedCapsules;
 
-    @OneToMany(mappedBy="user",cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "contentUploadedBy" ,cascade=CascadeType.ALL,orphanRemoval = true)
+    @JsonManagedReference("user-capsuleContent")
+    private List<CapsuleContentEntity> content;
+
+    @OneToMany(mappedBy="createdBy",cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-capsules")
     private List<TimeCapsuleEntity> timeCapsules = new ArrayList<>();
     public List<TimeCapsuleEntity> getTimeCapsules() {
