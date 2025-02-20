@@ -2,9 +2,12 @@ package cit.edu.mmr.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 public class CapsuleContentEntity {
@@ -19,6 +22,10 @@ public class CapsuleContentEntity {
     @JsonBackReference("user-capsuleContent")
     private UserEntity contentUploadedBy;
 
+
+    @OneToMany(mappedBy="commentid",cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("comment-reaction")
+    private List<CommentReactionEntity> reactions = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "capsule_id",nullable = false)

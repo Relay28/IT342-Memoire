@@ -58,6 +58,13 @@ public class UserEntity {
     @OneToMany(mappedBy="createdBy",cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-capsules")
     private List<TimeCapsuleEntity> timeCapsules = new ArrayList<>();
+
+
+    @OneToMany(mappedBy="userid",cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("user-commentReaction")
+    private List<CommentReactionEntity> commentReaction = new ArrayList<>();
+
+
     public List<TimeCapsuleEntity> getTimeCapsules() {
         return timeCapsules;
     }
