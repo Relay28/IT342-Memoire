@@ -23,9 +23,7 @@ public class CapsuleContentEntity {
     private UserEntity contentUploadedBy;
 
 
-    @OneToMany(mappedBy="commentid",cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("comment-reaction")
-    private List<CommentReactionEntity> reactions = new ArrayList<>();
+
 
     @ManyToOne
     @JoinColumn(name = "capsule_id",nullable = false)

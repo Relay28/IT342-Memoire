@@ -22,7 +22,7 @@ public class CommentReactionEntity {
     @ManyToOne
     @JoinColumn(name = "comment_id",nullable = false)
     @JsonBackReference("comment-reaction")
-    private CommentEntity commentid;
+    private CommentEntity comment;
 
     public Long getId() {
         return id;
@@ -41,11 +41,11 @@ public class CommentReactionEntity {
     }
 
     public CommentEntity getCommentid() {
-        return commentid;
+        return comment;
     }
 
     public void setCommentid(CommentEntity commentid) {
-        this.commentid = commentid;
+        this.comment = commentid;
     }
 
     public String getType() {

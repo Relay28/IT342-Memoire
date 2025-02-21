@@ -28,20 +28,28 @@ public class UserEntity {
     private String profilePicture;
 
     private boolean isActive;
-//    @OneToMany(mappedBy = "user")
-//    private List<Friendship> friendships;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("user-friendships")
+    private List<FriendShipEntity> friendshipsAsUser;
+
+    @OneToMany(mappedBy = "friend", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("friend-friendships")
+    private List<FriendShipEntity> friendshipsAsFriend;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-comments")
     private List<CommentEntity> comments;
-//
-//    // Comment Reactions (One-to-Many)
-//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<CommentReaction> reactions;
-//
-//    // Notifications (One-to-Many)
-//    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<Notification> notifications;
-//
+
+    // Notifications (One-to-Many)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference("user-notif")
+    private List<NotificationEntity> notifications;
+
+    @OneToMany(mappedBy="reporter",cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonManagedReference("user-report")
+    private List<ReportEntity> reports;
+
+
 // Capsule Access (One-to-Many)
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-capsuleAccess")
