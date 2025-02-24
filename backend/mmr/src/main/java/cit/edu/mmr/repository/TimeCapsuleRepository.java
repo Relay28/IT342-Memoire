@@ -15,6 +15,10 @@ public interface TimeCapsuleRepository extends JpaRepository<TimeCapsuleEntity, 
     
     // Get capsules by their current status
     List<TimeCapsuleEntity> findByStatus(String status);
+
+
+    // Retrieve capsules created by a specific user
+    List<TimeCapsuleEntity> findByCreatedById(Long userId);
     
     // Find capsules that are ready to be opened
     @Query("SELECT t FROM TimeCapsuleEntity t WHERE t.openDate <= ?1 AND t.isLocked = true")

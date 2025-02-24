@@ -41,13 +41,13 @@ public class UserController {
     }
 
     // Update user details including optional profile image
-    @PutMapping("/{id}")
+    @PutMapping("updateUser/{id}")
     public ResponseEntity<UserEntity> updateUser(
             @PathVariable long id,
-            @RequestPart("user") UserEntity newUserDetails,
-            @RequestPart(value = "profileImg", required = false) MultipartFile profileImg) {
+            @RequestBody UserEntity newUserDetails) {
         try {
-            UserEntity updatedUser = userService.putUserDetails(id, newUserDetails, profileImg);
+            // Passing null for profileImg, since we aren't updating it here
+            UserEntity updatedUser = userService.putUserDetails(id, newUserDetails, null);
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
@@ -55,6 +55,7 @@ public class UserController {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
+
 
     // Disable user account
     @PatchMapping("/{id}/disable")
