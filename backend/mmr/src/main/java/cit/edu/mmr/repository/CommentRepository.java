@@ -11,6 +11,8 @@ import java.util.List;
 public interface CommentRepository extends JpaRepository<CommentEntity, Long> {
     // Get all comments for a specific time capsule
     List<CommentEntity> findByTimeCapsule(TimeCapsuleEntity timeCapsule);
+
+    List<CommentEntity> findByTimeCapsuleId(Long capsuleId);
     
     // Get all comments by a specific user
     List<CommentEntity> findByUser(UserEntity user);
