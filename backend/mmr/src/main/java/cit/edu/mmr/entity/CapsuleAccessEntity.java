@@ -14,7 +14,7 @@ public class CapsuleAccessEntity {
 
     @ManyToOne
     @JoinColumn(name = "capsule_id", nullable = false)
-    @JsonManagedReference("capsule-access")
+    @JsonBackReference("capsule-access")
     private TimeCapsuleEntity capsule;
 
     @ManyToOne

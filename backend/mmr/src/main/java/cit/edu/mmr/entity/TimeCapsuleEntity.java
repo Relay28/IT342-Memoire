@@ -32,7 +32,7 @@ public class TimeCapsuleEntity {
     private UserEntity createdBy; // but
 
     @OneToMany(mappedBy = "capsule", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonBackReference("capsule-access")
+    @JsonManagedReference("capsule-access")
     private List<CapsuleAccessEntity> capsuleAccesses;
 
     @OneToMany(mappedBy = "timeCapsule", cascade = CascadeType.ALL, orphanRemoval = true)
