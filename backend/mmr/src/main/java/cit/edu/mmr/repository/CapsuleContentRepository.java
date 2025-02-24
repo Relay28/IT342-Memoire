@@ -11,6 +11,7 @@ import java.util.List;
 public interface CapsuleContentRepository extends JpaRepository<CapsuleContentEntity, Long> {
     // Find all content in a specific capsule
     List<CapsuleContentEntity> findByCapsule(TimeCapsuleEntity capsule);
+    List<CapsuleContentEntity> findByCapsuleId(Long capsuleId);
     
     // Find content uploaded by a specific user
     List<CapsuleContentEntity> findByContentUploadedBy(UserEntity user);

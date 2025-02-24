@@ -12,15 +12,16 @@ import java.util.Optional;
 public interface CapsuleAccessRepository extends JpaRepository<CapsuleAccessEntity, Long> {
     // Find all users with access to a specific capsule
     List<CapsuleAccessEntity> findByCapsule(TimeCapsuleEntity capsule);
-    
+
+    Optional<CapsuleAccessEntity> findByCapsuleAndUser(TimeCapsuleEntity capsule, UserEntity user);
+
+    boolean existsByUserIdAndCapsuleIdAndRole(Long userId, Long capsuleId, String role);
     // Find all capsules a user has access to
     List<CapsuleAccessEntity> findByUser(UserEntity user);
     
     // Find all capsules uploaded by a specific user
     List<CapsuleAccessEntity> findByUploadedBy(UserEntity uploadedBy);
-    
-    // Find access entry for specific user and capsule
-    Optional<CapsuleAccessEntity> findByCapsuleAndUser(TimeCapsuleEntity capsule, UserEntity user);
+
     
     // Find users with specific role in a capsule
     List<CapsuleAccessEntity> findByCapsuleAndRole(TimeCapsuleEntity capsule, String role);

@@ -3,17 +3,21 @@ package cit.edu.mmr.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 @Entity
+@Getter
+@Setter
 public class CommentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="commentid")
+    @Column(name="commentId")
     public long id;
 
     @ManyToOne
@@ -30,61 +34,13 @@ public class CommentEntity {
     @JsonBackReference("user-comments")
     private UserEntity user;
 
+    @Column(length = 500)
     private String text;
 
     private Date createdAt;
 
     private Date updatedAt;
 
-
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public TimeCapsuleEntity getTimeCapsule() {
-        return timeCapsule;
-    }
-
-    public void setTimeCapsule(TimeCapsuleEntity timeCapsule) {
-        this.timeCapsule = timeCapsule;
-    }
-
-    public UserEntity getUser() {
-        return user;
-    }
-
-    public void setUser(UserEntity user) {
-        this.user = user;
-    }
-
-    public String getText() {
-        return text;
-    }
-
-    public void setText(String text) {
-        this.text = text;
-    }
-
-    public Date getCreatedAt() {
-        return createdAt;
-    }
-
-    public void setCreatedAt(Date createdAt) {
-        this.createdAt = createdAt;
-    }
-
-    public Date getUpdatedAt() {
-        return updatedAt;
-    }
-
-    public void setUpdatedAt(Date updatedAt) {
-        this.updatedAt = updatedAt;
-    }
 
 
 

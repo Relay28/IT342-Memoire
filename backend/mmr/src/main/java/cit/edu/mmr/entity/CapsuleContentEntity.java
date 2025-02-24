@@ -4,11 +4,15 @@ package cit.edu.mmr.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+@Setter
+@Getter
 @Entity
 public class CapsuleContentEntity {
 
@@ -37,7 +41,5 @@ public class CapsuleContentEntity {
     private String contentType;
 
     private Date uploadedAt;
-
-
 
 }
