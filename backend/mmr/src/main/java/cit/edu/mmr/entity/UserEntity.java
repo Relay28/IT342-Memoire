@@ -77,6 +77,18 @@ public class UserEntity {
     private List<CommentReactionEntity> commentReaction = new ArrayList<>();
 
     private String role;
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean isOauthUser = false;
+
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(nullable = false, updatable = false)
+    private Date createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = new Date();
+    }
 
 
 
