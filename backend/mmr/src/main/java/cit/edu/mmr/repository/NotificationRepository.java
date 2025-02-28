@@ -11,9 +11,10 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
     // Get all notifications for a specific user
     List<NotificationEntity> findByUser(UserEntity user);
     List<NotificationEntity> findByUserIdOrderByCreatedAtDesc(Long userId);
-    
+    List<NotificationEntity> findByUserId(long id);
     // Get unread notifications for a user
     List<NotificationEntity> findByUserAndIsReadFalse(UserEntity user);
+    List<NotificationEntity> findByUserIdAndIsReadFalse(Long userId);
     
     // Get notifications by their type
     List<NotificationEntity> findByType(String type);

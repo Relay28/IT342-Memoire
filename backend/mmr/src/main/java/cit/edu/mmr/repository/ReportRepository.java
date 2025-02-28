@@ -10,7 +10,7 @@ import java.util.List;
 public interface ReportRepository extends JpaRepository<ReportEntity, Long> {
     // Get all reports made by a specific user
     List<ReportEntity> findByReporter(UserEntity reporter);
-    
+
     // Get reports by their current status
     List<ReportEntity> findByStatus(String status);
     

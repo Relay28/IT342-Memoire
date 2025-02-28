@@ -30,6 +30,8 @@ public class UserService {
         super();
 
     }
+
+
     public boolean isUsernameTaken(String username) {
         return urepo.existsByUsername(username);
     }
@@ -57,6 +59,8 @@ public class UserService {
         return user.orElse(null);
 
     }
+
+
 
     public UserEntity insertUserRecord(UserEntity user){
 
