@@ -22,7 +22,6 @@ public class NotificationController {
         this.notificationService = notificationService;
     }
 
-    // Create a new notification
     @PostMapping("/user/{userId}")
     public ResponseEntity<NotificationEntity> createNotification(
             @PathVariable Long userId,
@@ -40,8 +39,6 @@ public class NotificationController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
-
-    // Mark a notification as read
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<NotificationEntity> markAsRead(@PathVariable Long notificationId) {
         try {
@@ -52,30 +49,20 @@ public class NotificationController {
         }
     }
 
-    // Get a single notification by its ID
-    @GetMapping("/{notificationId}")
-    public ResponseEntity<NotificationEntity> getNotificationById(@PathVariable Long notificationId) {
-        return notificationService.getNotificationById(notificationId)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+
+    // Get unread notifications for a user
+    @GetMapping("/user/{userId}/unread")
+    public ResponseEntity<List<NotificationEntity>> getUnreadNotifications(@PathVariable Long userId) {
+        List<NotificationEntity> unreadNotifications = notificationService.getUnreadNotifications(userId);
+        return ResponseEntity.ok(unreadNotifications);
     }
 
-    // Get all notifications for a user
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<NotificationEntity>> getNotificationsForUser(@PathVariable Long userId) {
-        List<NotificationEntity> notifications = notificationService.getNotificationsForUser(userId);
-        return ResponseEntity.ok(notifications);
+
+    @PutMapping("/user/{userId}/read-all")
+    public ResponseEntity<Void> markAllAsRead(@PathVariable Long userId) {
+        notificationService.markAllNotificationsAsRead(userId);
+        return ResponseEntity.noContent().build();
     }
 
-    // Delete a notification
-    @DeleteMapping("/{notificationId}")
-    public ResponseEntity<Void> deleteNotification(@PathVariable Long notificationId) {
-        try {
-            notificationService.deleteNotification(notificationId);
-            return ResponseEntity.noContent().build();
-        } catch (EntityNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
 
 }
