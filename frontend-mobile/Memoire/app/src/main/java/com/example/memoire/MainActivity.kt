@@ -1,20 +1,64 @@
 package com.example.memoire
 
+import android.content.Intent
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
+import android.util.Log
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
+import com.example.memoire.api.RetrofitClient
+import com.example.memoire.api.ApiService
+
+import com.example.memoire.models.AuthenticationRequest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+
+        val emailInput = findViewById<EditText>(R.id.emailInput)
+        val passwordInput = findViewById<EditText>(R.id.passwordInput)
+        val loginButton = findViewById<Button>(R.id.loginButton)
+
+        loginButton.setOnClickListener {
+            val username = emailInput.text.toString().trim()
+            val password = passwordInput.text.toString().trim()
+
+            if (username.isNotEmpty() && password.isNotEmpty()) {
+                loginUser(username, password)
+            } else {
+                Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun loginUser(username: String, password: String) {
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.instance.login(AuthenticationRequest(username, password))
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val authResponse = response.body()
+                        Toast.makeText(this@MainActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
+                        // 🔹 Navigate to another activity after login
+                        val intent = Intent(this@MainActivity, HomeActivity::class.java)
+                        startActivity(intent)
+                        finish()
+                    } else {
+                        Toast.makeText(this@MainActivity, "Login Failed!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("API_ERROR", "Error calling API: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 }

@@ -55,7 +55,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**.","/api/notifications/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**.","/api/notifications/**","/api/users/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
