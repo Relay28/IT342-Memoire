@@ -25,11 +25,11 @@ interface ApiService {
     suspend fun updateUser(@Path("id") id: Long, @Body user: User): Response<User>
 
     // 🔹 Disable User
-    @PATCH("/api/users/{id}/disable")
+    @PATCH("api/users/{id}/disable")
     suspend fun disableUser(@Path("id") id: Long): Response<String>
 
     // 🔹 Register User
-    @POST("/auth/register")
+    @POST("api/auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthenticationResponse>
 
     // 🔹 Login User
