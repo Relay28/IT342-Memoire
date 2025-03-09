@@ -5,10 +5,10 @@ import cit.edu.mmr.dto.AuthenticationResponse;
 import cit.edu.mmr.dto.RegisterRequest;
 import cit.edu.mmr.service.AuthenticationService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -18,6 +18,12 @@ public class AuthenticationController {
 
     public AuthenticationController(AuthenticationService authService) {
         this.authService = authService;
+    }
+
+    @PostMapping("/verify-token")
+    public Map verifyToken(@RequestParam String idToken) {
+        String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
+        return new RestTemplate().getForObject(url, Map.class);
     }
 
     @PostMapping("/register")
