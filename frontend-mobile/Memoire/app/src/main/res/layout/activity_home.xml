@@ -69,7 +69,7 @@
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:contentDescription="Search"
-                        android:src="@drawable/ic_google" />
+                        android:src="@drawable/ic_search" />
 
                     <ImageView
                         android:id="@+id/ivNotification"
@@ -77,39 +77,29 @@
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
                         android:contentDescription="Notifications"
-                        android:src="@drawable/ic_launcher_background" />
+                        android:src="@drawable/ic_notification" />
 
                     <ImageView
                         android:id="@+id/ivProfile"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
+                        android:layout_width="27dp"
+                        android:layout_height="27dp"
+                        android:layout_marginEnd="16dp"
                         android:contentDescription="Profile"
-                        android:src="@drawable/common_google_signin_btn_icon_dark" />
+                        android:src="@drawable/ic_placeholder" />
                 </LinearLayout>
             </RelativeLayout>
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
-
-    <!-- Bottom Navigation - Positioned at the VERY bottom -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNavigation"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:background="@drawable/topborder"
-        app:elevation="16dp"
-        app:itemIconSize="24dp"
-        app:labelVisibilityMode="labeled"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:menu="@menu/bottom_navigation_menu" />
 
     <!-- Scrollable Content Area - Between AppBar and Bottom Nav -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/nestedScrollView"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:background="#FFFFFF"
+        android:clipToPadding="false"
         android:fillViewport="true"
+        android:paddingBottom="56dp"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -122,7 +112,7 @@
             android:paddingStart="16dp"
             android:paddingTop="16dp"
             android:paddingEnd="16dp"
-            android:paddingBottom="16dp">
+            android:paddingBottom="0dp">
 
             <!-- Memory Card Item - Repeated for each memory -->
             <androidx.cardview.widget.CardView
@@ -148,7 +138,7 @@
                             android:layout_width="40dp"
                             android:layout_height="40dp"
                             android:contentDescription="User Profile"
-                            android:src="@drawable/ic_google" />
+                            android:src="@drawable/ic_placeholder" />
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -177,7 +167,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:contentDescription="More Options"
-                            android:src="@drawable/ic_launcher_background" />
+                            android:src="@drawable/three_dots" />
                     </LinearLayout>
 
                     <!-- Memory Content -->
@@ -200,8 +190,8 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:baselineAligned="false">
+                        android:baselineAligned="false"
+                        android:orientation="horizontal">
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -319,5 +309,24 @@
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Navigation - Positioned at the VERY bottom -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/topborder"
+        app:itemIconSize="20dp"
+        app:itemIconTint="@color/MemoireRed"
+        android:paddingBottom="0dp"
+        app:labelVisibilityMode="unlabeled"
+        android:layout_marginBottom="-60dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:menu="@menu/bottom_navigation_menu"
+        android:backgroundTint="#FFFFFF"
+        app:itemRippleColor="@android:color/transparent"
+        android:foreground="@null" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
