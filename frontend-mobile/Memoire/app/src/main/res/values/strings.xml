@@ -10,4 +10,14 @@
     <string name="orLoginWith">OR LOGIN WITH</string>
     <string name="signUpGoogle">Sign in with Google</string>
     <string name="logi">Login</string>
+
+<!--    Register Strings-->
+    <string name="full_name">USERNAME</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="register">Register</string>
+    <string name="alreadyHaveAcc">Already have an account? Log in</string>
+    <string name="orRegisterWith">or register with</string>
+    <string name="confirm_your_password">Confirm your password</string>
+
+
 </resources>
