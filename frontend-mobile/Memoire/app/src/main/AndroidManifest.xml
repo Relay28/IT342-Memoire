@@ -18,10 +18,16 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".EditProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false" />
+        <activity
             android:name=".RegisterActivity"
             android:exported="false" />
         <activity
-            android:name=".HomeActivity"
+            android:name=".com.example.memoire.HomeActivity"
             android:exported="false" />
         <activity
             android:name=".MainActivity"
