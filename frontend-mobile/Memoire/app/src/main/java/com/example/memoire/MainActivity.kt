@@ -12,10 +12,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.lifecycle.lifecycleScope
 import com.example.memoire.api.RetrofitClient
-import com.example.memoire.api.ApiService
-import com.example.memoire.api.GoogleAuthRequest
+import android.content.Context
+import android.content.SharedPreferences
+import com.example.memoire.com.example.memoire.HomeActivity
 
 import com.example.memoire.models.AuthenticationRequest
+import com.example.memoire.utils.SessionManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -31,7 +33,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        val sessionManager = SessionManager(this)
+        if (sessionManager.isLoggedIn()) {
+            val intent = Intent(this, HomeActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
         val emailInput = findViewById<EditText>(R.id.emailInput)
         val passwordInput = findViewById<EditText>(R.id.passwordInput)
         val loginButton = findViewById<Button>(R.id.loginButton)
@@ -50,6 +57,7 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this@MainActivity, RegisterActivity::class.java)
             startActivity(intent)
         }
+
 
         loginButton.setOnClickListener {
             val username = emailInput.text.toString().trim()
@@ -74,7 +82,13 @@ class MainActivity : AppCompatActivity() {
                 val response = RetrofitClient.instance.login(AuthenticationRequest(username, password))
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful && response.body() != null) {
-                        Toast.makeText(this@MainActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
+                        val authResponse = response.body()!!
+                       // Toast.makeText(this@MainActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this@MainActivity,""+response+" ",Toast.LENGTH_LONG).show()
+
+                        // Save login data
+                        saveLoginData(authResponse.token, authResponse.userId, authResponse.username, authResponse.email)
+
                         val intent = Intent(this@MainActivity, HomeActivity::class.java)
                         startActivity(intent)
                         finish()
@@ -128,11 +142,19 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful && response.body() != null) {
                         val userData = response.body()!!
-                        Toast.makeText(this@MainActivity, "Google Login Successful!", Toast.LENGTH_SHORT).show()
+//                        Toast.makeText(this@MainActivity, "Google Login Successful!"+userData, Toast.LENGTH_SHORT).show()
 
-                        // Example: Extract user info from response
-                        val email = userData["email"] ?: "Unknown Email"
-                        Log.d("GoogleSignIn", "User Email: $email")
+                          val userId = userData["userId"]?:""
+
+                       val token = userData["token"] ?: "" // Unique Google user ID
+                       val email = userData["email"] ?: "Unknown Email"
+                       val username = userData["username"] ?: "Unknown Name"
+//                        val profilePicture = userData["picture"] ?: ""
+                        Toast.makeText(this@MainActivity, "Google Login Successful!"+userId, Toast.LENGTH_SHORT).show()
+                        saveLoginData(token,userId.toLong(),username, email)
+                        // Save data locally
+                       // saveGoogleUserSession(googleId, email, name, profilePicture)
+                        Log.d("GoogleSignIn", "User Email: $userData")
 
                         val intent = Intent(this@MainActivity, HomeActivity::class.java)
                         startActivity(intent)
@@ -149,5 +171,41 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun saveLoginData(token: String, userId: Long, username: String, email: String) {
+        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("token", token)
+        editor.putLong("userId", userId)
+        editor.putString("username", username)
+        editor.putString("email", email)
+        editor.apply() // Saves data asynchronously
+    }
+
+    private fun saveGoogleUserSession(googleId: String, email: String, name: String, profilePicture: String) {
+        val sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE)
+        val editor = sharedPreferences.edit()
+        editor.putString("googleId", googleId)  // Store Google unique ID
+        editor.putString("email", email)
+        editor.putString("username", name)
+        editor.putString("profilePicture", profilePicture)
+        editor.putBoolean("isGoogleUser", true) // Flag to check Google login
+        editor.apply()
+    }
+
+
+    private fun checkUserLoggedIn() {
+        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
+        val token = sharedPreferences.getString("token", null)
+        val isGoogleUser = sharedPreferences.getBoolean("isGoogleUser", false)
+
+        if (token != null) {
+            // User is already logged in, redirect to HomeActivity
+            val intent = Intent(this, HomeActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
+    }
+
 
 }

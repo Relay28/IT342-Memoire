@@ -5,7 +5,11 @@ import cit.edu.mmr.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,7 +24,12 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private final OAuth2AuthorizedClientService authorizedClientService;
 
+    public UserController(OAuth2AuthorizedClientService authorizedClientService) {
+        this.authorizedClientService = authorizedClientService;
+    }
     // Get user by id
     @GetMapping("/{id}")
     public ResponseEntity<UserEntity> getUserById(@PathVariable long id) {
@@ -32,6 +41,15 @@ public class UserController {
         }
     }
 
+    @GetMapping("getSub/{sub}")
+    public ResponseEntity<UserEntity> getUserById(@PathVariable String sub) {
+        Optional<UserEntity> userOptional = Optional.ofNullable(userService.findbyGoogleSub(sub));
+        if (userOptional.isPresent()) {
+            return new ResponseEntity<>(userOptional.get(), HttpStatus.OK);
+        } else {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
     // Create a new user
     @PostMapping("/createUser")
     public ResponseEntity<UserEntity> createUser(@RequestBody UserEntity user) {
@@ -71,8 +89,20 @@ public class UserController {
         }
     }
 
-    @GetMapping("/user-info")
-    public Map<String, Object> getUser(@AuthenticationPrincipal OAuth2User principal){
-        return principal.getAttributes();
+         @GetMapping("/user-info")
+        public String getAccessToken(Authentication authentication) {
+            if (authentication instanceof OAuth2AuthenticationToken) {
+                OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+                OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
+                        oauthToken.getAuthorizedClientRegistrationId(),
+                        oauthToken.getName()
+                );
+
+                if (client != null) {
+                    return client.getAccessToken().getTokenValue(); // This is the Google access token
+                }
+            }
+            return "No token found";
+
     }
 }

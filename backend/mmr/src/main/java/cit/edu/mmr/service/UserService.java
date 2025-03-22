@@ -60,6 +60,11 @@ public class UserService {
 
     }
 
+    public UserEntity findbyGoogleSub(String sub){
+        Optional<UserEntity> user = urepo.findByGoogleSub(sub);
+        return  user.orElse(null);
+    }
+
 
 
     public UserEntity insertUserRecord(UserEntity user){

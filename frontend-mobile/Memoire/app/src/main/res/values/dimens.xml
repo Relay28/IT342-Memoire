@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Profile screen dimensions -->
+    <dimen name="profile_padding_small">12dp</dimen>
+    <dimen name="profile_padding_normal">16dp</dimen>
+    <dimen name="profile_padding_large">24dp</dimen>
+    <dimen name="profile_image_size">80dp</dimen>
+    <dimen name="fab_margin_bottom">24dp</dimen>
+    <dimen name="profile_card_margin">16dp</dimen>
+</resources>
