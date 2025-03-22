@@ -18,12 +18,13 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize">
+            android:layout_height="?attr/actionBarSize"
+            android:paddingHorizontal="8dp">
 
             <ImageButton
                 android:id="@+id/btn_back"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Back"
                 android:src="@drawable/ic_back"
@@ -35,10 +36,13 @@
                 android:id="@+id/tv_username"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="_santos"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
+                android:gravity="center"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@+id/btn_more"
                 app:layout_constraintStart_toEndOf="@+id/btn_back"
@@ -46,8 +50,8 @@
 
             <ImageButton
                 android:id="@+id/btn_more"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="More options"
                 android:src="@drawable/three_dots"
@@ -67,16 +71,16 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="16dp"
-            android:paddingTop="16dp">
+            android:paddingTop="16dp"
+            android:paddingBottom="80dp">
 
             <!-- Profile picture -->
             <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/iv_profile"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
                 android:src="@drawable/default_profile"
                 app:civ_border_width="0dp"
-
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -85,109 +89,123 @@
                 android:id="@+id/tv_full_name"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
+                android:layout_marginStart="12dp"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="Georgia Santos"
                 android:textColor="@color/black"
-                android:textSize="18sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/iv_profile"
                 app:layout_constraintTop_toTopOf="@+id/iv_profile" />
 
-            <!-- Stats containers with guidelines for equal width -->
-            <androidx.constraintlayout.widget.Guideline
-                android:id="@+id/guideline1"
-                android:layout_width="wrap_content"
+            <!-- Stats section - using horizontal chain instead of guidelines -->
+            <LinearLayout
+                android:id="@+id/stats_container"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                app:layout_constraintGuide_percent="0.33" />
-
-            <androidx.constraintlayout.widget.Guideline
-                android:id="@+id/guideline2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                app:layout_constraintGuide_percent="0.66" />
-
-            <!-- Owned capsules -->
-            <TextView
-                android:id="@+id/tv_owned_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="35"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toStartOf="@+id/guideline1"
-                app:layout_constraintStart_toEndOf="@+id/iv_profile"
-                app:layout_constraintTop_toBottomOf="@+id/tv_full_name"
-                android:layout_marginTop="16dp" />
-
-            <TextView
-                android:id="@+id/tv_owned_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="owned capsules"
-                android:textColor="@color/gray"
-                android:textSize="12sp"
-                app:layout_constraintEnd_toStartOf="@+id/guideline1"
-                app:layout_constraintStart_toEndOf="@+id/iv_profile"
-                app:layout_constraintTop_toBottomOf="@+id/tv_owned_count" />
-
-            <!-- Friends -->
-            <TextView
-                android:id="@+id/tv_friends_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="55"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toStartOf="@+id/guideline2"
-                app:layout_constraintStart_toEndOf="@+id/guideline1"
-                app:layout_constraintTop_toTopOf="@+id/tv_owned_count" />
-
-            <TextView
-                android:id="@+id/tv_friends_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="friends"
-                android:textColor="@color/gray"
-                android:textSize="12sp"
-                app:layout_constraintEnd_toStartOf="@+id/guideline2"
-                app:layout_constraintStart_toEndOf="@+id/guideline1"
-                app:layout_constraintTop_toBottomOf="@+id/tv_friends_count" />
-
-            <!-- Shared capsules -->
-            <TextView
-                android:id="@+id/tv_shared_count"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="34"
-                android:textColor="@color/black"
-                android:textSize="16sp"
-                android:textStyle="bold"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal"
+                android:weightSum="3"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/guideline2"
-                app:layout_constraintTop_toTopOf="@+id/tv_friends_count" />
+                app:layout_constraintStart_toEndOf="@+id/iv_profile"
+                app:layout_constraintTop_toBottomOf="@+id/tv_full_name">
 
-            <TextView
-                android:id="@+id/tv_shared_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="shared capsules"
-                android:textColor="@color/gray"
-                android:textSize="12sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@+id/guideline2"
-                app:layout_constraintTop_toBottomOf="@+id/tv_shared_count" />
+                <!-- Owned capsules -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_owned_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="35"
+                        android:textColor="@color/black"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_owned_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:text="owned"
+                        android:textColor="@color/gray"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- Friends -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_friends_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="55"
+                        android:textColor="@color/black"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_friends_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:text="friends"
+                        android:textColor="@color/gray"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <!-- Shared capsules -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_shared_count"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="34"
+                        android:textColor="@color/black"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_shared_label"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="1"
+                        android:text="shared"
+                        android:textColor="@color/gray"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
 
             <!-- Bio section -->
             <TextView
                 android:id="@+id/tv_username_display"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="20dp"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="KHBAKSJAHSKA"
                 android:textColor="@color/black"
                 android:textSize="14sp"
@@ -212,30 +230,16 @@
             <androidx.appcompat.widget.AppCompatButton
                 android:id="@+id/btn_edit_profile"
                 android:layout_width="0dp"
-                android:layout_height="48dp"
+                android:layout_height="40dp"
                 android:layout_marginTop="16dp"
-                android:layout_marginEnd="8dp"
                 android:backgroundTint="@color/MemoireRed"
                 android:text="Edit Profile"
                 android:textAllCaps="false"
-
                 android:textColor="@color/white"
-                app:layout_constraintEnd_toStartOf="@+id/guideline2"
+                android:textSize="13sp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/tv_bio" />
-
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btn_share_profile"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:backgroundTint="@color/MemoireRed"
-                android:text="Share Profile"
-                android:textAllCaps="false"
-                android:textColor="@color/black"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="@+id/guideline2"
-                app:layout_constraintTop_toTopOf="@+id/btn_edit_profile" />
 
             <!-- Grid of capsules/posts -->
             <androidx.recyclerview.widget.RecyclerView
@@ -243,7 +247,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:layout_marginBottom="80dp"
                 android:contentDescription="@string/app"
                 app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -255,7 +258,5 @@
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
-
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -5,7 +5,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import com.google.gson.GsonBuilder
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.1.10:8080/"
+    private const val BASE_URL = "http://192.168.1.12:8080/"
 
     private val gson = GsonBuilder()
         .setLenient() // ✅ Allows lenient parsing for JSON responses

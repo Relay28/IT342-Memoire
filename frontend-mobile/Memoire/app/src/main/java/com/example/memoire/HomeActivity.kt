@@ -10,7 +10,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
-import com.example.memoire.utils.AuthManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -25,11 +24,6 @@ class HomeActivity : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
-        }
-        val user = AuthManager.getUserInfo(this) // Inside an Activity
-        val id = user?.id
-        if (user != null) {
-            Toast.makeText(this@HomeActivity, "${id ?: "Unknown"} exists", Toast.LENGTH_SHORT).show()
         }
         val profile = findViewById<ImageView>(R.id.prof)
 
