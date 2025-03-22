@@ -98,11 +98,13 @@ public class UserService {
         if (newUserDetails.getEmail() != null) {
             user.setEmail(newUserDetails.getEmail());
         }
+        user.setBiography(newUserDetails.getBiography());
 
         // Save profile image if provided
         if (profileImg != null && !profileImg.isEmpty()) {
             saveProfileImage(profileImg, user);
         }
+
 
         // Save the updated user entity to the repository
         return urepo.save(user);

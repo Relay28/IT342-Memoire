@@ -13,8 +13,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.memoire.api.RetrofitClient
-import com.example.memoire.models.AuthenticationRequest
-import com.example.memoire.models.AuthenticationResponse
+import com.example.memoire.com.example.memoire.HomeActivity
 import com.example.memoire.models.RegisterRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

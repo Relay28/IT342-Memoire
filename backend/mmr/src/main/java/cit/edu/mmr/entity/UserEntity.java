@@ -26,8 +26,13 @@ public class UserEntity implements UserDetails {
     private String email;
     private String password;
 
+    @Column(unique = true, nullable = false)
+    private String googleSub;
+
     @Lob
     private String profilePicture;
+
+    private String biography;
 
     private boolean isActive;
     private String role;  // Should be stored as "ROLE_USER" or "ROLE_ADMIN"
