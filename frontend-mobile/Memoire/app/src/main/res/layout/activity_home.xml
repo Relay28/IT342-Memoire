@@ -80,7 +80,7 @@
                         android:src="@drawable/ic_notification" />
 
                     <ImageView
-                        android:id="@+id/ivProfile"
+                        android:id="@+id/prof"
                         android:layout_width="27dp"
                         android:layout_height="27dp"
                         android:layout_marginEnd="16dp"

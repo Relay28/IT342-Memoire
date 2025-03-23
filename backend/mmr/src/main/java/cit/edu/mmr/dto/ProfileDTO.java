@@ -4,6 +4,16 @@ public class ProfileDTO {
     private long userId;
     private String username;
     private String email;
+
+    public String getBiography() {
+        return biography;
+    }
+
+    public void setBiography(String biography) {
+        this.biography = biography;
+    }
+
+    private String biography;
     private String profilePicture;
     private java.util.Date createdAt;
     private String role;

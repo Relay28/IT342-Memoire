@@ -11,7 +11,7 @@
     <string name="signUpGoogle">Sign in with Google</string>
     <string name="logi">Login</string>
 
-<!--    Register Strings-->
+    <!--    Register Strings-->
     <string name="full_name">USERNAME</string>
     <string name="confirm_password">Confirm Password</string>
     <string name="register">Register</string>

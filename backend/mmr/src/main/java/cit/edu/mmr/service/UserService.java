@@ -3,6 +3,7 @@ package cit.edu.mmr.service;
 
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
+import cit.edu.mmr.util.FileStorageService;
 import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,8 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder; //
+    @Autowired
+    private FileStorageService fileStorageService;
 
     public UserService(){
         super();
@@ -60,6 +63,11 @@ public class UserService {
 
     }
 
+    public UserEntity findbyGoogleSub(String sub){
+        Optional<UserEntity> user = urepo.findByGoogleSub(sub);
+        return  user.orElse(null);
+    }
+
 
 
     public UserEntity insertUserRecord(UserEntity user){
@@ -82,33 +90,30 @@ public class UserService {
         return urepo.save(user);
     }
 
-    public UserEntity putUserDetails(long id, UserEntity newUserDetails, MultipartFile profileImg) {
-        // Find the existing user or throw an exception if not found
-        UserEntity user = urepo.findById(id).orElseThrow(() -> new NoSuchElementException("User " + id + " not found"));
+    public UserEntity updateUserDetails(long userId, UserEntity newUserDetails, MultipartFile profileImg) throws IOException {
+        UserEntity existingUser = urepo.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
 
-        // Update user details from newUserDetails
-
-
+        // Update only the fields that are provided in the request
         if (newUserDetails.getUsername() != null) {
-            user.setUsername(newUserDetails.getUsername());
-        }
-        if (newUserDetails.getPassword() != null) {
-            user.setPassword(newUserDetails.getPassword());
+            existingUser.setUsername(newUserDetails.getUsername());
         }
         if (newUserDetails.getEmail() != null) {
-            user.setEmail(newUserDetails.getEmail());
+            existingUser.setEmail(newUserDetails.getEmail());
+        }
+        if (newUserDetails.getBiography() != null) {
+            existingUser.setBiography(newUserDetails.getBiography());
         }
 
-        // Save profile image if provided
+        // Handle profile image update
         if (profileImg != null && !profileImg.isEmpty()) {
-            saveProfileImage(profileImg, user);
+            String profilePictureUrl = fileStorageService.storeFile(profileImg);
+            existingUser.setProfilePicture(profilePictureUrl);
         }
 
-        // Save the updated user entity to the repository
-        return urepo.save(user);
+        // Save the updated user
+        return urepo.save(existingUser);
     }
-
-
     public String disableUser(long id ){
         String msg="";
         UserEntity user = urepo.findById(id).orElseThrow(() -> new NoSuchElementException("User " + id + " not found"));
