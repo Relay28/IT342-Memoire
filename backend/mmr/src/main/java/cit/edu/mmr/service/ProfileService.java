@@ -40,15 +40,16 @@ public class ProfileService {
      * @param userId the ID of the user whose profile to retrieve
      * @return ProfileDTO with detailed user information
      */
-    public ProfileDTO getOwnProfile(long userId) {
-        // Get current authenticated user
+    public ProfileDTO getOwnProfile() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserEntity currentUser = (UserEntity) auth.getPrincipal();
-
-        // Verify the requested profile belongs to the authenticated user
-        if (currentUser.getId() != userId) {
-            throw new SecurityException("You can only access your own detailed profile");
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new SecurityException("User is not authenticated");
         }
+
+        // Assuming the principal is the username, fetch the user entity from the repository
+        String username = auth.getName();
+        UserEntity currentUser = userRepository.findByUsername(username)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
 
         return convertToProfileDTO(currentUser, true);
     }

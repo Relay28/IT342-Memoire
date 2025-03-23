@@ -2,6 +2,7 @@ package cit.edu.mmr.controller;
 
 import cit.edu.mmr.dto.ProfileDTO;
 import cit.edu.mmr.entity.UserEntity;
+import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.ProfileService;
 import cit.edu.mmr.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -25,6 +27,8 @@ public class ProfileController {
     @Autowired
     private ProfileService profileService;
 
+    @Autowired
+    private UserRepository userRepository;
     /**
      * Get public profile information for any user
      */
@@ -39,19 +43,20 @@ public class ProfileController {
     }
 
     /**
-     * Get detailed profile information for the currently authenticated user
+     * Endpoint to retrieve the authenticated user's own profile
+     * @return ProfileDTO with the authenticated user's details
      */
     @GetMapping("/me")
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ProfileDTO> getOwnProfile() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        UserEntity currentUser = (UserEntity) auth.getPrincipal();
-
         try {
-            ProfileDTO profile = profileService.getOwnProfile(currentUser.getId());
-            return ResponseEntity.ok(profile);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error retrieving profile", e);
+            ProfileDTO profileDTO = profileService.getOwnProfile();
+            return ResponseEntity.ok(profileDTO);
+        } catch (SecurityException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (NoSuchElementException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
 
