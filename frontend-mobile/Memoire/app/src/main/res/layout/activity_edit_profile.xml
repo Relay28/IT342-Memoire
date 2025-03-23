@@ -237,17 +237,5 @@
     </androidx.core.widget.NestedScrollView>
 
     <!-- Modern floating action button for save -->
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/fab_save"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center"
-        android:layout_marginBottom="@dimen/fab_margin_bottom"
-        android:backgroundTint="@color/MemoireRed"
-        android:textColor="@color/white"
-        app:icon="@drawable/ic_save"
-        app:iconTint="@color/white"
-        android:text="Save Changes"
-        app:iconPadding="8dp" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -43,7 +43,7 @@ public class CommentReactionServiceImpl implements CommentReactionService {
 
         CommentReactionEntity reaction = new CommentReactionEntity();
         reaction.setComment(comment);
-        reaction.setUserid(user);
+        reaction.setUser(user);
         reaction.setType(type);
         reaction.setReactedAt(new Date());
 

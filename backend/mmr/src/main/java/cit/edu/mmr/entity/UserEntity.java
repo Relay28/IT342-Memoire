@@ -1,6 +1,9 @@
 package cit.edu.mmr.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,13 +17,16 @@ import java.util.Date;
 import java.util.List;
 
 @Entity
+@Table(name = "user_entity")
 @Getter
 @Setter
+@NoArgsConstructor // Required for JPA
+@AllArgsConstructor
 public class UserEntity implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="userid")
+    @Column(name = "user_id")
     private long id;
 
     private String username;
@@ -66,7 +72,8 @@ public class UserEntity implements UserDetails {
     private List<CapsuleAccessEntity> capsuleAccesses;
 
     @OneToMany(mappedBy = "uploadedBy", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference("user-capsuleOwnership")
+    //@JsonManagedReference("user-capsuleOwnership")
+    @JsonIgnore
     private List<CapsuleAccessEntity> uploadedCapsules;
 
     @OneToMany(mappedBy = "contentUploadedBy" ,cascade=CascadeType.ALL,orphanRemoval = true)
@@ -78,12 +85,13 @@ public class UserEntity implements UserDetails {
     private List<TimeCapsuleEntity> timeCapsules = new ArrayList<>();
 
 
-    @OneToMany(mappedBy="userid",cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy="user",cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-commentReaction")
     private List<CommentReactionEntity> commentReaction = new ArrayList<>();
 
-    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
-    private boolean isOauthUser = false;
+    @Column(columnDefinition = "TINYINT(1) DEFAULT 0", nullable = false)
+    private boolean isOauthUser;
+
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false, updatable = false)

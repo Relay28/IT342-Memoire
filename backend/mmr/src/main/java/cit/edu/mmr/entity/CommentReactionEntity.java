@@ -3,7 +3,9 @@ package cit.edu.mmr.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.Date;
@@ -11,6 +13,8 @@ import java.util.Date;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor // Required for JPA
+@AllArgsConstructor
 public class CommentReactionEntity {
 
     @Id
@@ -21,7 +25,7 @@ public class CommentReactionEntity {
     @ManyToOne
     @JoinColumn(name = "user_id",nullable = false)
     @JsonBackReference("user-commentReaction")
-    private UserEntity userid;
+    private UserEntity user;
 
     @ManyToOne
     @JoinColumn(name = "comment_id",nullable = false)

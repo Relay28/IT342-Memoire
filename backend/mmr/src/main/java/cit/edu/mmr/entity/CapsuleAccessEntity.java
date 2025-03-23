@@ -3,8 +3,12 @@ package cit.edu.mmr.entity;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Entity
+@NoArgsConstructor // Required for JPA
+@AllArgsConstructor
 public class CapsuleAccessEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
