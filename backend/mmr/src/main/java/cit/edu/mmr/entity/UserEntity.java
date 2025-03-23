@@ -76,7 +76,7 @@ public class UserEntity implements UserDetails {
     @OneToMany(mappedBy="createdBy",cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-capsules")
     private List<TimeCapsuleEntity> timeCapsules = new ArrayList<>();
-    
+
 
     @OneToMany(mappedBy="userid",cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-commentReaction")

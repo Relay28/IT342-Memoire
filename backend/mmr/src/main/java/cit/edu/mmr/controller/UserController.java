@@ -1,12 +1,14 @@
 package cit.edu.mmr.controller;
 
 import cit.edu.mmr.entity.UserEntity;
+import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -14,6 +16,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -24,6 +27,8 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    @Autowired
+    private UserRepository userRepository;
     @Autowired
     private final OAuth2AuthorizedClientService authorizedClientService;
 
@@ -62,22 +67,39 @@ public class UserController {
     }
 
     // Update user details including optional profile image
-    @PutMapping("updateUser/{id}")
+    @PutMapping("/updateUser")
     public ResponseEntity<UserEntity> updateUser(
-            @PathVariable long id,
-            @RequestBody UserEntity newUserDetails) {
+            @RequestBody UserEntity newUserDetails,
+            @RequestParam(value = "profileImg", required = false) MultipartFile profileImg) {
         try {
-            // Passing null for profileImg, since we aren't updating it here
-            UserEntity updatedUser = userService.putUserDetails(id, newUserDetails, null);
+            // Get the authenticated user's details
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null || !auth.isAuthenticated()) {
+                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+            }
+
+            // Fetch the current user from the repository using the authenticated username
+            String username = auth.getName();
+            UserEntity currentUser = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new NoSuchElementException("User not found"));
+
+//            // Ensure the authenticated user is a USER and can only update their own account
+//            if (!currentUser.getRole().equals("USER")) {
+//                return new ResponseEntity<>(null, HttpStatus.FORBIDDEN); // Only USER role can update their own account
+//            }
+            long id = currentUser.getId();
+
+            // Update the authenticated user's details
+            UserEntity updatedUser = userService.updateUserDetails(currentUser.getId(), newUserDetails, profileImg);
             return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        } catch (IOException e) {
+            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-
     // Disable user account
     @PatchMapping("/{id}/disable")
     public ResponseEntity<String> disableUser(@PathVariable long id) {
