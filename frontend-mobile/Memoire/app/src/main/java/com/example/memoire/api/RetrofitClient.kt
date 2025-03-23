@@ -2,6 +2,7 @@ package com.example.memoire.api
 
 import android.content.Context
 import com.example.memoire.utils.SessionManager
+import com.google.gson.Gson
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import com.google.gson.GsonBuilder
@@ -30,6 +31,11 @@ object RetrofitClient {
                 chain.proceed(request)
             }
             .build()
+    }
+    private val gson: Gson by lazy {
+        GsonBuilder()
+            .setLenient() // Enable lenient JSON parsing
+            .create()
     }
 
     val instance: ApiService by lazy {

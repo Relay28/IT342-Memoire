@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.jetbrainsKotlinAndroid)
+
 }
 
 android {
@@ -49,5 +50,6 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation("de.hdodenhof:circleimageview:3.1.0")
-
+    implementation("com.github.bumptech.glide:glide:4.15.1")
+   // implementation("com.github.bumptech.glide:compiler:4.15.1")
 }

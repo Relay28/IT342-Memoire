@@ -147,37 +147,11 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="16dp"
+                    >
 
-                    <!-- Name -->
-                    <TextView
-                        android:id="@+id/tv_name_label"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Name"
-                        android:textColor="@color/gray"
-                        android:textSize="14sp" />
 
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        app:boxBackgroundColor="@color/white"
-                        app:boxBackgroundMode="none"
-                        app:hintEnabled="false">
 
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/et_name"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@null"
-                            android:hint="Your full name"
-                            android:inputType="textPersonName"
-                            android:padding="8dp"
-                            android:text="Georgia Santos"
-                            android:textColor="@color/black"
-                            android:textSize="16sp" />
-                    </com.google.android.material.textfield.TextInputLayout>
 
                     <View
                         android:layout_width="match_parent"
@@ -239,6 +213,7 @@
                         app:boxBackgroundColor="@color/white"
                         app:boxBackgroundMode="none"
                         app:counterEnabled="true"
+                        android:paddingBottom="50dp"
                         app:counterMaxLength="150"
                         app:hintEnabled="false">
 

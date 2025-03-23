@@ -2,6 +2,7 @@ package com.example.memoire.api
 
 import com.example.memoire.models.AuthenticationRequest
 import com.example.memoire.models.AuthenticationResponse
+import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.RegisterRequest
 import com.example.memoire.models.User
 import retrofit2.Call
@@ -24,11 +25,17 @@ interface ApiService {
     ): Response<User>
 
 
-    @PUT("api/users/updateUser/{id}")
+    @GET("api/profiles/view/{userId}")
+    fun getPublicProfile(@Path("userId") userId: Long): Call<ProfileDTO>
+
+    @GET("api/profiles/me")
+    fun getOwnProfile(@Header("Authorization") authToken: String): Call<ProfileDTO>
+
+    @PUT("api/users/updateUser")
     suspend fun updateUser(
-        @Path("id") id: Long,
-        @Body user: User
-    ): Response<User>
+        @Body profile: ProfileDTO
+    ): Response<ProfileDTO>
+
 
     @PATCH("api/users/{id}/disable")
     suspend fun disableUser(@Path("id") id: Long): Response<String>

@@ -10,9 +10,9 @@ class SessionManager(context: Context) {
 
     private val editor: SharedPreferences.Editor = sharedPreferences.edit()
 
-    fun saveLoginData(token: String, userId: Int, username: String, email: String) {
+    fun saveLoginData(token: String, userId: Long, username: String, email: String) {
         editor.putString("token", token)
-        editor.putInt("userId", userId)
+        editor.putLong("userId", userId)
         editor.putString("username", username)
         editor.putString("email", email)
         editor.apply() // Saves asynchronously
@@ -21,7 +21,7 @@ class SessionManager(context: Context) {
     fun getUserSession(): Map<String, Any?> {
         return mapOf(
             "token" to sharedPreferences.getString("token", null),
-            "userId" to sharedPreferences.getInt("userId", -1),
+            "userId" to sharedPreferences.getLong("userId", -1),
             "username" to sharedPreferences.getString("username", null),
             "email" to sharedPreferences.getString("email", null)
         )
