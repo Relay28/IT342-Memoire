@@ -12,7 +12,8 @@ import java.util.Optional;
 @Repository
 public interface CommentReactionRepository extends JpaRepository<CommentReactionEntity, Long> {
 	// Finds a single reaction by combining user and comment IDs, returns Optional in case reaction doesn't exist
-    Optional<CommentReactionEntity> findByUseridAndComment(UserEntity user, CommentEntity comment);
+    Optional<CommentReactionEntity> findByUserAndComment(UserEntity user, CommentEntity comment);
+
     // Find reactions by comment id
     List<CommentReactionEntity> findByCommentId(Long commentId);
 
@@ -20,5 +21,6 @@ public interface CommentReactionRepository extends JpaRepository<CommentReaction
     List<CommentReactionEntity> findByComment(CommentEntity comment);
 
     // Checks if a reaction exists for this user and comment combination, returns true/false
-    boolean existsByUseridAndComment(UserEntity user, CommentEntity comment);
+    boolean existsByUserAndComment(UserEntity user, CommentEntity comment);
+
 }

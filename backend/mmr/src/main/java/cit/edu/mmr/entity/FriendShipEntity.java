@@ -3,7 +3,9 @@ package cit.edu.mmr.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.xml.crypto.Data;
@@ -12,6 +14,8 @@ import java.util.Date;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor // Required for JPA
+@AllArgsConstructor
 public class FriendShipEntity {
 
     @Id
@@ -25,7 +29,7 @@ public class FriendShipEntity {
     private UserEntity user;
 
     @ManyToOne
-    @JoinColumn(name="friend_id", nullable = false)
+    @JoinColumn(name = "friend_id", nullable = false) // Changed name to friend_id
     @JsonBackReference("friend-friendships")
     private UserEntity friend;
 

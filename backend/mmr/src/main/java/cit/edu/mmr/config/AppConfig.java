@@ -14,7 +14,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.Collections;
+
 @Configuration
+
 public class AppConfig {
 
     private final UserRepository userRepository;
@@ -38,8 +40,26 @@ public class AppConfig {
                         true,
                         true,
                         true,
-                        Collections.singleton(new SimpleGrantedAuthority("ROLE_" + (user.getRole() != null ? user.getRole() : "USER")))
+                        Collections.singleton(new SimpleGrantedAuthority(user.getRole())) // Ensure roles are stored correctly
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
+        return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService());
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
