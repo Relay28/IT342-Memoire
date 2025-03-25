@@ -1,18 +1,17 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
 import { BrowserRouter } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import AppRoutes from "./Routes";
 
 function App() {
+  const clientId = "500063994752-5graisegq8sp2t5mfkai2lm9a48k0kb8.apps.googleusercontent.com"; // Your Google Client ID
+
   return (
-    <>
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
-    </>
-  )
+    <GoogleOAuthProvider clientId={clientId}>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </GoogleOAuthProvider>
+  );
 }
 
-export default App
+export default App;
