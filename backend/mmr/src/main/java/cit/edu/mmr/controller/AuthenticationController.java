@@ -16,7 +16,9 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthenticationController {
@@ -89,6 +91,7 @@ public class AuthenticationController {
     ) {
         return ResponseEntity.ok(authService.register(request));
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<AuthenticationResponse> authenticate(
