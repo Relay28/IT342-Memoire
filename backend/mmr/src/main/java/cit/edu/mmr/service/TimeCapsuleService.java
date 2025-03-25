@@ -48,6 +48,9 @@ public class TimeCapsuleService {
         capsule.setLocked(false);
         capsule.setCreatedBy(user);
         capsule.setStatus("ACTIVE");
+        List<TimeCapsuleEntity> cap = user.getTimeCapsules();
+        cap.add(capsule);
+        user.setTimeCapsules(cap);
 
         return convertToDTO(tcRepo.save(capsule));
     }
@@ -131,6 +134,7 @@ public class TimeCapsuleService {
         dto.setDescription(entity.getDescription());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setOpenDate(entity.getOpenDate());
+        dto.setContents(entity.getContents());
         dto.setLocked(entity.isLocked());
         dto.setCreatedById(entity.getCreatedBy().getId());
         dto.setStatus(entity.getStatus());

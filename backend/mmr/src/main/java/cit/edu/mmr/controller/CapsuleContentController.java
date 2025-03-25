@@ -12,25 +12,34 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/capsule-content")
+@RequestMapping("/api/capsule-content") // 🔹 Ensures authentication for all requests
 public class CapsuleContentController {
 
     private final CapsuleContentService capsuleContentService;
 
-    @Autowired
     public CapsuleContentController(CapsuleContentService capsuleContentService) {
         this.capsuleContentService = capsuleContentService;
     }
 
-    @PostMapping("/{capsuleId}/{userId}/upload")
+    @PostMapping("/{capsuleId}/upload")
     public ResponseEntity<CapsuleContentEntity> uploadContent(
             @PathVariable Long capsuleId,
-            @PathVariable Long userId,
             @RequestParam("file") MultipartFile file) {
         try {
-            CapsuleContentEntity savedContent = capsuleContentService.uploadContent(capsuleId, userId, file);
+            CapsuleContentEntity savedContent = capsuleContentService.uploadContent(capsuleId, file);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedContent);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -54,14 +63,19 @@ public class CapsuleContentController {
         }
     }
 
+
+
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteContent(@PathVariable Long id) {
         capsuleContentService.deleteContent(id);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/capsule/{capsuleId}")
+    @GetMapping("/{capsuleId}")
     public ResponseEntity<List<CapsuleContentEntity>> getContentsByCapsule(@PathVariable Long capsuleId) {
         return ResponseEntity.ok(capsuleContentService.getContentsByCapsuleId(capsuleId));
     }
+
+
 }

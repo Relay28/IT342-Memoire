@@ -9,7 +9,7 @@ import java.util.Optional;
 
 public interface CapsuleContentService {
 
-    CapsuleContentEntity uploadContent(Long capsuleId, Long userId, MultipartFile file) throws IOException;
+    CapsuleContentEntity uploadContent(Long capsuleId, MultipartFile file) throws IOException;
 
     CapsuleContentEntity updateContent(Long id, MultipartFile file) throws IOException;
 

@@ -74,8 +74,7 @@ public class UserEntity implements UserDetails {
     private List<CapsuleAccessEntity> capsuleAccesses;
 
     @OneToMany(mappedBy = "uploadedBy", cascade = CascadeType.ALL, orphanRemoval = true)
-    //@JsonManagedReference("user-capsuleOwnership")
-    @JsonIgnore
+    @JsonManagedReference("user-capsuleOwnership")
     private List<CapsuleAccessEntity> uploadedCapsules;
 
     @OneToMany(mappedBy = "contentUploadedBy" ,cascade=CascadeType.ALL,orphanRemoval = true)

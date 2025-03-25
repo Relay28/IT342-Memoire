@@ -25,4 +25,6 @@ public interface CapsuleAccessRepository extends JpaRepository<CapsuleAccessEnti
     
     // Find users with specific role in a capsule
     List<CapsuleAccessEntity> findByCapsuleAndRole(TimeCapsuleEntity capsule, String role);
+
+    Optional<CapsuleAccessEntity> findByUserAndCapsule(UserEntity user, TimeCapsuleEntity capsule);
 }
