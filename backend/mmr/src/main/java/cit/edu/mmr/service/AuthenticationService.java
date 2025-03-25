@@ -47,6 +47,8 @@ public class AuthenticationService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole("USER");
         user.setActive(true);
+        user.setName(request.getUsername());
+
 
         userRepository.save(user);
 

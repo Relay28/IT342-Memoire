@@ -64,7 +64,7 @@ public class ProfileController {
      * Get detailed profile information for a specific user (admin only)
      */
     @GetMapping("/admin/{userId}")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ProfileDTO> getDetailedProfileAsAdmin(@PathVariable long userId) {
         try {
             // For admin users, we can provide the detailed profile of any user

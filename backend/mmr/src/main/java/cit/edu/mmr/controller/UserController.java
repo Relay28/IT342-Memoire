@@ -6,6 +6,7 @@ import cit.edu.mmr.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,43 +21,39 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
 
     @Autowired
     private UserService userService;
+
     @Autowired
     private UserRepository userRepository;
+
     @Autowired
     private final OAuth2AuthorizedClientService authorizedClientService;
 
     public UserController(OAuth2AuthorizedClientService authorizedClientService) {
         this.authorizedClientService = authorizedClientService;
     }
-    // Get user by id
-    @GetMapping("/{id}")
-    public ResponseEntity<UserEntity> getUserById(@PathVariable long id) {
-        Optional<UserEntity> userOptional = Optional.ofNullable(userService.findById(id));
-        if (userOptional.isPresent()) {
-            return new ResponseEntity<>(userOptional.get(), HttpStatus.OK);
+
+    // Get user by JWT token
+    @GetMapping
+    public ResponseEntity<UserEntity> getCurrentUser(Authentication authentication) {
+        if (authentication != null && authentication.isAuthenticated()) {
+            String username = authentication.getName();
+            UserEntity currentUser = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new NoSuchElementException("User not found"));
+            return new ResponseEntity<>(currentUser, HttpStatus.OK);
         } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
     }
 
-    @GetMapping("getSub/{sub}")
-    public ResponseEntity<UserEntity> getUserById(@PathVariable String sub) {
-        Optional<UserEntity> userOptional = Optional.ofNullable(userService.findbyGoogleSub(sub));
-        if (userOptional.isPresent()) {
-            return new ResponseEntity<>(userOptional.get(), HttpStatus.OK);
-        } else {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-    }
-    // Create a new user
-    @PostMapping("/createUser")
+    // Create a new user (assuming this endpoint is used for account creation for admins)
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserEntity> createUser(@RequestBody UserEntity user) {
         try {
             UserEntity createdUser = userService.insertUserRecord(user);
@@ -67,31 +64,22 @@ public class UserController {
     }
 
     // Update user details including optional profile image
-    @PutMapping("/updateUser")
+    @PutMapping
     public ResponseEntity<UserEntity> updateUser(
             @RequestBody UserEntity newUserDetails,
-            @RequestParam(value = "profileImg", required = false) MultipartFile profileImg) {
+            @RequestParam(value = "profileImg", required = false) MultipartFile profileImg,
+            Authentication authentication) {
         try {
-            // Get the authenticated user's details
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            if (auth == null || !auth.isAuthenticated()) {
-                return new ResponseEntity<>(null, HttpStatus.UNAUTHORIZED);
+            if (authentication != null && authentication.isAuthenticated()) {
+                String username = authentication.getName();
+                UserEntity currentUser = userRepository.findByUsername(username)
+                        .orElseThrow(() -> new NoSuchElementException("User not found"));
+
+                UserEntity updatedUser = userService.updateUserDetails(currentUser.getId(), newUserDetails, profileImg);
+                return new ResponseEntity<>(updatedUser, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
             }
-
-            // Fetch the current user from the repository using the authenticated username
-            String username = auth.getName();
-            UserEntity currentUser = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new NoSuchElementException("User not found"));
-
-//            // Ensure the authenticated user is a USER and can only update their own account
-//            if (!currentUser.getRole().equals("USER")) {
-//                return new ResponseEntity<>(null, HttpStatus.FORBIDDEN); // Only USER role can update their own account
-//            }
-            long id = currentUser.getId();
-
-            // Update the authenticated user's details
-            UserEntity updatedUser = userService.updateUserDetails(currentUser.getId(), newUserDetails, profileImg);
-            return new ResponseEntity<>(updatedUser, HttpStatus.OK);
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
         } catch (IllegalArgumentException e) {
@@ -100,31 +88,23 @@ public class UserController {
             return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     // Disable user account
-    @PatchMapping("/{id}/disable")
-    public ResponseEntity<String> disableUser(@PathVariable long id) {
+    @PatchMapping("/disable")
+    public ResponseEntity<String> disableUser(Authentication authentication) {
         try {
-            String response = userService.disableUser(id);
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            if (authentication != null && authentication.isAuthenticated()) {
+                String username = authentication.getName();
+                UserEntity currentUser = userRepository.findByUsername(username)
+                        .orElseThrow(() -> new NoSuchElementException("User not found"));
+
+                String response = userService.disableUser(currentUser.getId());
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("User not authenticated", HttpStatus.UNAUTHORIZED);
+            }
         } catch (NoSuchElementException e) {
             return new ResponseEntity<>("User not found", HttpStatus.NOT_FOUND);
         }
-    }
-
-         @GetMapping("/user-info")
-        public String getAccessToken(Authentication authentication) {
-            if (authentication instanceof OAuth2AuthenticationToken) {
-                OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
-                OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
-                        oauthToken.getAuthorizedClientRegistrationId(),
-                        oauthToken.getName()
-                );
-
-                if (client != null) {
-                    return client.getAccessToken().getTokenValue(); // This is the Google access token
-                }
-            }
-            return "No token found";
-
     }
 }

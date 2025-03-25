@@ -33,7 +33,9 @@ public class UserEntity implements UserDetails {
     private String email;
     private String password;
 
-    @Column(unique = true, nullable = false)
+    private String name;
+
+    @Column(unique = true, nullable = true)
     private String googleSub;
 
     @Lob
