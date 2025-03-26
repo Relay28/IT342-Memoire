@@ -55,19 +55,15 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
         this.capsuleAccessRepository = capsuleAccessRepository;
         this.userRepository = userRepository;
     }
-    private UserEntity getAuthenticatedUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        System.out.println("USERNAME "+username);
-
-        UserEntity user = userRepository.findByUsername(username)
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
-
-        return user;
     }
 
     @Override
-    public CapsuleContentEntity uploadContent(Long capsuleId, MultipartFile file) throws IOException {
-        UserEntity user = getAuthenticatedUser();
+    public CapsuleContentEntity uploadContent(Long capsuleId, MultipartFile file,Authentication authentication) throws IOException {
+        UserEntity user = getAuthenticatedUser( authentication);
         TimeCapsuleEntity capsule = timeCapsuleRepository.findById(capsuleId)
                 .orElseThrow(() -> new EntityNotFoundException("Capsule not found with id " + capsuleId));
 
@@ -99,8 +95,8 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
     }
 
     @Override
-    public CapsuleContentEntity updateContent(Long id, MultipartFile file) throws IOException {
-        UserEntity user = getAuthenticatedUser();
+    public CapsuleContentEntity updateContent(Long id, MultipartFile file,Authentication authentication) throws IOException {
+        UserEntity user = getAuthenticatedUser(authentication);
         CapsuleContentEntity existingContent = capsuleContentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Content not found with id " + id));
 
@@ -129,8 +125,8 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
 
 
     @Override
-    public void deleteContent(Long id) {
-        UserEntity user = getAuthenticatedUser();
+    public void deleteContent(Long id,Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
         CapsuleContentEntity content = capsuleContentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Content not found with id " + id));
 
@@ -167,8 +163,8 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
     }
 
     @Override
-    public List<CapsuleContentEntity> getContentsByCapsuleId(Long capsuleId) {
-        UserEntity user = getAuthenticatedUser();
+    public List<CapsuleContentEntity> getContentsByCapsuleId(Long capsuleId,Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
         TimeCapsuleEntity capsule = timeCapsuleRepository.findById(capsuleId)
                 .orElseThrow(() -> new EntityNotFoundException("Capsule not found with id " + capsuleId));
 
@@ -188,8 +184,8 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
 
 
     @Override
-    public byte[] getFileContent(Long id) throws IOException {
-        UserEntity user = getAuthenticatedUser();
+    public byte[] getFileContent(Long id,Authentication authentication) throws IOException {
+        UserEntity user = getAuthenticatedUser(authentication);
         CapsuleContentEntity content = capsuleContentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Content not found with id " + id));
 

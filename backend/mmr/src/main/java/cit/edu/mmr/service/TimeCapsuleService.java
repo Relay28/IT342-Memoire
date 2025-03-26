@@ -11,6 +11,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -19,7 +20,6 @@ import java.util.stream.Collectors;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
-
 
 @Service
 @Transactional
@@ -31,14 +31,14 @@ public class TimeCapsuleService {
     @Autowired
     private UserRepository userRepository;
 
-    private UserEntity getAuthenticatedUser() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    public TimeCapsuleDTO createTimeCapsule(TimeCapsuleDTO dto) {
-        UserEntity user = getAuthenticatedUser();
+    public TimeCapsuleDTO createTimeCapsule(TimeCapsuleDTO dto, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
 
         TimeCapsuleEntity capsule = new TimeCapsuleEntity();
         capsule.setTitle(dto.getTitle());
@@ -48,15 +48,12 @@ public class TimeCapsuleService {
         capsule.setLocked(false);
         capsule.setCreatedBy(user);
         capsule.setStatus("ACTIVE");
-        List<TimeCapsuleEntity> cap = user.getTimeCapsules();
-        cap.add(capsule);
-        user.setTimeCapsules(cap);
 
         return convertToDTO(tcRepo.save(capsule));
     }
 
-    public TimeCapsuleDTO updateTimeCapsule(Long id, TimeCapsuleDTO dto) {
-        UserEntity user = getAuthenticatedUser();
+    public TimeCapsuleDTO updateTimeCapsule(Long id, TimeCapsuleDTO dto, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
         TimeCapsuleEntity capsule = tcRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
@@ -77,8 +74,8 @@ public class TimeCapsuleService {
         return convertToDTO(capsule);
     }
 
-    public List<TimeCapsuleDTO> getUserTimeCapsules() {
-        UserEntity user = getAuthenticatedUser();
+    public List<TimeCapsuleDTO> getUserTimeCapsules(Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
         List<TimeCapsuleEntity> capsules = tcRepo.findByCreatedById(user.getId());
         return capsules.stream().map(this::convertToDTO).collect(Collectors.toList());
     }
@@ -87,8 +84,8 @@ public class TimeCapsuleService {
         return tcRepo.findAll(pageable).map(this::convertToDTO);
     }
 
-    public String deleteTimeCapsule(Long id) {
-        UserEntity user = getAuthenticatedUser();
+    public String deleteTimeCapsule(Long id, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
         TimeCapsuleEntity capsule = tcRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
@@ -97,12 +94,11 @@ public class TimeCapsuleService {
         }
 
         tcRepo.delete(capsule);
-
-       return "Time Capsule Successfully Deleted";
+        return "Time Capsule Successfully Deleted";
     }
 
-    public void lockTimeCapsule(Long id) {
-        UserEntity user = getAuthenticatedUser();
+    public void lockTimeCapsule(Long id, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
         TimeCapsuleEntity capsule = tcRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
@@ -114,11 +110,11 @@ public class TimeCapsuleService {
         tcRepo.save(capsule);
     }
 
-    public void unlockTimeCapsule(Long id) {
-        UserEntity user = getAuthenticatedUser();
+    public void unlockTimeCapsule(Long id, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
         TimeCapsuleEntity capsule = tcRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
-        long usid = capsule.getCreatedBy().getId();
+
         if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
             throw new AccessDeniedException("You do not have permission to unlock this capsule");
         }

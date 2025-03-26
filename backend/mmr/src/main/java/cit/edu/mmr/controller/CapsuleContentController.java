@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -37,9 +38,10 @@ public class CapsuleContentController {
     @PostMapping("/{capsuleId}/upload")
     public ResponseEntity<CapsuleContentEntity> uploadContent(
             @PathVariable Long capsuleId,
-            @RequestParam("file") MultipartFile file) {
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication) {
         try {
-            CapsuleContentEntity savedContent = capsuleContentService.uploadContent(capsuleId, file);
+            CapsuleContentEntity savedContent = capsuleContentService.uploadContent(capsuleId, file,authentication);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedContent);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -47,9 +49,9 @@ public class CapsuleContentController {
     }
 
     @GetMapping("/{id}/download")
-    public ResponseEntity<byte[]> downloadContent(@PathVariable Long id) {
+    public ResponseEntity<byte[]> downloadContent(@PathVariable Long id,Authentication authentication) {
         try {
-            byte[] fileContent = capsuleContentService.getFileContent(id);
+            byte[] fileContent = capsuleContentService.getFileContent(id,authentication);
             CapsuleContentEntity content = capsuleContentService.getContentById(id)
                     .orElseThrow(() -> new RuntimeException("Content not found"));
 
@@ -67,14 +69,14 @@ public class CapsuleContentController {
 
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteContent(@PathVariable Long id) {
-        capsuleContentService.deleteContent(id);
+    public ResponseEntity<Void> deleteContent(@PathVariable Long id,Authentication authentication) {
+        capsuleContentService.deleteContent(id,authentication);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{capsuleId}")
-    public ResponseEntity<List<CapsuleContentEntity>> getContentsByCapsule(@PathVariable Long capsuleId) {
-        return ResponseEntity.ok(capsuleContentService.getContentsByCapsuleId(capsuleId));
+    public ResponseEntity<List<CapsuleContentEntity>> getContentsByCapsule(@PathVariable Long capsuleId,Authentication authentication) {
+        return ResponseEntity.ok(capsuleContentService.getContentsByCapsuleId(capsuleId,authentication));
     }
 
 

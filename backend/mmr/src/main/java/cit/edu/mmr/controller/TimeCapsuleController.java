@@ -10,28 +10,36 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
 @RestController
 @RequestMapping("/api/timecapsules")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 public class TimeCapsuleController {
 
     @Autowired
     private TimeCapsuleService timeCapsuleService;
 
+    // Create a time capsule (requires authentication)
     @PostMapping
-    public ResponseEntity<TimeCapsuleDTO> createTimeCapsule(@RequestBody TimeCapsuleDTO timeCapsuleDTO) {
+    public ResponseEntity<TimeCapsuleDTO> createTimeCapsule(
+            @RequestBody TimeCapsuleDTO timeCapsuleDTO,
+            Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         try {
-            TimeCapsuleDTO created = timeCapsuleService.createTimeCapsule(timeCapsuleDTO);
+            TimeCapsuleDTO created = timeCapsuleService.createTimeCapsule(timeCapsuleDTO,authentication);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // Get a specific time capsule
     @GetMapping("/{id}")
     public ResponseEntity<TimeCapsuleDTO> getTimeCapsule(@PathVariable Long id) {
         try {
@@ -41,15 +49,20 @@ public class TimeCapsuleController {
         }
     }
 
+    // Get time capsules for the authenticated user
     @GetMapping("/user")
-    public ResponseEntity<List<TimeCapsuleDTO>> getUserTimeCapsules() {
+    public ResponseEntity<List<TimeCapsuleDTO>> getUserTimeCapsules(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         try {
-            return ResponseEntity.ok(timeCapsuleService.getUserTimeCapsules());
+            return ResponseEntity.ok(timeCapsuleService.getUserTimeCapsules(authentication));
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
+    // Get all time capsules with pagination
     @GetMapping
     public ResponseEntity<Page<TimeCapsuleDTO>> getAllTimeCapsules(
             @RequestParam(defaultValue = "0") int page,
@@ -65,10 +78,17 @@ public class TimeCapsuleController {
         }
     }
 
+    // Update a time capsule (requires authentication)
     @PutMapping("/{id}")
-    public ResponseEntity<TimeCapsuleDTO> updateTimeCapsule(@PathVariable Long id, @RequestBody TimeCapsuleDTO timeCapsuleDTO) {
+    public ResponseEntity<TimeCapsuleDTO> updateTimeCapsule(
+            @PathVariable Long id,
+            @RequestBody TimeCapsuleDTO timeCapsuleDTO,
+            Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         try {
-            return ResponseEntity.ok(timeCapsuleService.updateTimeCapsule(id, timeCapsuleDTO));
+            return ResponseEntity.ok(timeCapsuleService.updateTimeCapsule(id, timeCapsuleDTO,authentication));
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (AccessDeniedException e) {
@@ -76,10 +96,14 @@ public class TimeCapsuleController {
         }
     }
 
+    // Delete a time capsule (requires authentication)
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTimeCapsule(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteTimeCapsule(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         try {
-            timeCapsuleService.deleteTimeCapsule(id);
+            timeCapsuleService.deleteTimeCapsule(id,authentication);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -88,10 +112,14 @@ public class TimeCapsuleController {
         }
     }
 
+    // Lock a time capsule (requires authentication)
     @PatchMapping("/{id}/lock")
-    public ResponseEntity<Void> lockTimeCapsule(@PathVariable Long id) {
+    public ResponseEntity<Void> lockTimeCapsule(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         try {
-            timeCapsuleService.lockTimeCapsule(id);
+            timeCapsuleService.lockTimeCapsule(id,authentication);
             return ResponseEntity.ok().build();
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -100,10 +128,14 @@ public class TimeCapsuleController {
         }
     }
 
+    // Unlock a time capsule (requires authentication)
     @PatchMapping("/{id}/unlock")
-    public ResponseEntity<Void> unlockTimeCapsule(@PathVariable Long id) {
+    public ResponseEntity<Void> unlockTimeCapsule(@PathVariable Long id, Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
         try {
-            timeCapsuleService.unlockTimeCapsule(id);
+            timeCapsuleService.unlockTimeCapsule(id,authentication);
             return ResponseEntity.ok().build();
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
