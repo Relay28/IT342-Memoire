@@ -7,6 +7,7 @@ import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.FriendShipService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -25,31 +26,27 @@ public class FriendshipController {
 
     // Create a new friendship
     @PostMapping("/create")
-    public ResponseEntity<?> createFriendship(@RequestBody FriendshipRequest request) {
-        UserEntity user = userRepository.findById(request.getUserId()).orElse(null);
-        UserEntity friend = userRepository.findById(request.getFriendId()).orElse(null);
-        if (user == null || friend == null) {
-            return new ResponseEntity<>("User or Friend not found", NOT_FOUND);
-        }
-        FriendShipEntity friendship = friendShipService.createFriendship(user, friend, request.getStatus());
+    public ResponseEntity<?> createFriendship(@RequestBody FriendshipRequest request, Authentication auth) {
+
+
+        FriendShipEntity friendship = friendShipService.createFriendship(request,auth);
         return new ResponseEntity<>(friendship, HttpStatus.CREATED);
     }
 
     // Check if two users are friends
-    @GetMapping("/areFriends")
-    public ResponseEntity<?> areFriends(@RequestParam long userId, @RequestParam long friendId) {
-        UserEntity user = userRepository.findById(userId).orElse(null);
-        UserEntity friend = userRepository.findById(friendId).orElse(null);
-        if (user == null || friend == null) {
-            return new ResponseEntity<>("User or Friend not found", NOT_FOUND);
-        }
-        boolean isFriend = friendShipService.areFriends(user, friend);
+    @GetMapping("/areFriends/{friendId}")
+    public ResponseEntity<?> areFriends(@PathVariable long friendId,Authentication auth) {
+
+//        if (user == null || friend == null) {
+//            return new ResponseEntity<>("User or Friend not found", NOT_FOUND);
+//        }
+        boolean isFriend = friendShipService.areFriends(friendId, auth);
         return new ResponseEntity<>(isFriend, HttpStatus.OK);
     }
 
     // Retrieve a friendship by its id
     @GetMapping("/{id}")
-    public ResponseEntity<?> getFriendshipById(@PathVariable Long id) {
+    public ResponseEntity<?> getFriendshipById(@PathVariable Long id,Authentication auth) {
         return friendShipService.getFriendshipById(id)
                 .<ResponseEntity<?>>map(friendship -> new ResponseEntity<>(friendship, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>("Friendship not found", HttpStatus.NOT_FOUND));
@@ -57,8 +54,8 @@ public class FriendshipController {
 
     // Endpoint to accept a friend request
     @PutMapping("/{id}/accept")
-    public ResponseEntity<FriendShipEntity> acceptFriendship(@PathVariable Long id) {
-        return friendShipService.acceptFriendship(id)
+    public ResponseEntity<FriendShipEntity> acceptFriendship(@PathVariable Long id,Authentication auth) {
+        return friendShipService.acceptFriendship(id,auth)
                 .map(friendship -> new ResponseEntity<>(friendship, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(null, HttpStatus.NOT_FOUND));
     }
@@ -66,11 +63,11 @@ public class FriendshipController {
 
     // Delete a friendship
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteFriendship(@PathVariable Long id) {
+    public ResponseEntity<?> deleteFriendship(@PathVariable Long id,Authentication auth) {
         if (!friendShipService.getFriendshipById(id).isPresent()) {
             return new ResponseEntity<>("Friendship not found", NOT_FOUND);
         }
-        friendShipService.deleteFriendship(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        friendShipService.deleteFriendship(id,auth);
+        return new ResponseEntity<>(HttpStatus.OK);
     }
 }

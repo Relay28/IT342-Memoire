@@ -1,29 +1,58 @@
 package cit.edu.mmr.service;
 
+import cit.edu.mmr.dto.FriendshipRequest;
 import cit.edu.mmr.entity.FriendShipEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.FriendShipRepository;
+import cit.edu.mmr.repository.UserRepository;
+import org.modelmapper.internal.bytebuddy.implementation.bytecode.Throw;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
+
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @Service
 public class FriendShipService {
 
     private final FriendShipRepository friendShipRepository;
+    @Autowired
+    private final UserRepository userRepository;
 
-    public FriendShipService(FriendShipRepository friendShipRepository) {
+    public FriendShipService(FriendShipRepository friendShipRepository, UserRepository userRepository) {
         this.friendShipRepository = friendShipRepository;
+        this.userRepository = userRepository;
+    }
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
-    public FriendShipEntity createFriendship(UserEntity user, UserEntity friend, String status) {
+    public FriendShipEntity createFriendship(FriendshipRequest request, Authentication auth) {
+       UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(request.getFriendId()).orElse(null);
+        if (friend == null) {
+            throw new UsernameNotFoundException("User  not found");
+        }
         FriendShipEntity friendship = new FriendShipEntity();
         friendship.setUser(user);
         friendship.setFriend(friend);
-        friendship.setStatus(status);
+
+        friendship.setStatus("Pending");
         friendship.setCreatedAt(new Date());
+        List<FriendShipEntity> usr = user.getFriendshipsAsUser();
+        List<FriendShipEntity> fsr = friend.getFriendshipsAsFriend();
+        fsr.add(friendship);
+        usr.add(friendship);
         return friendShipRepository.save(friendship);
     }
 
@@ -39,7 +68,13 @@ public class FriendShipService {
         return friendShipRepository.findByFriend(friend);
     }
 
-    public boolean areFriends(UserEntity user, UserEntity friend) {
+    public boolean areFriends(long friendId , Authentication auth) {
+
+        UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(friendId).orElse(null);
+        if (friend == null) {
+            throw new UsernameNotFoundException("User  not found");
+        }
         Optional<FriendShipEntity> friendshipOpt = friendShipRepository.findByUserAndFriend(user, friend);
         if (!friendshipOpt.isPresent()) {
             friendshipOpt = friendShipRepository.findByUserAndFriend(friend, user);
@@ -48,7 +83,22 @@ public class FriendShipService {
     }
 
 
-    public void deleteFriendship(Long id) {
+    public void deleteFriendship(Long id, Authentication auth) {
+        UserEntity user = getAuthenticatedUser(auth);
+
+        Optional<FriendShipEntity> optionalFriendship = friendShipRepository.findById(id);
+
+        if (!optionalFriendship.isPresent()) {
+            throw new NoSuchElementException("Friendship not found");
+        }
+
+        FriendShipEntity friendship = optionalFriendship.get();
+
+        // Corrected condition: The user must be part of the friendship to delete it
+        if (!(friendship.getUser().equals(user) || friendship.getFriend().equals(user))) {
+            throw new AccessDeniedException("You do not have access to delete this friendship");
+        }
+
         friendShipRepository.deleteById(id);
     }
 
@@ -58,7 +108,8 @@ public class FriendShipService {
      * @param friendshipId The ID of the friendship request.
      * @return An Optional containing the updated FriendShipEntity, or empty if not found.
      */
-    public Optional<FriendShipEntity> acceptFriendship(Long friendshipId) {
+    public Optional<FriendShipEntity> acceptFriendship(Long friendshipId, Authentication auth) {
+        UserEntity user = getAuthenticatedUser(auth);
         Optional<FriendShipEntity> optionalFriendship = friendShipRepository.findById(friendshipId);
         if(optionalFriendship.isPresent()) {
             FriendShipEntity friendship = optionalFriendship.get();
