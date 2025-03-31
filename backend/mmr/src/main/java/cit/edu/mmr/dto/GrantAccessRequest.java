@@ -15,8 +15,6 @@ public class GrantAccessRequest {
     @NotNull(message = "User ID cannot be null")
     private Long userId;
 
-    @NotNull(message = "Uploader ID cannot be null")
-    private Long uploaderId;
 
     @NotNull(message = "Role cannot be null")
     @NotEmpty(message = "Role cannot be empty")

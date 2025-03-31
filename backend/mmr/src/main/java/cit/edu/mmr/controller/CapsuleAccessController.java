@@ -13,6 +13,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
@@ -37,12 +38,12 @@ public class CapsuleAccessController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<CapsuleAccessDTO> grantAccess(@Valid @RequestBody GrantAccessRequest request) {
+    public ResponseEntity<CapsuleAccessDTO> grantAccess(@Valid @RequestBody GrantAccessRequest request, Authentication authentication) {
         CapsuleAccessEntity access = capsuleAccessService.grantAccess(
                 request.getCapsuleId(),
                 request.getUserId(),
-                request.getUploaderId(),
-                request.getRole()
+                request.getRole(),
+                authentication
         );
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(modelMapper.map(access, CapsuleAccessDTO.class));
@@ -51,21 +52,22 @@ public class CapsuleAccessController {
     @PutMapping("/{accessId}/role")
     public ResponseEntity<CapsuleAccessDTO> updateAccessRole(
             @PathVariable Long accessId,
-            @Valid @RequestBody UpdateRoleRequest request) {
-        CapsuleAccessEntity updated = capsuleAccessService.updateAccessRole(accessId, request.getNewRole());
+            @Valid @RequestBody UpdateRoleRequest request,
+            Authentication authentication) {
+        CapsuleAccessEntity updated = capsuleAccessService.updateAccessRole(accessId, request.getNewRole(),authentication);
         return ResponseEntity.ok(modelMapper.map(updated, CapsuleAccessDTO.class));
     }
 
     @DeleteMapping("/{accessId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public ResponseEntity<Void> removeAccess(@PathVariable Long accessId) {
-        capsuleAccessService.removeAccess(accessId);
+    public ResponseEntity<Void> removeAccess(@PathVariable Long accessId,Authentication authentication) {
+        capsuleAccessService.removeAccess(accessId,authentication);
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/capsule/{capsuleId}")
-    public ResponseEntity<List<CapsuleAccessDTO>> getAccessesByCapsule(@PathVariable Long capsuleId) {
-        List<CapsuleAccessEntity> accesses = capsuleAccessService.getAccessesByCapsule(capsuleId);
+    @GetMapping("/{capsuleId}")
+    public ResponseEntity<List<CapsuleAccessDTO>> getAccessesByCapsule(@PathVariable Long capsuleId,Authentication authentication) {
+        List<CapsuleAccessEntity> accesses = capsuleAccessService.getAccessesByCapsule(capsuleId,authentication);
         List<CapsuleAccessDTO> accessDTOs = accesses.stream()
                 .map(access -> modelMapper.map(access, CapsuleAccessDTO.class))
                 .collect(Collectors.toList());
@@ -73,8 +75,8 @@ public class CapsuleAccessController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<CapsuleAccessDTO>> getAccessesByUser(@PathVariable Long userId) {
-        List<CapsuleAccessEntity> accesses = capsuleAccessService.getAccessesByUser(userId);
+    public ResponseEntity<List<CapsuleAccessDTO>> getAccessesByUser(@PathVariable Long userId,Authentication auth) {
+        List<CapsuleAccessEntity> accesses = capsuleAccessService.getAccessesByUser(userId,auth);
         List<CapsuleAccessDTO> accessDTOs = accesses.stream()
                 .map(access -> modelMapper.map(access, CapsuleAccessDTO.class))
                 .collect(Collectors.toList());
@@ -83,10 +85,9 @@ public class CapsuleAccessController {
 
     @GetMapping("/check")
     public ResponseEntity<Boolean> checkAccess(
-            @RequestParam Long userId,
             @RequestParam Long capsuleId,
-            @RequestParam String role) {
-        boolean hasAccess = capsuleAccessService.hasAccess(userId, capsuleId, role);
+            @RequestParam String role,Authentication auth) {
+        boolean hasAccess = capsuleAccessService.hasAccess( capsuleId, role,auth);
         return ResponseEntity.ok(hasAccess);
     }
 
