@@ -8,6 +8,9 @@ import cit.edu.mmr.repository.CommentRepository;
 import cit.edu.mmr.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,11 @@ public class CommentReactionServiceImpl implements CommentReactionService {
     private final CommentReactionRepository reactionRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
 
     @Autowired
     public CommentReactionServiceImpl(CommentReactionRepository reactionRepository,
@@ -33,36 +41,48 @@ public class CommentReactionServiceImpl implements CommentReactionService {
     }
 
     @Override
-    public CommentReactionEntity addReaction(Long commentId, Long userId, String type) {
+    public CommentReactionEntity addReaction(Long commentId,  String type,Authentication auth) {
         // Fetch CommentEntity
         CommentEntity comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Comment not found with id " + commentId));
-        // Fetch UserEntity
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id " + userId));
+
+        UserEntity user = getAuthenticatedUser(auth);
 
         CommentReactionEntity reaction = new CommentReactionEntity();
         reaction.setComment(comment);
         reaction.setUser(user);
         reaction.setType(type);
         reaction.setReactedAt(new Date());
+        List<CommentReactionEntity> cmntReactionList = comment.getReactions();
+        cmntReactionList.add(reaction);
+        comment.setReactions(cmntReactionList);
 
         return reactionRepository.save(reaction);
     }
 
     @Override
-    public CommentReactionEntity updateReaction(Long reactionId, String type) {
+    public CommentReactionEntity updateReaction(Long reactionId, String type,Authentication auth) {
+
+        UserEntity user = getAuthenticatedUser(auth);
+
         CommentReactionEntity reaction = reactionRepository.findById(reactionId)
                 .orElseThrow(() -> new EntityNotFoundException("Reaction not found with id " + reactionId));
+       if(reaction.getUser().equals(user)){
+           throw new AccessDeniedException("You are not the creator of this reaction");
+       }
+
         reaction.setType(type);
         reaction.setReactedAt(new Date());
         return reactionRepository.save(reaction);
     }
 
     @Override
-    public void deleteReaction(Long reactionId) {
-        if (!reactionRepository.existsById(reactionId)) {
-            throw new EntityNotFoundException("Reaction not found with id " + reactionId);
+    public void deleteReaction(Long reactionId,Authentication auth) {
+        UserEntity user = getAuthenticatedUser(auth);
+        CommentReactionEntity reaction = reactionRepository.findById(reactionId)
+                .orElseThrow(() -> new EntityNotFoundException("Reaction not found with id " + reactionId));
+        if(reaction.getUser().equals(user)){
+            throw new AccessDeniedException("You are not the creator of this reaction");
         }
         reactionRepository.deleteById(reactionId);
     }

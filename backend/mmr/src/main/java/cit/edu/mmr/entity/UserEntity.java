@@ -35,8 +35,8 @@ public class UserEntity implements UserDetails {
 
     private String name;
 
-    @Column(unique = true, nullable = true)
-    private String googleSub;
+//    @Column(unique = true, nullable = true)
+//    private String googleSub;
 
     @Lob
     private String profilePicture;

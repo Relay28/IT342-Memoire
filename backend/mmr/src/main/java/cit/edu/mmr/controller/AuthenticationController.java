@@ -59,7 +59,7 @@ public class AuthenticationController {
         } else {
             // Register new user
             userEntity = new UserEntity();
-            userEntity.setGoogleSub(googleSub);
+            //userEntity.setGoogleSub(googleSub);
             userEntity.setEmail(email);
             userEntity.setUsername(username);
             userEntity.setRole("USER");

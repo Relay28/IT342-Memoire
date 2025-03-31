@@ -1,13 +1,18 @@
 package cit.edu.mmr.service;
 
+import cit.edu.mmr.dto.CommentRequest;
 import cit.edu.mmr.entity.CommentEntity;
 import cit.edu.mmr.entity.TimeCapsuleEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.CommentRepository;
 import cit.edu.mmr.repository.TimeCapsuleRepository;
 import cit.edu.mmr.repository.UserRepository;
+import com.google.rpc.context.AttributeContext;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,15 +37,20 @@ public class CommentServiceImpl implements CommentService {
         this.userRepository = userRepository;
     }
 
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
     @Override
-    public CommentEntity createComment(Long capsuleId, Long userId, String text) {
+    public CommentEntity createComment(Long capsuleId, Authentication auth ,String text) {
         // Fetch the TimeCapsuleEntity by its ID
         TimeCapsuleEntity timeCapsule = timeCapsuleRepository.findById(capsuleId)
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found with id " + capsuleId));
 
         // Fetch the UserEntity by its ID
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id " + userId));
+        UserEntity user = getAuthenticatedUser(auth);
 
         CommentEntity comment = new CommentEntity();
         comment.setTimeCapsule(timeCapsule);
@@ -48,30 +58,47 @@ public class CommentServiceImpl implements CommentService {
         comment.setText(text);
         comment.setCreatedAt(new Date());
         comment.setUpdatedAt(new Date());
+//        List<CommentEntity> cmnt =  timeCapsule.getComments();
+//        cmnt.add(comment);
+//        user.setComments(cmnt);
+
         // Reactions can be set later via separate logic if needed
 
         return commentRepository.save(comment);
     }
 
     @Override
-    public CommentEntity updateComment(CommentEntity comment) {
-        if (!commentRepository.existsById(comment.getId())) {
-            throw new EntityNotFoundException("Comment not found with id " + comment.getId());
+    public CommentEntity updateComment(Long commentId, CommentRequest commentRequest, Authentication auth) {
+
+        UserEntity user = getAuthenticatedUser(auth);
+
+        CommentEntity existingComment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new EntityNotFoundException("Comment not found with id " + commentId));
+        existingComment.setText(commentRequest.getText());
+
+        if(existingComment.getUser().equals(user)){
+            throw new AccessDeniedException("You are not the creator of comment");
         }
-        comment.setUpdatedAt(new Date());
-        return commentRepository.save(comment);
+
+
+        existingComment.setUpdatedAt(new Date());
+        return commentRepository.save(existingComment);
     }
 
     @Override
-    public void deleteComment(Long id) {
-        if (!commentRepository.existsById(id)) {
-            throw new EntityNotFoundException("Comment not found with id " + id);
+    public void deleteComment(Long id,Authentication auth) {
+        UserEntity user =getAuthenticatedUser(auth);
+
+        CommentEntity existingComment = commentRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Comment not found with id " + id));
+        if(existingComment.getUser().equals(user)){
+            throw new AccessDeniedException("You are not the creator of comment");
         }
         commentRepository.deleteById(id);
     }
 
     @Override
-    public Optional<CommentEntity> getCommentById(Long id) {
+    public Optional<CommentEntity> getCommentById(Long id,Authentication auth) {
         return commentRepository.findById(id);
     }
 

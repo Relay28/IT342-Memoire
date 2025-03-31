@@ -7,6 +7,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,13 +24,13 @@ public class CommentReactionController {
     }
 
     // Add a new reaction to a comment
-    @PostMapping("/comment/{commentId}/user/{userId}")
+    @PostMapping("/comment/{commentId}")
     public ResponseEntity<CommentReactionEntity> addReaction(
             @PathVariable Long commentId,
-            @PathVariable Long userId,
-            @RequestBody ReactionRequest reactionRequest) {
+            @RequestBody ReactionRequest reactionRequest,
+            Authentication auth) {
         try {
-            CommentReactionEntity reaction = commentReactionService.addReaction(commentId, userId, reactionRequest.getType());
+            CommentReactionEntity reaction = commentReactionService.addReaction(commentId, reactionRequest.getType(),auth);
             return ResponseEntity.status(HttpStatus.CREATED).body(reaction);
         } catch (EntityNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -40,9 +41,10 @@ public class CommentReactionController {
     @PutMapping("/{reactionId}")
     public ResponseEntity<CommentReactionEntity> updateReaction(
             @PathVariable Long reactionId,
-            @RequestBody ReactionRequest reactionRequest) {
+            @RequestBody ReactionRequest reactionRequest,
+            Authentication auth) {
         try {
-            CommentReactionEntity updated = commentReactionService.updateReaction(reactionId, reactionRequest.getType());
+            CommentReactionEntity updated = commentReactionService.updateReaction(reactionId, reactionRequest.getType(),auth);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -51,9 +53,9 @@ public class CommentReactionController {
 
     // Delete a reaction
     @DeleteMapping("/{reactionId}")
-    public ResponseEntity<Void> deleteReaction(@PathVariable Long reactionId) {
+    public ResponseEntity<Void> deleteReaction(@PathVariable Long reactionId,Authentication auth) {
         try {
-            commentReactionService.deleteReaction(reactionId);
+            commentReactionService.deleteReaction(reactionId,auth);
             return ResponseEntity.noContent().build();
         } catch (EntityNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

@@ -3,7 +3,6 @@ package cit.edu.mmr.service;
 
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
-import cit.edu.mmr.util.FileStorageService;
 import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -26,8 +25,8 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder; //
-    @Autowired
-    private FileStorageService fileStorageService;
+//    @Autowired
+//    private FileStorageService fileStorageService;
 
     public UserService(){
         super();
@@ -63,10 +62,10 @@ public class UserService {
 
     }
 
-    public UserEntity findbyGoogleSub(String sub){
-        Optional<UserEntity> user = urepo.findByGoogleSub(sub);
-        return  user.orElse(null);
-    }
+//    public UserEntity findbyGoogleSub(String sub){
+//        Optional<UserEntity> user = urepo.findByGoogleSub(sub);
+//        return  user.orElse(null);
+//    }
 
 
 
@@ -107,8 +106,8 @@ public class UserService {
 
         // Handle profile image update
         if (profileImg != null && !profileImg.isEmpty()) {
-            String profilePictureUrl = fileStorageService.storeFile(profileImg);
-            existingUser.setProfilePicture(profilePictureUrl);
+            saveProfileImage(profileImg,existingUser);
+
         }
 
         // Save the updated user

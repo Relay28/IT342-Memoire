@@ -7,6 +7,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,13 +26,13 @@ public class CommentController {
     }
 
     // Create a new comment with a request body for long text
-    @PostMapping("/capsule/{capsuleId}/user/{userId}")
+    @PostMapping("/capsule/{capsuleId}")
     public ResponseEntity<CommentEntity> createComment(
             @PathVariable Long capsuleId,
-            @PathVariable Long userId,
-            @RequestBody CommentRequest commentRequest) {
+            @RequestBody CommentRequest commentRequest,
+            Authentication auth) {
         try {
-            CommentEntity created = commentService.createComment(capsuleId, userId, commentRequest.getText());
+            CommentEntity created = commentService.createComment(capsuleId, auth, commentRequest.getText());
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
         } catch (EntityNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -42,12 +43,11 @@ public class CommentController {
     @PutMapping("/{commentId}")
     public ResponseEntity<CommentEntity> updateComment(
             @PathVariable Long commentId,
-            @RequestBody CommentRequest commentRequest) {
+            @RequestBody CommentRequest commentRequest,
+            Authentication auth) {
         try {
-            CommentEntity existing = commentService.getCommentById(commentId)
-                    .orElseThrow(() -> new EntityNotFoundException("Comment not found with id " + commentId));
-            existing.setText(commentRequest.getText());
-            CommentEntity updated = commentService.updateComment(existing);
+
+            CommentEntity updated = commentService.updateComment(commentId,commentRequest,auth);
             return ResponseEntity.ok(updated);
         } catch (EntityNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -56,9 +56,9 @@ public class CommentController {
 
     // Delete a comment
     @DeleteMapping("/{commentId}")
-    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId) {
+    public ResponseEntity<Void> deleteComment(@PathVariable Long commentId,Authentication auth) {
         try {
-            commentService.deleteComment(commentId);
+            commentService.deleteComment(commentId,auth);
             return ResponseEntity.noContent().build();
         } catch (EntityNotFoundException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -67,8 +67,8 @@ public class CommentController {
 
     // Retrieve a single comment by its id
     @GetMapping("/{commentId}")
-    public ResponseEntity<CommentEntity> getCommentById(@PathVariable Long commentId) {
-        return commentService.getCommentById(commentId)
+    public ResponseEntity<CommentEntity> getCommentById(@PathVariable Long commentId,Authentication auth) {
+        return commentService.getCommentById(commentId,auth)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
     }
