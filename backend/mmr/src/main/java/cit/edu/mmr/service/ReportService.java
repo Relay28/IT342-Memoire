@@ -4,30 +4,52 @@ package cit.edu.mmr.service;
 import cit.edu.mmr.entity.ReportEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.ReportRepository;
+import cit.edu.mmr.repository.UserRepository;
+import cit.edu.mmr.service.serviceInterfaces.report.CommentHandler;
+import cit.edu.mmr.service.serviceInterfaces.report.ReportEntityFactory;
+import cit.edu.mmr.service.serviceInterfaces.report.ReportableEntity;
+import cit.edu.mmr.service.serviceInterfaces.report.TimeCapsuleHandler;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
-
 @Service
 public class ReportService {
-
     private final ReportRepository reportRepository;
+    private final ReportEntityFactory entityFactory;
+    private final UserRepository userRepository;
 
-    public ReportService(ReportRepository reportRepository) {
+    @Autowired
+    public ReportService(ReportRepository reportRepository, ReportEntityFactory entityFactory, UserRepository userRepository) {
         this.reportRepository = reportRepository;
+        this.entityFactory = entityFactory;
+        this.userRepository = userRepository;
     }
 
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
     /**
-     * Creates a new report.
-     *
-     * @param reportedID the ID of the reported entity (regardless of type)
-     * @param itemType the type of item being reported (e.g., "User", "Comment", etc.)
-     * @param reporter the user reporting the item
-     * @param status the status of the report (e.g., "Pending", "Reviewed")
-     * @return the created ReportEntity
+     * Creates a new report with entity validation.
      */
-    public ReportEntity createReport(long reportedID, String itemType, UserEntity reporter, String status) {
+    public ReportEntity createReport(long reportedID, String itemType, String status,Authentication auth) {
+       UserEntity reporter = getAuthenticatedUser(auth);
+        // Get the appropriate handler
+        ReportableEntity handler = entityFactory.getHandler(itemType);
+
+        // Validate the entity exists
+        if (handler instanceof TimeCapsuleHandler) {
+            ((TimeCapsuleHandler) handler).getEntity(reportedID);
+        } else if (handler instanceof CommentHandler) {
+            ((CommentHandler) handler).getEntity(reportedID);
+        }
+
+        // Create the report
         ReportEntity report = new ReportEntity();
         report.setReportedID(reportedID);
         report.setItemType(itemType);
@@ -37,43 +59,37 @@ public class ReportService {
     }
 
     /**
-     * Retrieves a report by its id.
-     *
-     * @param id the report id
-     * @return an Optional containing the report if found
+     * Gets the reported entity with proper typing.
      */
+    public Object getReportedEntity(long reportId) {
+        ReportEntity report = reportRepository.findById(reportId)
+                .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+
+        ReportableEntity handler = entityFactory.getHandler(report.getItemType());
+
+        if (handler instanceof TimeCapsuleHandler) {
+            return ((TimeCapsuleHandler) handler).getEntity(report.getReportedID());
+        } else if (handler instanceof CommentHandler) {
+            return ((CommentHandler) handler).getEntity(report.getReportedID());
+        }
+
+        throw new IllegalStateException("Unsupported entity type: " + report.getItemType());
+    }
+
+    // Existing methods remain unchanged...
     public Optional<ReportEntity> getReportById(long id) {
         return reportRepository.findById(id);
     }
 
-    /**
-     * Retrieves all reports submitted by a given reporter.
-     *
-     * @param reporter the user who submitted the report
-     * @return list of ReportEntity
-     */
     public List<ReportEntity> getReportsByReporter(UserEntity reporter) {
         return reportRepository.findByReporter(reporter);
     }
 
-    /**
-     * Retrieves all reports for a given item type.
-     *
-     * @param itemType the type of item being reported
-     * @return list of ReportEntity
-     */
     public List<ReportEntity> getReportsByItemType(String itemType) {
         return reportRepository.findByItemType(itemType);
     }
 
-    /**
-     * Updates the status of an existing report.
-     *
-     * @param reportId the report id
-     * @param newStatus the new status to set
-     * @return an Optional containing the updated ReportEntity if found
-     */
-    public Optional<ReportEntity> updateReportStatus(long reportId, String newStatus) {
+    public Optional<ReportEntity> updateReportStatus(long reportId, String newStatus, Authentication auth) {
         Optional<ReportEntity> optionalReport = reportRepository.findById(reportId);
         if (optionalReport.isPresent()) {
             ReportEntity report = optionalReport.get();
@@ -84,11 +100,6 @@ public class ReportService {
         return Optional.empty();
     }
 
-    /**
-     * Deletes a report by its id.
-     *
-     * @param reportId the report id
-     */
     public void deleteReport(long reportId) {
         reportRepository.deleteById(reportId);
     }

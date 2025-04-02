@@ -6,6 +6,7 @@ import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.CommentReactionRepository;
 import cit.edu.mmr.repository.CommentRepository;
 import cit.edu.mmr.repository.UserRepository;
+import cit.edu.mmr.service.serviceInterfaces.CommentReactionService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;

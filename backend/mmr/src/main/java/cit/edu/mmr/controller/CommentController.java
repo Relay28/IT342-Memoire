@@ -2,7 +2,7 @@ package cit.edu.mmr.controller;
 
 import cit.edu.mmr.dto.CommentRequest;
 import cit.edu.mmr.entity.CommentEntity;
-import cit.edu.mmr.service.CommentService;
+import cit.edu.mmr.service.serviceInterfaces.CommentService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

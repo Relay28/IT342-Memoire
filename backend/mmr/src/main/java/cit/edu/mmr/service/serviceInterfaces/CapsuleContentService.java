@@ -1,4 +1,4 @@
-package cit.edu.mmr.service;
+package cit.edu.mmr.service.serviceInterfaces;
 
 import cit.edu.mmr.entity.CapsuleContentEntity;
 import org.springframework.security.core.Authentication;

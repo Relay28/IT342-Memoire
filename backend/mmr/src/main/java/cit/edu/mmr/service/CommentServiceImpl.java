@@ -7,7 +7,7 @@ import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.CommentRepository;
 import cit.edu.mmr.repository.TimeCapsuleRepository;
 import cit.edu.mmr.repository.UserRepository;
-import com.google.rpc.context.AttributeContext;
+import cit.edu.mmr.service.serviceInterfaces.CommentService;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;

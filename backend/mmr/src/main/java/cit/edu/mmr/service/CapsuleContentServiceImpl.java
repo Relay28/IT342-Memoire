@@ -8,8 +8,8 @@ import cit.edu.mmr.repository.CapsuleAccessRepository;
 import cit.edu.mmr.repository.CapsuleContentRepository;
 import cit.edu.mmr.repository.TimeCapsuleRepository;
 import cit.edu.mmr.repository.UserRepository;
+import cit.edu.mmr.service.serviceInterfaces.CapsuleContentService;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,17 +23,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.Date;
-import java.util.List;
 import java.util.Objects;
 
 @Service
