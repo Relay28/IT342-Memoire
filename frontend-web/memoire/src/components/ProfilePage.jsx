@@ -110,11 +110,16 @@ const ProfilePage = () => {
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar */}
           <aside className="w-64 p-4 shadow-md overflow-y-auto">
-            <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <FaPlus className="text-red-700 mr-3" size={20} />
-              <span>Create your capsule</span>
-            </div>
+            <Link 
+            to="/create" 
+            className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+            >
+            <FaPlus className="text-red-700 mr-3" size={20} />
+            <span>Create your capsule</span>
+            </Link>
+
             <hr className="my-2" />
+
             <Link 
             to="/homepage" 
             className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
@@ -122,14 +127,22 @@ const ProfilePage = () => {
             <FaHome className="text-red-700 mr-3" size={20} />
             <span>Home</span>
             </Link>
-            <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <FaShareAlt className="text-red-700 mr-3" size={20} />
-              <span>Analytics</span>
-            </div>
-            <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <FaStar className="text-red-700 mr-3" size={20} />
-              <span>Capsules</span>
-            </div>
+
+            <Link 
+            to="/capsules" 
+            className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+            >
+            <FaStar className="text-red-700 mr-3" size={20} />
+            <span>Capsules</span>
+            </Link>
+
+            <Link 
+            to="/archived_capsules" 
+            className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+            >
+            <FaShareAlt className="text-red-700 mr-3" size={20} />
+            <span>Archived Capsules</span>
+            </Link>
             <hr className="my-2" />
 
             <div className="flex justify-between items-center p-3">
@@ -237,9 +250,9 @@ const ProfilePage = () => {
             
             <button 
               className="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-md transition-colors"
-              onClick={() => {/* Handle temporary deactivation */}}
+              onClick={() => {/* Handle deactivation */}}
             >
-              <div className="font-medium">Temporarily Deactivate Account</div>
+              <div className="font-medium">Deactivate Account</div>
               <p className="text-sm text-red-500">Hide your profile and content</p>
             </button>
           </div>

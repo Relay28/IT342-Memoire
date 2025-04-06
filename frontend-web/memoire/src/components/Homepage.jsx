@@ -101,7 +101,7 @@ const Homepage = () => {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
           <Link to="/profile" className=" text-sm no-underline hover:underline" >
-                          Profile
+            Profile
           </Link>
         </button>
       </div>
@@ -128,23 +128,40 @@ const Homepage = () => {
         <div className="flex flex-1 h-screen overflow-hidden">
           {/* Sidebar */}
           <aside className="w-64 p-4 shadow-md h-[calc(100vh)]">
-            <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <FaPlus className="text-red-700 mr-3" size={20} />
-              <span>Create your capsule</span>
-            </div>
+            <Link 
+            to="/create" 
+            className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+            >
+            <FaPlus className="text-red-700 mr-3" size={20} />
+            <span>Create your capsule</span>
+            </Link>
+
             <hr className="my-2" />
-            <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <FaHome className="text-red-700 mr-3" size={20} />
-              <span>Home</span>
-            </div>
-            <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <FaShareAlt className="text-red-700 mr-3" size={20} />
-              <span>Analytics</span>
-            </div>
-            <div className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-              <FaStar className="text-red-700 mr-3" size={20} />
-              <span>Capsules</span>
-            </div>
+
+           <Link 
+            to="/homepage" 
+            className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+            >
+            <FaHome className="text-red-700 mr-3" size={20} />
+            <span>Home</span>
+            </Link>
+
+            <Link 
+            to="/capsules" 
+            className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+            >
+            <FaStar className="text-red-700 mr-3" size={20} />
+            <span>Capsules</span>
+            </Link>
+
+            <Link 
+            to="/archived_capsules" 
+            className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+            >
+            <FaShareAlt className="text-red-700 mr-3" size={20} />
+            <span>Archived Capsules</span>
+            </Link>
+
             <hr className="my-2" />
 
             <div className="flex justify-between items-center p-3">
