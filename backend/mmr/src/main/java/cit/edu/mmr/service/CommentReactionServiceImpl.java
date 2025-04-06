@@ -11,6 +11,9 @@ import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -47,6 +50,7 @@ public class CommentReactionServiceImpl implements CommentReactionService {
     }
 
     @Override
+    @CacheEvict(value = "contentMetadata", key = "'commentReactions_' + #commentId")
     public CommentReactionEntity addReaction(Long commentId, String type, Authentication auth) {
         logger.info("Adding reaction to commentId: {} by user: {}", commentId, auth.getName());
 
@@ -70,6 +74,10 @@ public class CommentReactionServiceImpl implements CommentReactionService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'commentReactions_' + #reaction.comment.id"),
+            @CacheEvict(value = "contentMetadata", key = "'reaction_' + #reactionId")
+    })
     public CommentReactionEntity updateReaction(Long reactionId, String type, Authentication auth) {
         logger.info("Updating reactionId: {} by user: {}", reactionId, auth.getName());
 
@@ -92,6 +100,10 @@ public class CommentReactionServiceImpl implements CommentReactionService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'commentReactions_' + #reaction.comment.id"),
+            @CacheEvict(value = "contentMetadata", key = "'reaction_' + #reactionId")
+    })
     public void deleteReaction(Long reactionId, Authentication auth) {
         logger.info("Deleting reactionId: {} by user: {}", reactionId, auth.getName());
 
@@ -109,12 +121,14 @@ public class CommentReactionServiceImpl implements CommentReactionService {
     }
 
     @Override
+    @Cacheable(value = "contentMetadata", key = "'reaction_' + #reactionId")
     public Optional<CommentReactionEntity> getReactionById(Long reactionId) {
         logger.info("Fetching reaction by id: {}", reactionId);
         return reactionRepository.findById(reactionId);
     }
 
     @Override
+    @Cacheable(value = "contentMetadata", key = "'commentReactions_' + #commentId")
     public List<CommentReactionEntity> getReactionsByCommentId(Long commentId) {
         logger.info("Fetching reactions for commentId: {}", commentId);
         return reactionRepository.findByCommentId(commentId);

@@ -17,6 +17,9 @@ import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
@@ -52,7 +55,13 @@ public class CommentServiceImpl implements CommentService {
         this.messagingTemplate = messagingTemplate;
     }
 
+
+
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'comments_capsule_' + #capsuleId"),
+            @CacheEvict(value = "contentMetadata", key = "'comment_' + #result.id", condition = "#result != null")
+    })
     public CommentEntity createComment(Long capsuleId, Authentication auth, String text) {
         logger.info("Creating comment for capsule ID: {} with text length: {}", capsuleId,
                 text != null ? text.length() : 0);
@@ -124,6 +133,10 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'comment_' + #commentId"),
+            @CacheEvict(value = "contentMetadata", key = "'comments_capsule_' + #result.timeCapsule.id", condition = "#result != null")
+    })
     public CommentEntity updateComment(Long commentId, CommentRequest commentRequest, Authentication auth) {
         logger.info("Updating comment ID: {}", commentId);
 
@@ -188,6 +201,10 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'comment_' + #id"),
+            @CacheEvict(value = "contentMetadata", key = "'comments_capsule_' + #existingComment.timeCapsule.id")
+    })
     public void deleteComment(Long id, Authentication auth) {
         logger.info("Deleting comment ID: {}", id);
 
@@ -250,6 +267,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Cacheable(value = "contentMetadata", key = "'comment_' + #id")
     public Optional<CommentEntity> getCommentById(Long id, Authentication auth) {
         logger.info("Retrieving comment ID: {}", id);
 
@@ -284,6 +302,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Cacheable(value = "contentMetadata", key = "'comments_capsule_' + #capsuleId")
     public List<CommentEntity> getCommentsByTimeCapsuleId(Long capsuleId) {
         logger.info("Retrieving comments for capsule ID: {}", capsuleId);
 

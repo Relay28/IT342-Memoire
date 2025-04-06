@@ -99,7 +99,7 @@ public class UserService {
             existingUser.setBiography(newUserDetails.getBiography());
         }
         if(newUserDetails.getName()!=null){
-            existingUser.setName(newUserDetails.getName());s
+            existingUser.setName(newUserDetails.getName());
         }
 
         // Handle profile image update

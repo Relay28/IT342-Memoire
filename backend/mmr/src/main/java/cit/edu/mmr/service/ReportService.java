@@ -12,6 +12,9 @@ import cit.edu.mmr.service.serviceInterfaces.report.TimeCapsuleHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -20,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 @Service
 public class ReportService {
-
     private static final Logger logger = LoggerFactory.getLogger(ReportService.class);
 
     private final ReportRepository reportRepository;
@@ -28,18 +30,15 @@ public class ReportService {
     private final UserRepository userRepository;
 
     @Autowired
-    public ReportService(ReportRepository reportRepository, ReportEntityFactory entityFactory, UserRepository userRepository) {
+    public ReportService(ReportRepository reportRepository,
+                         ReportEntityFactory entityFactory,
+                         UserRepository userRepository) {
         this.reportRepository = reportRepository;
         this.entityFactory = entityFactory;
         this.userRepository = userRepository;
     }
 
-    private UserEntity getAuthenticatedUser(Authentication authentication) {
-        String username = authentication.getName();
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Authenticated user not found"));
-    }
-
+    @CacheEvict(value = "reports", allEntries = true)
     public ReportEntity createReport(long reportedID, String itemType, String status, Authentication auth) {
         UserEntity reporter = getAuthenticatedUser(auth);
 
@@ -62,6 +61,7 @@ public class ReportService {
         return reportRepository.save(report);
     }
 
+    @Cacheable(value = "reportedEntities", key = "'reportedEntity_' + #reportId + '_' + @reportService.getReportById(#reportId).orElse(null)?.itemType")
     public Object getReportedEntity(long reportId) {
         ReportEntity report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found"));
@@ -77,18 +77,26 @@ public class ReportService {
         throw new IllegalStateException("Unsupported entity type: " + report.getItemType());
     }
 
+    @Cacheable(value = "reports", key = "'report_' + #id")
     public Optional<ReportEntity> getReportById(long id) {
         return reportRepository.findById(id);
     }
 
+    @Cacheable(value = "reports", key = "'reporterReports_' + #reporter.id")
     public List<ReportEntity> getReportsByReporter(UserEntity reporter) {
         return reportRepository.findByReporter(reporter);
     }
 
+    @Cacheable(value = "reports", key = "'reportsByType_' + #itemType")
     public List<ReportEntity> getReportsByItemType(String itemType) {
         return reportRepository.findByItemType(itemType);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "reports", key = "'report_' + #reportId"),
+            @CacheEvict(value = "reports", key = "'reporterReports_' + @reportService.getReportById(#reportId).orElse(null)?.reporter.id"),
+            @CacheEvict(value = "reports", key = "'reportsByType_' + @reportService.getReportById(#reportId).orElse(null)?.itemType")
+    })
     public Optional<ReportEntity> updateReportStatus(long reportId, String newStatus, Authentication auth) {
         Optional<ReportEntity> optionalReport = reportRepository.findById(reportId);
         if (optionalReport.isPresent()) {
@@ -100,11 +108,23 @@ public class ReportService {
         return Optional.empty();
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "reports", key = "'report_' + #reportId"),
+            @CacheEvict(value = "reportedEntities", key = "'reportedEntity_' + #reportId + '_*'"),
+            @CacheEvict(value = "reports", key = "'reporterReports_' + @reportService.getReportById(#reportId).orElse(null)?.reporter.id"),
+            @CacheEvict(value = "reports", key = "'reportsByType_' + @reportService.getReportById(#reportId).orElse(null)?.itemType")
+    })
     public void deleteReport(long reportId) {
         if (!reportRepository.existsById(reportId)) {
             throw new IllegalArgumentException("Report not found");
         }
         logger.info("Deleting report with ID: {}", reportId);
         reportRepository.deleteById(reportId);
+    }
+
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Authenticated user not found"));
     }
 }

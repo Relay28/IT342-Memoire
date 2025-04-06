@@ -9,6 +9,9 @@ import cit.edu.mmr.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -42,6 +45,11 @@ public class FriendShipService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "userAuthentication", key = "'friends_' + #auth.name"),
+            @CacheEvict(value = "userAuthentication", key = "'friends_' + #request.friendId"),
+            @CacheEvict(value = "contentMetadata", key = "'friendship_' + #result.id", condition = "#result != null")
+    })
     public FriendShipEntity createFriendship(FriendshipRequest request, Authentication auth) {
         logger.info("Creating friendship for friendId: {}", request.getFriendId());
         UserEntity user = getAuthenticatedUser(auth);
@@ -73,21 +81,27 @@ public class FriendShipService {
         return friendShipRepository.save(friendship);
     }
 
+    @Cacheable(value = "contentMetadata", key = "'friendship_' + #id")
     public Optional<FriendShipEntity> getFriendshipById(Long id) {
         logger.debug("Retrieving friendship by ID: {}", id);
         return friendShipRepository.findById(id);
     }
 
+    @Cacheable(value = "userAuthentication", key = "'friendOf_' + #friend.id")
     public List<FriendShipEntity> getFriendshipsByUser(UserEntity user) {
         logger.debug("Fetching friendships initiated by user: {}", user.getUsername());
         return friendShipRepository.findByUser(user);
     }
 
+    @Cacheable(value = "userAuthentication", key = "'friendOf_' + #friend.id")
     public List<FriendShipEntity> getFriendshipsByFriend(UserEntity friend) {
         logger.debug("Fetching friendships where user is friend: {}", friend.getUsername());
         return friendShipRepository.findByFriend(friend);
     }
 
+    @Cacheable(value = "userAuthentication",
+            key = "'areFriends_' + #auth.name + '_' + #friendId",
+            condition = "#friendId != null")
     public boolean areFriends(long friendId, Authentication auth) {
         logger.info("Checking friendship status with friendId: {}", friendId);
         UserEntity user = getAuthenticatedUser(auth);
@@ -106,6 +120,14 @@ public class FriendShipService {
         return friendshipOpt.isPresent() && "Friends".equalsIgnoreCase(friendshipOpt.get().getStatus());
     }
 
+
+    @Caching(evict = {
+            @CacheEvict(value = "userAuthentication", key = "'friends_' + #auth.name"),
+            @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().friend.id"),
+            @CacheEvict(value = "contentMetadata", key = "'friendship_' + #id"),
+            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().friend.id"),
+            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().friend.username + '_' + #auth.name")
+    })
     public void deleteFriendship(Long id, Authentication auth) {
         logger.info("Attempting to delete friendship with ID: {}", id);
         UserEntity user = getAuthenticatedUser(auth);
@@ -126,6 +148,13 @@ public class FriendShipService {
         logger.info("Deleted friendship with ID: {}", id);
     }
 
+    @Caching(evict = {
+            @CacheEvict(value = "userAuthentication", key = "'friends_' + #auth.name"),
+            @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().user.id"),
+            @CacheEvict(value = "contentMetadata", key = "'friendship_' + #friendshipId"),
+            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().user.id"),
+            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().user.username + '_' + #auth.name")
+    })
     public Optional<FriendShipEntity> acceptFriendship(Long friendshipId, Authentication auth) {
         logger.info("Accepting friendship request with ID: {}", friendshipId);
         UserEntity user = getAuthenticatedUser(auth);

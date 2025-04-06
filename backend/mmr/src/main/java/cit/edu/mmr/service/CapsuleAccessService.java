@@ -12,6 +12,10 @@ import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -28,14 +32,17 @@ public class CapsuleAccessService {
     private final CapsuleAccessRepository capsuleAccessRepository;
     private final TimeCapsuleRepository timeCapsuleRepository;
     private final UserRepository userRepository;
+    private final CacheManager cacheManager;
 
     @Autowired
     public CapsuleAccessService(CapsuleAccessRepository capsuleAccessRepository,
                                 TimeCapsuleRepository timeCapsuleRepository,
-                                UserRepository userRepository) {
+                                UserRepository userRepository,
+                                CacheManager cacheManager) {
         this.capsuleAccessRepository = capsuleAccessRepository;
         this.timeCapsuleRepository = timeCapsuleRepository;
         this.userRepository = userRepository;
+        this.cacheManager = cacheManager;
     }
 
     private UserEntity getAuthenticatedUser(Authentication authentication) {
@@ -59,6 +66,11 @@ public class CapsuleAccessService {
      * @throws EntityNotFoundException  if capsule or users not found
      * @throws IllegalArgumentException if invalid parameters
      */
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'capsuleAccesses_' + #capsuleId"),
+            @CacheEvict(value = "contentMetadata", key = "'userAccesses_' + #userId"),
+            @CacheEvict(value = "contentMetadata", key = "'hasAccess_' + #capsuleId + '_*'", allEntries = true)
+    })
     public CapsuleAccessEntity grantAccess(Long capsuleId, Long userId, String role, Authentication authentication) {
         logger.info("Granting {} access to capsule ID {} for user ID {}", role, capsuleId, userId);
 
@@ -146,6 +158,11 @@ public class CapsuleAccessService {
      * @throws EntityNotFoundException if access not found
      * @throws AccessDeniedException if current user is not the uploader
      */
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'capsuleAccesses_' + #access.capsule.id"),
+            @CacheEvict(value = "contentMetadata", key = "'userAccesses_' + #access.user.id"),
+            @CacheEvict(value = "contentMetadata", key = "'hasAccess_' + #access.capsule.id + '_*'", allEntries = true)
+    })
     public CapsuleAccessEntity updateAccessRole(Long accessId, String newRole, Authentication authentication) {
         logger.info("Updating access role for access ID {} to {}", accessId, newRole);
 
@@ -246,6 +263,7 @@ public class CapsuleAccessService {
      * @return List of CapsuleAccessEntity
      * @throws EntityNotFoundException if capsule not found
      */
+    @Cacheable(value = "contentMetadata", key = "'capsuleAccesses_' + #capsuleId")
     public List<CapsuleAccessEntity> getAccessesByCapsule(Long capsuleId, Authentication authentication) {
         logger.info("Getting accesses for capsule ID {}", capsuleId);
 
@@ -286,6 +304,7 @@ public class CapsuleAccessService {
      * @return List of CapsuleAccessEntity
      * @throws EntityNotFoundException if user not found
      */
+    @Cacheable(value = "contentMetadata", key = "'userAccesses_' + #userId")
     public List<CapsuleAccessEntity> getAccessesByUser(Long userId, Authentication auth) {
         logger.info("Getting accesses for user ID {}", userId);
 
@@ -326,6 +345,7 @@ public class CapsuleAccessService {
      * @param auth Current authenticated user
      * @return boolean indicating if user has the specified access
      */
+    @Cacheable(value = "contentMetadata", key = "'hasAccess_' + #capsuleId + '_' + #auth.name + '_' + #role")
     public boolean hasAccess(Long capsuleId, String role, Authentication auth) {
         logger.info("Checking {} access for capsule ID {}", role, capsuleId);
 
