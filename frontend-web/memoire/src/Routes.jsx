@@ -1,36 +1,26 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { Box, CircularProgress } from '@mui/material';
+import { Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { CircularProgress } from "@mui/material";
 
-// 1. Lazy load all page components
-const Homepage = lazy(() => import('./components/Homepage'));
-const Register = lazy(() => import('./components/Register'));
-const Login = lazy(() => import('./components/Login'));
-const ProfilePage = lazy(() => import('./components/ProfilePage'));
+// Lazy-loaded components
+const Homepage = lazy(() => import("./components/Homepage"));
+const Register = lazy(() => import("./components/Register"));
+const Login = lazy(() => import("./components/Login"));
+const ProfilePage = lazy(() => import("./components/ProfilePage"));
+const CreateCapsule = lazy(() => import("./components/CreateCapsule"));
+const Capsules = lazy(() => import("./components/Capsules"));
+const ArchivedCapsules = lazy(() => import("./components/ArchivedCapsules"));
+const FriendsPage = lazy(() => import("./components/FriendsPage"));
+const ErrorPage = lazy(() => import("./components/ErrorPage")); // New error page component
 
-// 2. Centralized circular loader component
+// Loading component
 const RouteLoader = () => (
-  <Box 
-    sx={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100vh', // Full viewport height
-      width: '100vw'  // Full viewport width
-    }}
-  >
-    <CircularProgress 
-      size={60} 
-      thickness={4}
-      sx={{
-        color: (theme) => theme.palette.primary.main
-      }} 
-    />
-  </Box>
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+    <CircularProgress size={60} />
+  </div>
 );
 
-// 3. Component with proper lazy loading
-export default function AppRoutes() {
+const AppRoutes = () => {
   return (
     <Suspense fallback={<RouteLoader />}>
       <Routes>
@@ -38,7 +28,15 @@ export default function AppRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/create" element={<CreateCapsule />} />
+        <Route path="/capsules" element={<Capsules />} />
+        <Route path="/archived_capsules" element={<ArchivedCapsules />} />
+        <Route path="/friends" element={<FriendsPage />} />
+        {/* Error page route - catches all undefined paths */}
+        <Route path="*" element={<ErrorPage />} />
       </Routes>
     </Suspense>
   );
-}
+};
+
+export default AppRoutes;
