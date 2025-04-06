@@ -86,7 +86,7 @@ const Header = ({ userData }) => {
                   className="group flex w-full items-center gap-2 rounded-md px-4 py-2 text-sm text-gray-900 hover:bg-[#AF3535]/10 hover:text-[#AF3535] transition-colors"
                   onClick={() => {
                     setIsProfileOpen(false);
-                    // Add logout logic here
+                    navigate('/login');
                   }}
                 >
                   <svg className="h-5 w-5 text-gray-400 group-hover:text-[#AF3535]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
