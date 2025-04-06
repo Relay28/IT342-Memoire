@@ -19,10 +19,34 @@ const ProfilePage = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [previewImage, setPreviewImage] = useState('');
   const fileInputRef = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize form data when personalInfo changes
+  // Fetch user data on component mount
   useEffect(() => {
-    if (personalInfo) {
+    const fetchUserData = async () => {
+      try {
+        //setIsLoading(true);
+        const userData = await profileService.getCurrentUser();
+        setPersonalInfo(userData);
+        console.log("dasdsadas"+userData)
+        setFormData({
+          biography: userData.biography || '',
+          email: userData.email || '',
+          name: userData.name || '',
+          username: userData.username || ''
+        });
+        setPreviewImage(userData.profilePicture || ProfilePictureSample);
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+        alert('Failed to load profile data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (!personalInfo.name) {
+      fetchUserData();
+    } else {
       setFormData({
         biography: personalInfo.biography || '',
         email: personalInfo.email || '',
@@ -31,7 +55,7 @@ const ProfilePage = () => {
       });
       setPreviewImage(personalInfo.profilePicture || ProfilePictureSample);
     }
-  }, [personalInfo]);
+  }, [personalInfo, setPersonalInfo]);
 
   const toggleProfile = () => {
     setIsProfileOpen(!isProfileOpen);
@@ -59,28 +83,28 @@ const ProfilePage = () => {
 
   const handleSaveChanges = async () => {
     try {
+      setIsLoading(true);
       const userData = {
         biography: formData.biography,
         email: formData.email,
         name: formData.name,
-        username: formData.username // Make sure to include username
+        username: formData.username
       };
-  
-      console.log('Sending update with:', userData); // Debug log
-  
-      const updatedUser = await profileService.updateProfile(userData, profileImage);
-  
-      // Explicitly update all fields in state
+
+      let updatedUser;
+      
+      
+ 
+     updatedUser = await profileService.updateUserDetails(userData);
+      
+
+      // Update context and local state
       setPersonalInfo(prev => ({
         ...prev,
-        biography: updatedUser.biography || formData.biography,
-        email: updatedUser.email || formData.email,
-        name: updatedUser.name || formData.name,
-        username: updatedUser.username || formData.username,
-        profilePicture: updatedUser.profilePicture || previewImage
+        ...updatedUser,
+        // profilePicture: updatedUser.profilePicture || previewImage
       }));
-  
-      // Also update formData to match
+
       setFormData(prev => ({
         ...prev,
         biography: updatedUser.biography || prev.biography,
@@ -88,7 +112,7 @@ const ProfilePage = () => {
         name: updatedUser.name || prev.name,
         username: updatedUser.username || prev.username
       }));
-  
+
       setProfileImage(null);
       alert('Profile updated successfully!');
     } catch (error) {
@@ -97,17 +121,22 @@ const ProfilePage = () => {
         response: error.response?.data
       });
       alert(`Failed to update profile: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleDeactivateAccount = async () => {
     if (window.confirm('Are you sure you want to deactivate your account? This action cannot be undone.')) {
       try {
+        setIsLoading(true);
         await profileService.deactivateAccount();
         navigate('/login');
       } catch (error) {
         console.error('Failed to deactivate account:', error);
         alert('Failed to deactivate account. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -123,6 +152,18 @@ const ProfilePage = () => {
     biography: "",
     profilePicture: ProfilePictureSample
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#AF3535] mx-auto"></div>
+          <p className="mt-4 text-gray-700">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-screen bg-gray-100">
