@@ -5,15 +5,24 @@ import cit.edu.mmr.dto.AuthenticationRequest;
 import cit.edu.mmr.dto.AuthenticationResponse;
 import cit.edu.mmr.dto.RegisterRequest;
 import cit.edu.mmr.entity.UserEntity;
+import cit.edu.mmr.exception.exceptions.DatabaseOperationException;
+import cit.edu.mmr.exception.exceptions.EmailAlreadyExistsException;
+import cit.edu.mmr.exception.exceptions.InvalidCredentialsException;
+import cit.edu.mmr.exception.exceptions.UsernameAlreadyExistsException;
 import cit.edu.mmr.repository.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 @Service
 public class AuthenticationService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthenticationService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -33,12 +42,17 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse register(RegisterRequest request) {
+        logger.debug("Processing registration for username: {} and email: {}", request.getUsername(), request.getEmail());
+
         // Check if username or email is already taken
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username is already taken");
+            logger.warn("Registration failed: Username '{}' is already taken", request.getUsername());
+            throw new UsernameAlreadyExistsException("Username is already taken");
         }
+
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email is already registered");
+            logger.warn("Registration failed: Email '{}' is already registered", request.getEmail());
+            throw new EmailAlreadyExistsException("Email is already registered");
         }
 
         var user = new UserEntity();
@@ -49,8 +63,13 @@ public class AuthenticationService {
         user.setActive(true);
         user.setName(request.getUsername());
 
-
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+            logger.info("User successfully registered with ID: {}", user.getId());
+        } catch (Exception e) {
+            logger.error("Failed to save new user to database: {}", e.getMessage(), e);
+            throw new DatabaseOperationException("Failed to complete registration", e);
+        }
 
         var jwtToken = jwtService.generateToken(
                 User.withUsername(user.getUsername())
@@ -68,15 +87,25 @@ public class AuthenticationService {
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getUsername(),
-                        request.getPassword()
-                )
-        );
+        logger.debug("Attempting authentication for username: {}", request.getUsername());
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
+        } catch (BadCredentialsException e) {
+            logger.warn("Authentication failed: Bad credentials for username: {}", request.getUsername());
+            throw new InvalidCredentialsException("Invalid username or password");
+        }
 
         var user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+                .orElseThrow(() -> {
+                    logger.error("User not found after successful authentication: {}", request.getUsername());
+                    return new UsernameNotFoundException("User not found");
+                });
 
         var jwtToken = jwtService.generateToken(
                 User.withUsername(user.getUsername())
@@ -84,6 +113,8 @@ public class AuthenticationService {
                         .authorities("ROLE_" + user.getRole())
                         .build()
         );
+
+        logger.info("User '{}' authenticated successfully", request.getUsername());
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
