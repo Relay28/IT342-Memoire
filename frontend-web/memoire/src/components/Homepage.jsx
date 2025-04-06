@@ -1,16 +1,23 @@
-import React, {useState, useRef, useEffect} from 'react';
+import React, {useState, useRef, useEffect, useContext} from 'react';
 import mmrlogo from '../assets/mmrlogo.png';
 import bgmemoire from '../assets/bgmemoire.jpg';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { FaSearch, FaMoon, FaBell, FaPlus, FaHome, FaStar, FaShareAlt } from 'react-icons/fa';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { PersonalInfoContext } from '../components/PersonalInfoContext'; // Adjust the path as needed
 
 const Homepage = () => {
+  const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const reportRef = useRef(null);
-
-  
+const { personalInfo } = useContext(PersonalInfoContext);
+  const userData = personalInfo || {
+      username: "",
+      email: "",
+      bio: "",
+      profilePicture: ProfilePictureSample
+    };
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -78,13 +85,13 @@ const Homepage = () => {
       <div className="px-1 py-1">
         <div className="flex items-center gap-3 px-4 py-3">
           <img 
-            src={ProfilePictureSample} 
+            src={userData.profilePicture || ProfilePictureSample} 
             alt="User" 
             className="h-10 w-10 rounded-full border-2 border-[#AF3535] object-cover"
           />
           <div>
-            <p className="text-sm font-medium text-gray-900">John Doe</p>
-            <p className="text-xs text-gray-500">john@example.com</p>
+            <p className="text-sm font-medium text-gray-900">{userData.username || "Loading..."}</p>
+            <p className="text-xs text-gray-500">{userData.email || "loading@example.com"}</p>
           </div>
         </div>
       </div>
@@ -94,15 +101,14 @@ const Homepage = () => {
           onClick={() => {
             // Handle profile navigation
             setIsProfileOpen(false);
+            navigate('/profile');
           }}
           
         >
           <svg className="h-5 w-5 text-gray-400 group-hover:text-[#AF3535]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
           </svg>
-          <Link to="/profile" className=" text-sm no-underline hover:underline" >
-            Profile
-          </Link>
+          <span className="text-sm">Profile</span>
         </button>
       </div>
       <div className="px-1 py-1">

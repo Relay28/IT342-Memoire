@@ -7,6 +7,7 @@ import { TextField, InputAdornment, IconButton } from '@mui/material';
 import mmrlogo from "../assets/mmrlogo.png";
 import sunsetGif from "../assets/sunset.gif";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { PersonalInfoContext } from '../components/PersonalInfoContext'; // Add this import
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -19,6 +20,7 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState(null);
+  const { setPersonalInfo } = useContext(PersonalInfoContext); // Add this line
 
   useFCMToken(userId, sessionStorage.getItem("authToken"));
 
@@ -40,9 +42,19 @@ const Login = () => {
       );
 
       if (response.status === 200) {
-        const { token, userId } = response.data;
+        const { token, userId, ...userData } = response.data; // Destructure user data
         sessionStorage.setItem("authToken", token);
         setUserId(userId);
+        
+        // Update the context with user data
+        setPersonalInfo({
+          username: userData.username,
+          email: userData.email,
+          fullName: userData.fullName || userData.username,
+          bio: userData.bio || "",
+          profilePicture: userData.profilePicture || ""
+        });
+        
         navigate("/homepage");
       }
     } catch (error) {
@@ -62,12 +74,23 @@ const Login = () => {
       
       localStorage.setItem("token", data.token);
       setUserId(data.userId);
+      
+      // Update the context with Google user data
+      setPersonalInfo({
+        username: data.username || data.email.split('@')[0],
+        email: data.email,
+        fullName: data.name || data.email.split('@')[0],
+        bio: "",
+        profilePicture: data.picture || ""
+      });
+      
       navigate("/homepage");
     } catch (error) {
       alert("Google login failed");
     }
   };
 
+  // ... rest of your component remains exactly the same ...
   const handleGoogleLoginError = () => {
     console.error("Google Login Failed");
     alert("Google login failed. Please try again.");
@@ -76,7 +99,9 @@ const Login = () => {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
   return (
+    // ... your existing JSX remains exactly the same ...
     <div className="flex w-screen h-screen">
       {/* Left Section - Same as register */}
       <div className="w-1/2 h-screen relative">
