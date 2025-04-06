@@ -5,6 +5,7 @@ import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
 import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -62,13 +63,6 @@ public class UserService {
 
     }
 
-//    public UserEntity findbyGoogleSub(String sub){
-//        Optional<UserEntity> user = urepo.findByGoogleSub(sub);
-//        return  user.orElse(null);
-//    }
-
-
-
     public UserEntity insertUserRecord(UserEntity user){
 
         if(user.getUsername()==null|| user.getUsername().isEmpty()){
@@ -89,6 +83,8 @@ public class UserService {
         return urepo.save(user);
     }
 
+
+    @CacheEvict(value = {"publicProfiles", "ownProfiles"}, key = "#userId")
     public UserEntity updateUserDetails(long userId, UserEntity newUserDetails, MultipartFile profileImg) throws IOException {
         UserEntity existingUser = urepo.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
@@ -121,4 +117,6 @@ public class UserService {
         return "User Account has been Deactivated";
 
     }
+
+
 }

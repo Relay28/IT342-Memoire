@@ -6,6 +6,7 @@ import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.exception.exceptions.DisabledAccountException;
 import cit.edu.mmr.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -33,11 +34,11 @@ public class ProfileService {
 
     /**
      * Get public profile information for a user
-     * @param userId the ID of the user whose profile to retrieve
-     * @return ProfileDTO with public user information
+     * Cache results to improve performance for frequently accessed profiles
      */
+    @Cacheable(value = "publicProfiles", key = "#userId", unless = "#result == null")
     public ProfileDTO getPublicProfile(long userId) {
-        logger.info("Retrieving public profile for user ID: {}", userId);
+        logger.info("Cache miss: Retrieving public profile for user ID: {}", userId);
 
         try {
             UserEntity user = userService.findById(userId);
@@ -55,28 +56,28 @@ public class ProfileService {
             return convertToProfileDTO(user, false);
         } catch (Exception e) {
             logger.error("Error retrieving public profile for user ID {}: {}", userId, e.getMessage(), e);
-            throw e; // Re-throw the exception to be handled by the controller
+            throw e;
         }
     }
 
     /**
      * Get detailed profile information for the currently authenticated user
-     * @return ProfileDTO with detailed user information
+     * Cache results based on username since this is a common operation
      */
+    @Cacheable(value = "ownProfiles", key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication().getName()",
+            unless = "#result == null")
     public ProfileDTO getOwnProfile() {
-        logger.info("Retrieving authenticated user's own profile");
-
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        logger.info("Cache miss: Retrieving authenticated user's own profile for: {}", username);
+
         if (auth == null || !auth.isAuthenticated()) {
             logger.warn("Unauthorized attempt to access user profile");
             throw new SecurityException("User is not authenticated");
         }
 
         try {
-            // Assuming the principal is the username, fetch the user entity from the repository
-            String username = auth.getName();
-            logger.debug("Loading profile for authenticated user: {}", username);
-
             UserEntity currentUser = userRepository.findByUsername(username)
                     .orElseThrow(() -> {
                         logger.error("Authenticated user '{}' not found in database", username);
@@ -87,10 +88,9 @@ public class ProfileService {
             return convertToProfileDTO(currentUser, true);
         } catch (Exception e) {
             logger.error("Error retrieving own profile: {}", e.getMessage(), e);
-            throw e; // Re-throw the exception to be handled by the controller
+            throw e;
         }
     }
-
     /**
      * Convert a UserEntity to a ProfileDTO
      * @param user the user entity to convert

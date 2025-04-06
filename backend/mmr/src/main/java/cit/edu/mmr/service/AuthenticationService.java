@@ -12,6 +12,7 @@ import cit.edu.mmr.exception.exceptions.UsernameAlreadyExistsException;
 import cit.edu.mmr.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -86,8 +87,9 @@ public class AuthenticationService {
                 .build();
     }
 
+    @Cacheable(value = "userAuthentication", key = "#request.username", unless = "#result == null")
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
-        logger.debug("Attempting authentication for username: {}", request.getUsername());
+        logger.debug("Cache miss: Authenticating user: {}", request.getUsername());
 
         try {
             authenticationManager.authenticate(
