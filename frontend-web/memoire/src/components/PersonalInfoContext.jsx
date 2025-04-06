@@ -1,7 +1,9 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
 
 // Create the context
 export const PersonalInfoContext = createContext();
+
 
 // Provider component
 export const PersonalInfoProvider = ({ children }) => {
@@ -17,6 +19,7 @@ export const PersonalInfoProvider = ({ children }) => {
       localStorage.setItem('personalInfo', JSON.stringify(personalInfo));
     } else {
       localStorage.removeItem('personalInfo'); // Clean up if data is null
+ 
     }
   }, [personalInfo]);
 

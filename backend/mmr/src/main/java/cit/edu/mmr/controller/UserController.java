@@ -6,6 +6,8 @@ import cit.edu.mmr.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,14 +20,21 @@ import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
@@ -107,6 +116,8 @@ public class UserController {
                     .body("Failed to create user: " + e.getMessage());
         }
     }
+
+
 
     // Update user details including optional profile image
     @PutMapping
@@ -216,6 +227,47 @@ public class UserController {
             logger.error("Error updating profile picture: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to update profile picture: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/profile-picture")
+    public ResponseEntity<byte[]> getProfilePicture(Authentication auth) {
+        try {
+           UserEntity user = getAuthenticatedUser(auth);
+            if (user == null || user.getProfilePicture() == null) {
+                // Return default profile picture if none exists
+                ClassPathResource defaultImage = new ClassPathResource("static/default-profile.png");
+                byte[] defaultImageBytes = StreamUtils.copyToByteArray(defaultImage.getInputStream());
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_PNG)
+                        .body(defaultImageBytes);
+            }
+
+            byte[] imageBytes = userService.getProfileImage(user.getProfilePicture());
+
+            String contentType = determineContentType(user.getProfilePicture());
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS)) // Cache for 7 days
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .body(imageBytes);
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    private String determineContentType(String filename) {
+        String extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
+        switch (extension) {
+            case "jpg":
+            case "jpeg":
+                return "image/jpeg";
+            case "png":
+                return "image/png";
+            case "gif":
+                return "image/gif";
+            default:
+                return "application/octet-stream";
         }
     }
 }

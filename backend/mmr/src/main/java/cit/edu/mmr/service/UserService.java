@@ -14,6 +14,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,6 +39,18 @@ public class UserService {
 
     }
 
+    public byte[] getProfileImage(String filename) {
+        try {
+            String folder = "uploads/profileImages/";
+            Path path = Paths.get(folder + filename);
+            if (!Files.exists(path)) {
+                throw new FileNotFoundException("Profile image not found: " + filename);
+            }
+            return Files.readAllBytes(path);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read profile image: " + e.getMessage(), e);
+        }
+    }
 
     public boolean isUsernameTaken(String username) {
         return urepo.existsByUsername(username);
