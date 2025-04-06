@@ -1,8 +1,8 @@
 import React from 'react';
-import './css/homepage.css';
-import mmrlogo from './assets/mmrlogo.png';
-import bgmemoire from './assets/bgmemoire.jpg';
-import ProfilePictureSample from './assets/ProfilePictureSample.png';
+import '../css/homepage.css';
+import mmrlogo from '../assets/mmrlogo.png';
+import bgmemoire from '../assets/bgmemoire.jpg';
+import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { FaSearch, FaMoon, FaBell, FaPlus, FaHome, FaStar, FaShareAlt } from 'react-icons/fa';
 
 const Homepage = () => {
