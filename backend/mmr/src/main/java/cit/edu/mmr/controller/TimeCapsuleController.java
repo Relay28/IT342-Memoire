@@ -1,8 +1,10 @@
 package cit.edu.mmr.controller;
 
 
+import cit.edu.mmr.dto.LockRequest;
 import cit.edu.mmr.dto.TimeCapsuleDTO;
 import cit.edu.mmr.service.TimeCapsuleService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -114,12 +116,12 @@ public class TimeCapsuleController {
 
     // Lock a time capsule (requires authentication)
     @PatchMapping("/{id}/lock")
-    public ResponseEntity<Void> lockTimeCapsule(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<Void> lockTimeCapsule(@PathVariable Long id, @RequestBody @Valid LockRequest request, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         try {
-            timeCapsuleService.lockTimeCapsule(id,authentication);
+            timeCapsuleService.lockTimeCapsule(id,request.getOpenDate(),authentication);
             return ResponseEntity.ok().build();
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

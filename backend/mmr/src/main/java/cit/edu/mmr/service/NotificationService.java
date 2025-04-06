@@ -8,7 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import cit.edu.mmr.repository.NotificationRepository;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -18,130 +22,118 @@ import java.util.Map;
 import java.util.Optional;
 
 @Service
-@Slf4j
 public class NotificationService {
+    private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
 
-    private final NotificationRepository notificationRepository;
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
     private final FirebaseMessaging firebaseMessaging;
+    private final NotificationRepository notificationRepository;
+    private final UserRepository userRepository;
+
+
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Authenticated user not found"));
+    }
     @Autowired
-    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository, FirebaseMessaging firebaseMessaging) {
+    public NotificationService(FirebaseMessaging firebaseMessaging,
+                               NotificationRepository notificationRepository,
+                               UserRepository userRepository) {
+        this.firebaseMessaging = firebaseMessaging;
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
-        this.firebaseMessaging = firebaseMessaging;
     }
 
-    public NotificationEntity createNotification(Long userId, String type, String text,
-                                                 Long relatedItemId, String itemType) {
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
-
-        NotificationEntity notification = new NotificationEntity();
-        notification.setUser(user);
-        notification.setType(type);
-        notification.setText(text);
-        notification.setRelatedItemId(relatedItemId);
-        notification.setItemType(itemType);
-        notification.setRead(false);
-        notification.setCreatedAt(LocalDateTime.now());
-
-        NotificationEntity savedNotification = notificationRepository.save(notification);
-
-        // Send FCM notification
-        sendFCMNotification(user, type, text, savedNotification.getId());
-
-        return savedNotification;
-    }
-
-    public List<NotificationEntity> getUnreadNotifications(Long userId) {
-        return notificationRepository.findByUserIdAndIsReadFalse(userId);
-    }
-    public void markAllNotificationsAsRead(Long userId) {
-        List<NotificationEntity> unreadNotifications = notificationRepository.findByUserIdAndIsReadFalse(userId);
-        unreadNotifications.forEach(notification -> notification.setRead(true));
-        notificationRepository.saveAll(unreadNotifications);
-    }
-
-
-
-    private void sendFCMNotification(UserEntity user, String title, String body, Long notificationId) {
-        if (user.getFcmToken() == null || user.getFcmToken().isEmpty()) {
-            return; // No token to send to
-        }
-
+    public void sendNotificationToUser(Long userId, NotificationEntity notification) {
         try {
-            // You can customize the notification payload here
-            Notification notification = Notification.builder()
-                    .setTitle(title)
-                    .setBody(body)
-                    .build();
+            UserEntity user = userRepository.findById(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
-            // Add data payload for deep linking or additional processing
-            Map<String, String> data = new HashMap<>();
-            data.put("notificationId", notificationId.toString());
-            data.put("type", "your_notification_type");
-            data.put("click_action", "FLUTTER_NOTIFICATION_CLICK");
+            // Save notification to database
+            notification.setUser(user);
+            notificationRepository.save(notification);
 
-            Message message = Message.builder()
-                    .setToken(user.getFcmToken())
-                    .setNotification(notification)
-                    .putAllData(data)
-                    .build();
+            // Check if user has FCM token
+            if (user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
+                Message message = Message.builder()
+                        .setToken(user.getFcmToken())
+                        .setNotification(Notification.builder()
+                                .setTitle(getNotificationTitle(notification.getType()))
+                                .setBody(notification.getText())
+                                .build())
+                        .putData("type", notification.getType())
+                        .putData("itemType", notification.getItemType())
+                        .putData("itemId", String.valueOf(notification.getRelatedItemId()))
+                        .build();
 
-            String response = firebaseMessaging.send(message);
-            log.info("Successfully sent FCM notification: {}", response);
-        } catch (FirebaseMessagingException e) {
-            log.error("Failed to send FCM notification", e);
-
-            // Handle invalid/expired tokens
-            if (e.getErrorCode().equals("registration-token-not-registered")) {
-                user.setFcmToken(null);
-                userRepository.save(user);
+                String response = firebaseMessaging.send(message);
+                logger.info("Successfully sent notification to user {}: {}", userId, response);
+            } else {
+                logger.warn("User {} has no FCM token registered", userId);
             }
+        } catch (FirebaseMessagingException e) {
+            logger.error("Failed to send FCM notification to user {}: {}", userId, e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error in notification processing for user {}: {}", userId, e.getMessage());
         }
     }
 
-
-
-    public NotificationEntity markNotificationAsRead(Long notificationId) {
-        Optional<NotificationEntity> optionalNotification = notificationRepository.findById(notificationId);
-        if (optionalNotification.isPresent()) {
-            NotificationEntity notification = optionalNotification.get();
-            notification.setRead(true);
-            return notificationRepository.save(notification);
-        } else {
-            throw new EntityNotFoundException("Notification not found");
+    private String getNotificationTitle(String type) {
+        switch (type) {
+            case "FRIEND_REQUEST":
+                return "New Friend Request";
+            case "FRIEND_REQUEST_ACCEPTED":
+                return "Friend Request Accepted";
+            case "TIME_CAPSULE_OPEN":
+                return "Time Capsule Opened";
+            case "COMMENT":
+                return "New Comment on Your Time Capsule";
+            default:
+                return "New Notification";
         }
     }
 
-    public Optional<NotificationEntity> getNotificationById(Long notificationId) {
-        return notificationRepository.findById(notificationId);
+    public NotificationEntity getNotification(Long id, Authentication auth) {
+        UserEntity currentUser = getAuthenticatedUser(auth);
+        return notificationRepository.findByIdAndUserId(id, currentUser.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found"));
     }
 
-    public List<NotificationEntity> getNotificationsForUser(Long userId) {
-        return notificationRepository.findByUserId(userId);
+    public List<NotificationEntity> getUnreadNotifications(Authentication auth) {
+        UserEntity currentUser = getAuthenticatedUser(auth);
+        return notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(currentUser.getId());
+    }
+    @Transactional
+    public void markAllNotificationsAsRead(Authentication auth) {
+        UserEntity currentUser = getAuthenticatedUser(auth);
+        notificationRepository.markAllAsReadForUser(currentUser.getId());
     }
 
-    public void deleteNotification(Long notificationId) {
-        if (notificationRepository.existsById(notificationId)) {
-            notificationRepository.deleteById(notificationId);
-        } else {
-            throw new EntityNotFoundException("Notification not found");
-        }
+    public long getUnreadNotificationCount(Authentication auth) {
+        UserEntity currentUser = getAuthenticatedUser(auth);
+        return notificationRepository.countByUserIdAndIsReadFalse(currentUser.getId());
+    }
+
+    public List<NotificationEntity> getUserNotifications(Authentication auth) {
+        UserEntity currentUser = getAuthenticatedUser(auth);
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(currentUser.getId());
+    }
+
+    public void markNotificationAsRead(Long notificationId, Authentication auth) {
+        UserEntity currentUser = getAuthenticatedUser(auth);
+        NotificationEntity notification = notificationRepository.findByIdAndUserId(notificationId, currentUser.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Notification not found"));
+
+        notification.setRead(true);
+        notificationRepository.save(notification);
     }
 
     @Transactional
-    public void updateFcmToken(Long userId, String fcmToken) {
-        UserEntity user = userRepository.findById(userId)
+    public void updateFcmToken(Authentication auth, String fcmToken) {
+        UserEntity currentUser = getAuthenticatedUser(auth);
+        UserEntity user = userRepository.findById(currentUser.getId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
         user.setFcmToken(fcmToken);
         userRepository.save(user);
-    }
-
-    private String getUserFcmToken(Long userId) {
-        // TODO: Fetch user's FCM token from the database (Implement in User entity)
-        return "user_fcm_token"; // Replace with actual logic
     }
 }

@@ -2,14 +2,13 @@ package cit.edu.mmr.service;
 
 import cit.edu.mmr.dto.FriendshipRequest;
 import cit.edu.mmr.entity.FriendShipEntity;
+import cit.edu.mmr.entity.NotificationEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.FriendShipRepository;
 import cit.edu.mmr.repository.UserRepository;
-import org.modelmapper.internal.bytebuddy.implementation.bytecode.Throw;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -20,18 +19,19 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static org.springframework.http.HttpStatus.NOT_FOUND;
 @Service
 public class FriendShipService {
 
     private static final Logger logger = LoggerFactory.getLogger(FriendShipService.class);
 
     private final FriendShipRepository friendShipRepository;
+    private final NotificationService notificationService;
     private final UserRepository userRepository;
 
     @Autowired
-    public FriendShipService(FriendShipRepository friendShipRepository, UserRepository userRepository) {
+    public FriendShipService(FriendShipRepository friendShipRepository, NotificationService notificationService, UserRepository userRepository) {
         this.friendShipRepository = friendShipRepository;
+        this.notificationService = notificationService;
         this.userRepository = userRepository;
     }
 
@@ -60,6 +60,14 @@ public class FriendShipService {
 
         user.getFriendshipsAsUser().add(friendship);
         friend.getFriendshipsAsFriend().add(friendship);
+
+        NotificationEntity notification = new NotificationEntity();
+        notification.setType("FRIEND_REQUEST");
+        notification.setText(user.getUsername() + " sent you a friend request");
+        notification.setRelatedItemId(friendship.getId());
+        notification.setItemType("FRIENDSHIP");
+
+        notificationService.sendNotificationToUser(friend.getId(), notification);
 
         logger.info("Saving new friendship between {} and {}", user.getUsername(), friend.getUsername());
         return friendShipRepository.save(friendship);
@@ -127,6 +135,14 @@ public class FriendShipService {
             FriendShipEntity friendship = optionalFriendship.get();
             friendship.setStatus("Friends");
             friendShipRepository.save(friendship);
+            NotificationEntity notification = new NotificationEntity();
+            notification.setType("FRIEND_REQUEST_ACCEPTED");
+            notification.setText(friendship.getFriend().getUsername() + " accepted your friend request");
+            notification.setRelatedItemId(friendship.getId());
+            notification.setItemType("FRIENDSHIP");
+
+            notificationService.sendNotificationToUser(friendship.getUser().getId(), notification);
+
             logger.info("Friendship with ID {} accepted", friendshipId);
             return Optional.of(friendship);
         } else {

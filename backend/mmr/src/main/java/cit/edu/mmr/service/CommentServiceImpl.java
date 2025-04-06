@@ -4,6 +4,7 @@ import cit.edu.mmr.controller.websocket.CommentWebSocketController;
 import cit.edu.mmr.dto.CommentRequest;
 import cit.edu.mmr.dto.websocket.CommentUpdateDTO;
 import cit.edu.mmr.entity.CommentEntity;
+import cit.edu.mmr.entity.NotificationEntity;
 import cit.edu.mmr.entity.TimeCapsuleEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.exception.exceptions.AuthenticationException;
@@ -21,7 +22,6 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
@@ -34,6 +34,7 @@ public class CommentServiceImpl implements CommentService {
     private final CommentRepository commentRepository;
     private final TimeCapsuleRepository timeCapsuleRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
     private final CommentWebSocketController webSocketController;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -41,11 +42,12 @@ public class CommentServiceImpl implements CommentService {
     public CommentServiceImpl(CommentRepository commentRepository,
                               TimeCapsuleRepository timeCapsuleRepository,
                               UserRepository userRepository,
-                              CommentWebSocketController webSocketController,
+                              NotificationService notificationService, CommentWebSocketController webSocketController,
                               SimpMessagingTemplate messagingTemplate) {
         this.commentRepository = commentRepository;
         this.timeCapsuleRepository = timeCapsuleRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
         this.webSocketController = webSocketController;
         this.messagingTemplate = messagingTemplate;
     }
@@ -93,10 +95,22 @@ public class CommentServiceImpl implements CommentService {
             CommentEntity savedComment = commentRepository.save(comment);
             logger.info("Successfully created comment with ID: {} for capsule ID: {}", savedComment.getId(), capsuleId);
 
+            if (!timeCapsule.getCreatedBy().equals(user)) {
+                // Only send notification if the commenter is not the owner
+                NotificationEntity notification = new NotificationEntity();
+                notification.setType("COMMENT");
+                notification.setText(user.getUsername() + " commented on your time capsule: " + text);
+                notification.setRelatedItemId(savedComment.getId());
+                notification.setItemType("COMMENT");
+
+                notificationService.sendNotificationToUser(timeCapsule.getCreatedBy().getId(), notification);
+            }
+
             // Broadcast the new comment to all subscribers
             try {
                 webSocketController.broadcastCommentUpdate(savedComment, "CREATE");
                 logger.debug("Broadcast comment creation event for comment ID: {}", savedComment.getId());
+                return savedComment;
             } catch (Exception e) {
                 // Don't fail the operation if broadcast fails, just log it
                 logger.warn("Failed to broadcast comment creation: {}", e.getMessage(), e);
