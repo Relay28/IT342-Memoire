@@ -1,12 +1,16 @@
 package cit.edu.mmr.controller;
 
+import cit.edu.mmr.dto.ErrorResponse;
 import cit.edu.mmr.dto.ReactionRequest;
 import cit.edu.mmr.entity.CommentReactionEntity;
 import cit.edu.mmr.service.serviceInterfaces.CommentReactionService;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,6 +20,7 @@ import java.util.List;
 @RequestMapping("/api/comment-reactions")
 public class CommentReactionController {
 
+    private static final Logger logger = LoggerFactory.getLogger(CommentReactionController.class);
     private final CommentReactionService commentReactionService;
 
     @Autowired
@@ -23,63 +28,83 @@ public class CommentReactionController {
         this.commentReactionService = commentReactionService;
     }
 
-    // Add a new reaction to a comment
     @PostMapping("/comment/{commentId}")
-    public ResponseEntity<CommentReactionEntity> addReaction(
+    public ResponseEntity<?> addReaction(
             @PathVariable Long commentId,
             @RequestBody ReactionRequest reactionRequest,
             Authentication auth) {
         try {
-            CommentReactionEntity reaction = commentReactionService.addReaction(commentId, reactionRequest.getType(),auth);
+            CommentReactionEntity reaction = commentReactionService.addReaction(commentId, reactionRequest.getType(), auth);
             return ResponseEntity.status(HttpStatus.CREATED).body(reaction);
         } catch (EntityNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            logger.warn("Add reaction failed: {}", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(404, ex.getMessage()));
+        } catch (Exception ex) {
+            logger.error("Unexpected error while adding reaction", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(500, "Failed to add reaction"));
         }
     }
 
-    // Update an existing reaction
     @PutMapping("/{reactionId}")
-    public ResponseEntity<CommentReactionEntity> updateReaction(
+    public ResponseEntity<?> updateReaction(
             @PathVariable Long reactionId,
             @RequestBody ReactionRequest reactionRequest,
             Authentication auth) {
         try {
-            CommentReactionEntity updated = commentReactionService.updateReaction(reactionId, reactionRequest.getType(),auth);
+            CommentReactionEntity updated = commentReactionService.updateReaction(reactionId, reactionRequest.getType(), auth);
             return ResponseEntity.ok(updated);
+        } catch (AccessDeniedException ex) {
+            logger.warn("Access denied on update: {}", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(403, ex.getMessage()));
         } catch (EntityNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            logger.warn("Reaction not found: {}", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(404, ex.getMessage()));
+        } catch (Exception ex) {
+            logger.error("Unexpected error while updating reaction", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(500, "Failed to update reaction"));
         }
     }
 
-    // Delete a reaction
     @DeleteMapping("/{reactionId}")
-    public ResponseEntity<Void> deleteReaction(@PathVariable Long reactionId,Authentication auth) {
+    public ResponseEntity<?> deleteReaction(@PathVariable Long reactionId, Authentication auth) {
         try {
-            commentReactionService.deleteReaction(reactionId,auth);
+            commentReactionService.deleteReaction(reactionId, auth);
             return ResponseEntity.noContent().build();
+        } catch (AccessDeniedException ex) {
+            logger.warn("Access denied on delete: {}", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(403, ex.getMessage()));
         } catch (EntityNotFoundException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            logger.warn("Reaction not found on delete: {}", ex.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(404, ex.getMessage()));
+        } catch (Exception ex) {
+            logger.error("Unexpected error while deleting reaction", ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(500, "Failed to delete reaction"));
         }
     }
 
-    // Get a single reaction by its id
-    @GetMapping("getReaction/{reactionId}")
-    public ResponseEntity<CommentReactionEntity> getReactionById(@PathVariable Long reactionId) {
+    @GetMapping("/{reactionId}")
+    public ResponseEntity<Object> getReactionById(@PathVariable Long reactionId) {
         return commentReactionService.getReactionById(reactionId)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
+                .<ResponseEntity<Object>>map(ResponseEntity::ok)
+                .orElseGet(() -> {
+                    logger.warn("Reaction not found with id: {}", reactionId);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                            .body(new ErrorResponse(404, "Reaction not found with id " + reactionId));
+                });
     }
 
-    // Get all reactions for a specific comment
-    @GetMapping("getReaction/comment/{commentId}")
-    public ResponseEntity<List<CommentReactionEntity>> getReactionsByCommentId(@PathVariable Long commentId) {
-        List<CommentReactionEntity> reactions = commentReactionService.getReactionsByCommentId(commentId);
-        return ResponseEntity.ok(reactions);
-    }
-
-    // Optional: Global exception handler for EntityNotFoundException
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<String> handleEntityNotFound(EntityNotFoundException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    @GetMapping("/getReaction/comment/{commentId}")
+    public ResponseEntity<?> getReactionsByCommentId(@PathVariable Long commentId) {
+        try {
+            List<CommentReactionEntity> reactions = commentReactionService.getReactionsByCommentId(commentId);
+            return ResponseEntity.ok(reactions);
+        } catch (Exception ex) {
+            logger.error("Failed to fetch reactions for commentId: {}", commentId, ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(500, "Failed to fetch reactions"));
+        }
     }
 }

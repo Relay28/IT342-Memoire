@@ -9,6 +9,8 @@ import cit.edu.mmr.service.serviceInterfaces.report.CommentHandler;
 import cit.edu.mmr.service.serviceInterfaces.report.ReportEntityFactory;
 import cit.edu.mmr.service.serviceInterfaces.report.ReportableEntity;
 import cit.edu.mmr.service.serviceInterfaces.report.TimeCapsuleHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -18,6 +20,9 @@ import java.util.List;
 import java.util.Optional;
 @Service
 public class ReportService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ReportService.class);
+
     private final ReportRepository reportRepository;
     private final ReportEntityFactory entityFactory;
     private final UserRepository userRepository;
@@ -32,35 +37,31 @@ public class ReportService {
     private UserEntity getAuthenticatedUser(Authentication authentication) {
         String username = authentication.getName();
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                .orElseThrow(() -> new UsernameNotFoundException("Authenticated user not found"));
     }
-    /**
-     * Creates a new report with entity validation.
-     */
-    public ReportEntity createReport(long reportedID, String itemType, String status,Authentication auth) {
-       UserEntity reporter = getAuthenticatedUser(auth);
-        // Get the appropriate handler
-        ReportableEntity handler = entityFactory.getHandler(itemType);
 
-        // Validate the entity exists
+    public ReportEntity createReport(long reportedID, String itemType, String status, Authentication auth) {
+        UserEntity reporter = getAuthenticatedUser(auth);
+
+        ReportableEntity handler = entityFactory.getHandler(itemType);
         if (handler instanceof TimeCapsuleHandler) {
             ((TimeCapsuleHandler) handler).getEntity(reportedID);
         } else if (handler instanceof CommentHandler) {
             ((CommentHandler) handler).getEntity(reportedID);
+        } else {
+            throw new IllegalStateException("Unsupported handler for itemType: " + itemType);
         }
 
-        // Create the report
         ReportEntity report = new ReportEntity();
         report.setReportedID(reportedID);
         report.setItemType(itemType);
         report.setReporter(reporter);
         report.setStatus(status);
+
+        logger.info("Creating report: {}", report);
         return reportRepository.save(report);
     }
 
-    /**
-     * Gets the reported entity with proper typing.
-     */
     public Object getReportedEntity(long reportId) {
         ReportEntity report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found"));
@@ -76,7 +77,6 @@ public class ReportService {
         throw new IllegalStateException("Unsupported entity type: " + report.getItemType());
     }
 
-    // Existing methods remain unchanged...
     public Optional<ReportEntity> getReportById(long id) {
         return reportRepository.findById(id);
     }
@@ -94,13 +94,17 @@ public class ReportService {
         if (optionalReport.isPresent()) {
             ReportEntity report = optionalReport.get();
             report.setStatus(newStatus);
-            reportRepository.save(report);
-            return Optional.of(report);
+            logger.info("Updating report status. Report ID: {}, New Status: {}", reportId, newStatus);
+            return Optional.of(reportRepository.save(report));
         }
         return Optional.empty();
     }
 
     public void deleteReport(long reportId) {
+        if (!reportRepository.existsById(reportId)) {
+            throw new IllegalArgumentException("Report not found");
+        }
+        logger.info("Deleting report with ID: {}", reportId);
         reportRepository.deleteById(reportId);
     }
 }
