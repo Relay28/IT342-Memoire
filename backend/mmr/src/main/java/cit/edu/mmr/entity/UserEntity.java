@@ -93,6 +93,8 @@ public class UserEntity implements UserDetails {
     @Column(columnDefinition = "TINYINT(1) DEFAULT 0", nullable = false)
     private boolean isOauthUser;
 
+    @Column(name = "fcm_token")
+    private String fcmToken;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false, updatable = false)
@@ -104,6 +106,8 @@ public class UserEntity implements UserDetails {
     }
 
     // Implement UserDetails methods
+
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role));

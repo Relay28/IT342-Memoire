@@ -4,6 +4,7 @@ import mmrlogo from "./assets/mmrlogo.png";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import axios from "axios";
+import { useFCMToken } from "./hooks/useFCMToken"; // Import the hook
 
 const Login = () => {
   // const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -21,82 +22,53 @@ const Login = () => {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
+  const [userId, setUserId] = useState(null);
+  console.log(userId);
+  useFCMToken(userId,sessionStorage.getItem("authToken"));
+
   const handleLogin = async (e) => {
     e.preventDefault();
-    setErrorMessage(""); // Reset error message before submission
-    setLoading(true); // Set loading state to true
-
-    const { username, password } = formData;
-
-    // Validate inputs
-    if (!username || !password) {
-        setErrorMessage("Both username and password are required.");
-        setLoading(false); // Reset loading state on validation failure
-        return;
-    }
+    setErrorMessage("");
+    setLoading(true);
 
     try {
-        // Send login request to backend
-        const response = await axios.post(
-            "http://localhost:8080/api/auth/login", // API endpoint for login
-            formData,
-            {
-                headers: { "Content-Type": "application/json" }, // Set content-type for the request
-            }
-        );
+      const response = await axios.post(
+        "http://localhost:8080/api/auth/login",
+        formData,
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-        if (response.status === 200) {
-            const { token } = response.data; // Extract token from response
-
-            // Store token in session storage (temporary storage for the current session)
-            sessionStorage.setItem("authToken", token);
-
-            // Redirect to the dashboard or another protected route
-            navigate("/homepage");
-        }
+      if (response.status === 200) {
+        const { token, userId } = response.data; // Assume backend returns userId
+        sessionStorage.setItem("authToken", token);
+        setUserId(userId); // Trigger FCM token update
+        navigate("/homepage");
+      }
     } catch (error) {
-        console.error("Login error:", error.response?.data || error.message); // Log error to console
-        setErrorMessage(
-            error.response?.data?.message || "Login failed. Please try again later." // Set error message to display
-        );
-        setLoading(false); // Reset loading state after error
+      setErrorMessage(error.response?.data?.message || "Login failed");
+    } finally {
+      setLoading(false);
     }
-};
+  };
 
 
   // Handle successful Google Login
   const handleGoogleLoginSuccess = async (response) => {
-    console.log("Google Login Successful!");
-  
-    const idToken = response.credential; // Extract idToken from the Google response
-  
     try {
-      // Send the ID token as a query parameter
-      const res = await fetch(`http://localhost:8080/api/auth/verify-token?idToken=${idToken}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // Ensure cookies are sent if needed
-      });
-  
-      if (!res.ok) {
-        throw new Error("Failed to verify token");
-      }
-  
+      const res = await fetch(
+        `http://localhost:8080/api/auth/verify-token?idToken=${response.credential}`,
+        { method: "POST", credentials: "include" }
+      );
       const data = await res.json();
-  
-      // Handle successful login
-      console.log("Backend Response:", data);
-      localStorage.setItem("token", data.token); // Save JWT token to localStorage
-      alert("Login successful!");
-      navigate("/homepage"); // Navigate to the homepage
+      
+      localStorage.setItem("token", data.token);
+      setUserId(data.userId); // Trigger FCM token update
+      navigate("/homepage");
     } catch (error) {
-      console.error("Error verifying token:", error);
-      alert("Google login failed. Please try again.");
+      alert("Google login failed");
     }
   };
-  
+
 
   // Handle Google Login failure
   const handleGoogleLoginError = () => {

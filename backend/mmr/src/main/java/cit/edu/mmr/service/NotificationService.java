@@ -4,31 +4,41 @@ import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
 import com.google.firebase.messaging.*;
 import cit.edu.mmr.entity.NotificationEntity;
+import lombok.extern.slf4j.Slf4j;
 import cit.edu.mmr.repository.NotificationRepository;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
+@Slf4j
 public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     @Autowired
     private UserRepository userRepository;
     @Autowired
-    public NotificationService(NotificationRepository notificationRepository) {
+    private final FirebaseMessaging firebaseMessaging;
+    @Autowired
+    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository, FirebaseMessaging firebaseMessaging) {
         this.notificationRepository = notificationRepository;
+        this.userRepository = userRepository;
+        this.firebaseMessaging = firebaseMessaging;
     }
 
-    public NotificationEntity createNotification(Long userId, String type, String text, Long relatedItemId, String itemType) {
-        NotificationEntity notification = new NotificationEntity();
+    public NotificationEntity createNotification(Long userId, String type, String text,
+                                                 Long relatedItemId, String itemType) {
         UserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + userId));
 
+        NotificationEntity notification = new NotificationEntity();
         notification.setUser(user);
         notification.setType(type);
         notification.setText(text);
@@ -37,11 +47,10 @@ public class NotificationService {
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
 
-        // Save notification in the database
         NotificationEntity savedNotification = notificationRepository.save(notification);
 
-        // Send FCM push notification
-        sendFCMNotification(userId, type, text);
+        // Send FCM notification
+        sendFCMNotification(user, type, text, savedNotification.getId());
 
         return savedNotification;
     }
@@ -57,27 +66,44 @@ public class NotificationService {
 
 
 
-    private void sendFCMNotification(Long userId, String title, String message) {
-        try {
-            // Fetch user's FCM token from database (You need to implement `getUserFcmToken`)
-            String fcmToken = getUserFcmToken(userId);
-            if (fcmToken == null) {
-                return;
-            }
+    private void sendFCMNotification(UserEntity user, String title, String body, Long notificationId) {
+        if (user.getFcmToken() == null || user.getFcmToken().isEmpty()) {
+            return; // No token to send to
+        }
 
-            Message firebaseMessage = Message.builder()
-                    .setToken(fcmToken)
-                    .setNotification(Notification.builder()
-                            .setTitle(title)
-                            .setBody(message)
-                            .build())
+        try {
+            // You can customize the notification payload here
+            Notification notification = Notification.builder()
+                    .setTitle(title)
+                    .setBody(body)
                     .build();
 
-            FirebaseMessaging.getInstance().send(firebaseMessage);
+            // Add data payload for deep linking or additional processing
+            Map<String, String> data = new HashMap<>();
+            data.put("notificationId", notificationId.toString());
+            data.put("type", "your_notification_type");
+            data.put("click_action", "FLUTTER_NOTIFICATION_CLICK");
+
+            Message message = Message.builder()
+                    .setToken(user.getFcmToken())
+                    .setNotification(notification)
+                    .putAllData(data)
+                    .build();
+
+            String response = firebaseMessaging.send(message);
+            log.info("Successfully sent FCM notification: {}", response);
         } catch (FirebaseMessagingException e) {
-            e.printStackTrace();
+            log.error("Failed to send FCM notification", e);
+
+            // Handle invalid/expired tokens
+            if (e.getErrorCode().equals("registration-token-not-registered")) {
+                user.setFcmToken(null);
+                userRepository.save(user);
+            }
         }
     }
+
+
 
     public NotificationEntity markNotificationAsRead(Long notificationId) {
         Optional<NotificationEntity> optionalNotification = notificationRepository.findById(notificationId);
@@ -104,6 +130,14 @@ public class NotificationService {
         } else {
             throw new EntityNotFoundException("Notification not found");
         }
+    }
+
+    @Transactional
+    public void updateFcmToken(Long userId, String fcmToken) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+        user.setFcmToken(fcmToken);
+        userRepository.save(user);
     }
 
     private String getUserFcmToken(Long userId) {
