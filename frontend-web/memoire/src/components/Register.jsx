@@ -73,7 +73,7 @@ const Register = () => {
         />
         
         <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-150">
-          <div className="text-center backdrop-blur-md bg-white/10 rounded-lg p-8 border border-white/20 shadow-lg pb-15">
+          <div className="text-center">
             <div className="flex justify-center mb-4">
               <img src={mmrlogo} alt="MMR Logo" className="h-60 w-auto" />
             </div>
