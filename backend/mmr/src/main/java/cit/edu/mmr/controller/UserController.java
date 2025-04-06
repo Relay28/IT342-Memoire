@@ -1,20 +1,19 @@
 package cit.edu.mmr.controller;
 
-import cit.edu.mmr.dto.ErrorResponse;
 import cit.edu.mmr.entity.UserEntity;
-import cit.edu.mmr.exception.exceptions.AuthenticationException;
 import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.UserService;
-import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -23,13 +22,13 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
-
     private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @Autowired
@@ -38,89 +37,185 @@ public class UserController {
     @Autowired
     private UserRepository userRepository;
 
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> createUser(@RequestBody UserEntity user) {
+    @Autowired
+    private final OAuth2AuthorizedClientService authorizedClientService;
+
+    public UserController(OAuth2AuthorizedClientService authorizedClientService) {
+        this.authorizedClientService = authorizedClientService;
+    }
+
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        logger.debug("Getting authenticated user for username: {}", username);
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    logger.error("User not found for username: {}", username);
+                    return new UsernameNotFoundException("User not found");
+                });
+    }
+
+    // Get user by JWT token
+    @GetMapping
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        logger.info("Request received to get current user details");
+
         try {
-            logger.info("Attempting to create new user: {}", user.getUsername());
-            UserEntity createdUser = userService.insertUserRecord(user);
-            logger.info("User created successfully with ID: {}", createdUser.getId());
-            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+            if (authentication == null || !authentication.isAuthenticated()) {
+                logger.warn("Unauthorized access attempt to get current user details");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+            }
+
+            String username = authentication.getName();
+            logger.debug("Getting current user for username: {}", username);
+
+            UserEntity currentUser = userRepository.findByUsername(username)
+                    .orElseThrow(() -> {
+                        logger.error("User not found for username: {}", username);
+                        return new NoSuchElementException("User not found");
+                    });
+
+            logger.info("Successfully retrieved user details for: {}", username);
+            return ResponseEntity.ok(currentUser);
+
+        } catch (NoSuchElementException e) {
+            logger.error("Error getting current user: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (Exception e) {
-            logger.error("Failed to create user: {}", user.getUsername(), e);
+            logger.error("Unexpected error getting current user: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to create user"));
+                    .body("Failed to retrieve user details: " + e.getMessage());
         }
     }
 
+    // Create a new user (assuming this endpoint is used for account creation for admins)
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createUser(@RequestBody UserEntity user) {
+        logger.info("Request received to create new user with username: {}", user.getUsername());
+
+        try {
+            UserEntity createdUser = userService.insertUserRecord(user);
+            logger.info("Successfully created new user with ID: {}", createdUser.getId());
+            return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
+
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid user creation request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error creating user: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to create user: " + e.getMessage());
+        }
+    }
+
+    // Update user details including optional profile image
     @PutMapping
     public ResponseEntity<?> updateUser(
             @RequestBody UserEntity newUserDetails,
             @RequestParam(value = "profileImg", required = false) MultipartFile profileImg,
             Authentication authentication) {
+
+        logger.info("Request received to update user details");
+
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                logger.warn("Unauthorized attempt to update user details");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Unauthorized access"));
+                logger.warn("Unauthorized access attempt to update user details");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
             }
 
             String username = authentication.getName();
-            logger.info("Updating user details for: {}", username);
+            logger.debug("Updating user details for username: {}", username);
 
             UserEntity currentUser = userRepository.findByUsername(username)
                     .orElseThrow(() -> {
-                        logger.warn("User not found: {}", username);
-                        return new EntityNotFoundException("User not found");
+                        logger.error("User not found for username: {}", username);
+                        return new NoSuchElementException("User not found");
                     });
 
             UserEntity updatedUser = userService.updateUserDetails(currentUser.getId(), newUserDetails, profileImg);
-            logger.info("User updated successfully: {}", updatedUser.getId());
-
+            logger.info("Successfully updated user details for user ID: {}", currentUser.getId());
             return ResponseEntity.ok(updatedUser);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage()));
+
+        } catch (NoSuchElementException e) {
+            logger.error("User not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid user update request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (IOException e) {
-            logger.error("Profile image upload failed for user update", e);
+            logger.error("Error processing profile image: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Image upload failed"));
+                    .body("Failed to process profile image: " + e.getMessage());
         } catch (Exception e) {
-            logger.error("Unexpected error while updating user details", e);
+            logger.error("Unexpected error updating user: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected error occurred"));
+                    .body("Failed to update user details: " + e.getMessage());
         }
     }
 
+    // Disable user account
     @PatchMapping("/disable")
     public ResponseEntity<?> disableUser(Authentication authentication) {
+        logger.info("Request received to disable user account");
+
         try {
             if (authentication == null || !authentication.isAuthenticated()) {
-                logger.warn("Unauthenticated user attempted to disable their account");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "User not authenticated"));
+                logger.warn("Unauthorized access attempt to disable user account");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
             }
 
             String username = authentication.getName();
-            logger.info("Disabling user: {}", username);
+            logger.debug("Disabling account for username: {}", username);
 
             UserEntity currentUser = userRepository.findByUsername(username)
                     .orElseThrow(() -> {
-                        logger.warn("User not found for disabling: {}", username);
-                        return new EntityNotFoundException("User not found");
+                        logger.error("User not found for username: {}", username);
+                        return new NoSuchElementException("User not found");
                     });
 
-            String result = userService.disableUser(currentUser.getId());
-            logger.info("User disabled: {}", currentUser.getId());
+            String response = userService.disableUser(currentUser.getId());
+            logger.info("Successfully disabled account for user ID: {}", currentUser.getId());
+            return ResponseEntity.ok(response);
 
-            return ResponseEntity.ok(result);
-        } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage()));
+        } catch (NoSuchElementException e) {
+            logger.error("User not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         } catch (Exception e) {
-            logger.error("Failed to disable user", e);
+            logger.error("Unexpected error disabling user account: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Failed to disable user"));
+                    .body("Failed to disable user account: " + e.getMessage());
+        }
+    }
+
+    @PutMapping(value = "/profile-picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> updateProfilePicture(
+            @RequestParam("profileImg") MultipartFile profileImg,
+            Authentication authentication) {
+
+        try {
+            // Get authenticated user
+            UserEntity currentUser = getAuthenticatedUser(authentication);
+            logger.info("Received request to update profile picture for user: {}", currentUser.getUsername());
+
+            UserEntity updatedUser = userService.updateProfilePicture(profileImg, currentUser);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Profile picture updated successfully");
+            response.put("profilePicture", updatedUser.getProfilePicture());
+
+            logger.info("Profile picture successfully updated for user: {}", currentUser.getUsername());
+            return ResponseEntity.ok(response);
+
+        } catch (UsernameNotFoundException e) {
+            logger.error("Authentication error: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid request for profile picture update: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error updating profile picture: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to update profile picture: " + e.getMessage());
         }
     }
 }

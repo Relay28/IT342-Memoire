@@ -4,6 +4,8 @@ package cit.edu.mmr.service;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
 import org.apache.catalina.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +25,8 @@ import java.util.Optional;
 public class UserService {
     @Autowired
     private UserRepository urepo;
+
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     @Autowired
     private PasswordEncoder passwordEncoder; //
@@ -110,6 +114,36 @@ public class UserService {
 
         // Save the updated user
         return urepo.save(existingUser);
+    }
+
+    /**
+     * Updates only the profile picture of a user
+     * @param userId ID of the user
+     * @param profileImg new profile image
+     * @return updated user entity
+     */
+    @CacheEvict(value = {"publicProfiles", "ownProfiles", "userProfiles"}, key = "#currentUser.id")
+    public UserEntity updateProfilePicture(MultipartFile profileImg, UserEntity currentUser) {
+        long userId = currentUser.getId();
+        logger.info("Updating profile picture for user ID: {}", userId);
+
+        try {
+            // Validate image
+            if (profileImg == null || profileImg.isEmpty()) {
+                logger.warn("Empty profile image provided for user ID: {}", userId);
+                throw new IllegalArgumentException("Profile image cannot be empty");
+            }
+
+            // Save image
+            saveProfileImage(profileImg, currentUser);
+            logger.info("Profile picture successfully updated for user ID: {}", userId);
+
+            // Save and return updated user
+            return urepo.save(currentUser);
+        } catch (Exception e) {
+            logger.error("Failed to update profile picture for user ID: {}: {}", userId, e.getMessage(), e);
+            throw new RuntimeException("Failed to update profile picture: " + e.getMessage(), e);
+        }
     }
     public String disableUser(long id ){
         String msg="";
