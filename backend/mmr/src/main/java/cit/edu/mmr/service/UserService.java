@@ -75,6 +75,7 @@ public class UserService {
         if(isUsernameTaken(user.getUsername())){
             throw new IllegalArgumentException("Username is Already taken");
         }
+
         if(isEmailTaken(user.getEmail())){
             throw new IllegalArgumentException("Email is Already Registered");
         }
@@ -90,9 +91,7 @@ public class UserService {
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
         // Update only the fields that are provided in the request
-        if (newUserDetails.getUsername() != null) {
-            existingUser.setUsername(newUserDetails.getUsername());
-        }
+
         if (newUserDetails.getEmail() != null) {
             existingUser.setEmail(newUserDetails.getEmail());
         }
