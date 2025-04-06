@@ -23,7 +23,7 @@ const FriendsPage = () => {
         <Header userData={userData} />
         
         <div className="flex flex-1 h-screen overflow-hidden">
-
+            <Sidebar />
           {/* Main Capsule Content */}
           <section className="flex-1 p-8 overflow-y-auto">
   <div className="max-w-2xl mx-auto">
