@@ -1,11 +1,16 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { TextField } from '@mui/material';
+import { TextField, InputAdornment, IconButton } from '@mui/material';
 import mmrlogo from "../assets/mmrlogo.png";
 import sunsetGif from "../assets/sunset.gif";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const Register = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: "",
@@ -124,7 +129,7 @@ const Register = () => {
             <TextField
               id="password"
               label="Password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               variant="outlined"
               fullWidth
@@ -134,6 +139,19 @@ const Register = () => {
               sx={{
                 '& .MuiOutlinedInput-root': { borderRadius: '8px' },
                 mb: 2
+              }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={togglePasswordVisibility}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
               }}
             />
 

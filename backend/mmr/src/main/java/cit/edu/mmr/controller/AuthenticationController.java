@@ -47,7 +47,7 @@ public class AuthenticationController {
 
         String email = (String) googleUserInfo.get("email");
         String username = (String) googleUserInfo.get("name");
-        String googleSub = (String) googleUserInfo.get("sub"); // Google's unique user ID
+//        String googleSub = (String) googleUserInfo.get("sub"); // Google's unique user ID
         String profilePicture = (String) googleUserInfo.get("picture"); // User profile picture URL
 
         // Step 2: Check if user exists, else create one
