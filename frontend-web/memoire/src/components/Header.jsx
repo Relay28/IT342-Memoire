@@ -11,7 +11,7 @@ const Header = ({ userData }) => {
 
   return (
     <header className="flex items-center justify-between p-4 bg-white shadow-md">
-      <Link to="/" className="flex items-center space-x-2">
+      <Link to="/homepage" className="flex items-center space-x-2">
         <img src={mmrlogo} alt="Mémoire Logo" className="h-10 w-10" />
         <div className="text-2xl font-bold text-red-700">MÉMOIRE</div>
       </Link>
