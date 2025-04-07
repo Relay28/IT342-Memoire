@@ -9,7 +9,6 @@ Memoire is a digital time capsule system designed to store and share memories ov
 - Simple Capsule Analytics
 - Real-Time Media Uploads
 - Capsule Countdown Timer
-- Offline Drafts & Syncing
 - Capsule Opening & Scheduled Releases
 
 ## Links

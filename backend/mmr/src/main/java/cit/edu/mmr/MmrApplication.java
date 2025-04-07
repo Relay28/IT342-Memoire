@@ -1,15 +1,17 @@
 package cit.edu.mmr;
 
-import cit.edu.mmr.util.FileStorageProperties;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-@EnableConfigurationProperties(FileStorageProperties.class)
+//@EnableConfigurationProperties(FileStorageProperties.class)
 @ComponentScan(basePackages = "cit.edu.mmr")
+@EnableCaching
 @EnableJpaRepositories("cit.edu.mmr.repository")
 public class MmrApplication {
 

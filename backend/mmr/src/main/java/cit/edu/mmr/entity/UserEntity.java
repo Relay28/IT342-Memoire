@@ -33,8 +33,10 @@ public class UserEntity implements UserDetails {
     private String email;
     private String password;
 
-    @Column(unique = true, nullable = false)
-    private String googleSub;
+    private String name;
+
+//    @Column(unique = true, nullable = true)
+//    private String googleSub;
 
     @Lob
     private String profilePicture;
@@ -72,8 +74,7 @@ public class UserEntity implements UserDetails {
     private List<CapsuleAccessEntity> capsuleAccesses;
 
     @OneToMany(mappedBy = "uploadedBy", cascade = CascadeType.ALL, orphanRemoval = true)
-    //@JsonManagedReference("user-capsuleOwnership")
-    @JsonIgnore
+    @JsonManagedReference("user-capsuleOwnership")
     private List<CapsuleAccessEntity> uploadedCapsules;
 
     @OneToMany(mappedBy = "contentUploadedBy" ,cascade=CascadeType.ALL,orphanRemoval = true)
@@ -92,6 +93,8 @@ public class UserEntity implements UserDetails {
     @Column(columnDefinition = "TINYINT(1) DEFAULT 0", nullable = false)
     private boolean isOauthUser;
 
+    @Column(name = "fcm_token")
+    private String fcmToken;
 
     @Temporal(TemporalType.TIMESTAMP)
     @Column(nullable = false, updatable = false)
@@ -103,6 +106,8 @@ public class UserEntity implements UserDetails {
     }
 
     // Implement UserDetails methods
+
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority(role));

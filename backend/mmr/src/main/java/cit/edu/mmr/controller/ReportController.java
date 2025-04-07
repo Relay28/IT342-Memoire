@@ -5,11 +5,20 @@ import cit.edu.mmr.entity.ReportEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.ReportService;
+import cit.edu.mmr.service.serviceInterfaces.report.ReportEntityFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -17,65 +26,85 @@ public class ReportController {
 
     private final ReportService reportService;
     private final UserRepository userRepository;
+    private final ReportEntityFactory entityFactory;
 
-    public ReportController(ReportService reportService, UserRepository userRepository) {
+    public ReportController(ReportService reportService,
+                            UserRepository userRepository,
+                            ReportEntityFactory entityFactory) {
         this.reportService = reportService;
         this.userRepository = userRepository;
+        this.entityFactory = entityFactory;
     }
 
-    // Create a new report
     @PostMapping
-    public ResponseEntity<?> createReport(@RequestBody ReportRequest request) {
-        UserEntity reporter = userRepository.findById(request.getReporterId()).orElse(null);
-        if (reporter == null) {
-            return new ResponseEntity<>("Reporter not found", HttpStatus.NOT_FOUND);
-        }
-        ReportEntity report = reportService.createReport(request.getReportedID(),
-                request.getItemType(), reporter, request.getStatus());
-        return new ResponseEntity<>(report, HttpStatus.CREATED);
+    public ResponseEntity<ReportEntity> createReport(@RequestBody ReportRequest request, Authentication auth) {
+        // Validation: throws if not found
+
+        // Validate itemType handler exists (throws if invalid)
+        entityFactory.getHandler(request.getItemType());
+
+        ReportEntity report = reportService.createReport(
+                request.getReportedID(),
+                request.getItemType(),
+                request.getStatus(),
+                auth
+        );
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(report);
     }
 
-    // Get a report by its id
     @GetMapping("/{id}")
-    public ResponseEntity<?> getReportById(@PathVariable long id) {
-        return reportService.getReportById(id)
-                .<ResponseEntity<?>>map(report -> new ResponseEntity<>(report, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>("Report not found", HttpStatus.NOT_FOUND));
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getReportWithDetails(@PathVariable long id) {
+        ReportEntity report = reportService.getReportById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+
+        Object reportedEntity = reportService.getReportedEntity(id);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("report", report);
+        response.put("reportedEntity", reportedEntity);
+
+        return ResponseEntity.ok(response);
     }
 
-    // Get all reports by reporter (using reporter id)
     @GetMapping("/reporter/{reporterId}")
-    public ResponseEntity<?> getReportsByReporter(@PathVariable long reporterId) {
-        UserEntity reporter = userRepository.findById(reporterId).orElse(null);
-        if (reporter == null) {
-            return new ResponseEntity<>("Reporter not found", HttpStatus.NOT_FOUND);
-        }
-        List<ReportEntity> reports = reportService.getReportsByReporter(reporter);
-        return new ResponseEntity<>(reports, HttpStatus.OK);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ReportEntity>> getReportsByReporter(@PathVariable long reporterId) {
+        UserEntity reporter = userRepository.findById(reporterId)
+                .orElseThrow(() -> new IllegalArgumentException("Reporter not found"));
+
+        return ResponseEntity.ok(reportService.getReportsByReporter(reporter));
     }
 
-    // Get all reports by item type
     @GetMapping("/itemType/{itemType}")
-    public ResponseEntity<?> getReportsByItemType(@PathVariable String itemType) {
-        List<ReportEntity> reports = reportService.getReportsByItemType(itemType);
-        return new ResponseEntity<>(reports, HttpStatus.OK);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<ReportEntity>> getReportsByItemType(@PathVariable String itemType) {
+        entityFactory.getHandler(itemType); // validate itemType
+        return ResponseEntity.ok(reportService.getReportsByItemType(itemType));
     }
 
-    // Update report status
     @PutMapping("/{id}/status")
-    public ResponseEntity<?> updateReportStatus(@PathVariable long id, @RequestParam String status) {
-        return reportService.updateReportStatus(id, status)
-                .<ResponseEntity<?>>map(report -> new ResponseEntity<>(report, HttpStatus.OK))
-                .orElseGet(() -> new ResponseEntity<>("Report not found", HttpStatus.NOT_FOUND));
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ReportEntity> updateReportStatus(@PathVariable long id, @RequestParam String status, Authentication auth) {
+        ReportEntity updatedReport = reportService.updateReportStatus(id, status, auth)
+                .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+
+        return ResponseEntity.ok(updatedReport);
     }
 
-    // Delete a report
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteReport(@PathVariable long id) {
-        if (reportService.getReportById(id).isPresent()) {
-            reportService.deleteReport(id);
-            return new ResponseEntity<>(HttpStatus.NO_CONTENT);
-        }
-        return new ResponseEntity<>("Report not found", HttpStatus.NOT_FOUND);
+    public ResponseEntity<Void> deleteReport(@PathVariable long id) {
+        reportService.deleteReport(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/entity")
+    public ResponseEntity<Object> getReportedEntity(@PathVariable long id) {
+        reportService.getReportById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Report not found"));
+
+        Object entity = reportService.getReportedEntity(id);
+        return ResponseEntity.ok(entity);
     }
 }

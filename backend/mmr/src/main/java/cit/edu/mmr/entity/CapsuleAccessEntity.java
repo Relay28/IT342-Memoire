@@ -4,8 +4,10 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Getter
 @Entity
 @NoArgsConstructor // Required for JPA
 @AllArgsConstructor
@@ -33,43 +35,23 @@ public class CapsuleAccessEntity {
     @Column(nullable = false)
     private String role;
 
-    public Long getId() {
-        return id;
-    }
-
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public TimeCapsuleEntity getCapsule() {
-        return capsule;
     }
 
     public void setCapsule(TimeCapsuleEntity capsule) {
         this.capsule = capsule;
     }
 
-    public UserEntity getUser() {
-        return user;
-    }
-
     public void setUser(UserEntity user) {
         this.user = user;
-    }
-
-    public UserEntity getUploadedBy() {
-        return uploadedBy;
     }
 
     public void setUploadedBy(UserEntity uploadedBy) {
         this.uploadedBy = uploadedBy;
     }
 
-    public String getRole() {
-        return role;
-    }
-
     public void setRole(String role) {
         this.role = role;
-    }
+    } // Can Edit of Role EDITOR if VIEWER Only View
 }

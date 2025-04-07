@@ -1,6 +1,10 @@
 package cit.edu.mmr.dto;
 
+import cit.edu.mmr.entity.CapsuleContentEntity;
+
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class TimeCapsuleDTO {
 
@@ -12,6 +16,15 @@ public class TimeCapsuleDTO {
     private boolean isLocked;
     private Long createdById;
     private String status;
+    private List<CapsuleContentEntity> contents = new ArrayList<>();
+
+    public List<CapsuleContentEntity> getContents() {
+        return contents;
+    }
+
+    public void setContents(List<CapsuleContentEntity> contents) {
+        this.contents = contents;
+    }
 
     public Long getId() {
         return id;

@@ -1,18 +1,23 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
 import { BrowserRouter } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import AppRoutes from "./Routes";
-
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import FCMNotificationHandler from "./components/Firebase/FCMNotifcationHandler";
+import { PersonalInfoProvider } from './components/PersonalInfoContext'; 
 function App() {
+  
   return (
-    <>
-    <BrowserRouter>
-      <AppRoutes />
-    </BrowserRouter>
-    </>
-  )
+    <PersonalInfoProvider>
+    <GoogleOAuthProvider>
+      <BrowserRouter>
+        <AppRoutes />
+
+      </BrowserRouter>
+    </GoogleOAuthProvider>
+    </PersonalInfoProvider>
+    
+  );
 }
 
-export default App
+export default App;

@@ -38,7 +38,7 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         // Extract required fields from OAuth provider
         String email = (String) attributes.get("email");
         String username = (String) attributes.get("name"); // Adjust if needed
-        String googleSub = oAuth2User.getAttribute("sub");
+       // String googleSub = oAuth2User.getAttribute("sub");
 
         // Check if user already exists
         Optional<UserEntity> userOptional = userRepository.findByEmail(email);
@@ -50,7 +50,8 @@ public class CustomOAuth2UserService implements OAuth2UserService<OAuth2UserRequ
         } else {
             // Create a new user
             userEntity = new UserEntity();
-            userEntity.setGoogleSub(googleSub);
+            //if(!googleSub.isEmpty())
+
             userEntity.setEmail(email);
             userEntity.setUsername(username);
             userEntity.setRole("USER"); // Set a default role

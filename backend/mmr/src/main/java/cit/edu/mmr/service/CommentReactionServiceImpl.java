@@ -6,8 +6,17 @@ import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.CommentReactionRepository;
 import cit.edu.mmr.repository.CommentRepository;
 import cit.edu.mmr.repository.UserRepository;
+import cit.edu.mmr.service.serviceInterfaces.CommentReactionService;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +27,8 @@ import java.util.Optional;
 @Service
 @Transactional
 public class CommentReactionServiceImpl implements CommentReactionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CommentReactionServiceImpl.class);
 
     private final CommentReactionRepository reactionRepository;
     private final CommentRepository commentRepository;
@@ -32,14 +43,21 @@ public class CommentReactionServiceImpl implements CommentReactionService {
         this.userRepository = userRepository;
     }
 
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+    }
+
     @Override
-    public CommentReactionEntity addReaction(Long commentId, Long userId, String type) {
-        // Fetch CommentEntity
+    @CacheEvict(value = "contentMetadata", key = "'commentReactions_' + #commentId")
+    public CommentReactionEntity addReaction(Long commentId, String type, Authentication auth) {
+        logger.info("Adding reaction to commentId: {} by user: {}", commentId, auth.getName());
+
         CommentEntity comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new EntityNotFoundException("Comment not found with id " + commentId));
-        // Fetch UserEntity
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id " + userId));
+
+        UserEntity user = getAuthenticatedUser(auth);
 
         CommentReactionEntity reaction = new CommentReactionEntity();
         reaction.setComment(comment);
@@ -47,33 +65,72 @@ public class CommentReactionServiceImpl implements CommentReactionService {
         reaction.setType(type);
         reaction.setReactedAt(new Date());
 
-        return reactionRepository.save(reaction);
+        comment.getReactions().add(reaction); // Optional
+
+        CommentReactionEntity savedReaction = reactionRepository.save(reaction);
+        logger.debug("Reaction added: {}", savedReaction);
+
+        return savedReaction;
     }
 
     @Override
-    public CommentReactionEntity updateReaction(Long reactionId, String type) {
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'commentReactions_' + #reaction.comment.id"),
+            @CacheEvict(value = "contentMetadata", key = "'reaction_' + #reactionId")
+    })
+    public CommentReactionEntity updateReaction(Long reactionId, String type, Authentication auth) {
+        logger.info("Updating reactionId: {} by user: {}", reactionId, auth.getName());
+
+        UserEntity user = getAuthenticatedUser(auth);
+
         CommentReactionEntity reaction = reactionRepository.findById(reactionId)
                 .orElseThrow(() -> new EntityNotFoundException("Reaction not found with id " + reactionId));
+
+        if (!reaction.getUser().equals(user)) {
+            throw new AccessDeniedException("You are not the creator of this reaction");
+        }
+
         reaction.setType(type);
         reaction.setReactedAt(new Date());
-        return reactionRepository.save(reaction);
+
+        CommentReactionEntity updated = reactionRepository.save(reaction);
+        logger.debug("Reaction updated: {}", updated);
+
+        return updated;
     }
 
     @Override
-    public void deleteReaction(Long reactionId) {
-        if (!reactionRepository.existsById(reactionId)) {
-            throw new EntityNotFoundException("Reaction not found with id " + reactionId);
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'commentReactions_' + #reaction.comment.id"),
+            @CacheEvict(value = "contentMetadata", key = "'reaction_' + #reactionId")
+    })
+    public void deleteReaction(Long reactionId, Authentication auth) {
+        logger.info("Deleting reactionId: {} by user: {}", reactionId, auth.getName());
+
+        UserEntity user = getAuthenticatedUser(auth);
+
+        CommentReactionEntity reaction = reactionRepository.findById(reactionId)
+                .orElseThrow(() -> new EntityNotFoundException("Reaction not found with id " + reactionId));
+
+        if (!reaction.getUser().equals(user)) {
+            throw new AccessDeniedException("You are not the creator of this reaction");
         }
+
         reactionRepository.deleteById(reactionId);
+        logger.debug("Reaction deleted with id: {}", reactionId);
     }
 
     @Override
+    @Cacheable(value = "contentMetadata", key = "'reaction_' + #reactionId")
     public Optional<CommentReactionEntity> getReactionById(Long reactionId) {
+        logger.info("Fetching reaction by id: {}", reactionId);
         return reactionRepository.findById(reactionId);
     }
 
     @Override
+    @Cacheable(value = "contentMetadata", key = "'commentReactions_' + #commentId")
     public List<CommentReactionEntity> getReactionsByCommentId(Long commentId) {
+        logger.info("Fetching reactions for commentId: {}", commentId);
         return reactionRepository.findByCommentId(commentId);
     }
 }

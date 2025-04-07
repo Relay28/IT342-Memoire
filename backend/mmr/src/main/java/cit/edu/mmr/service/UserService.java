@@ -3,15 +3,18 @@ package cit.edu.mmr.service;
 
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
-import cit.edu.mmr.util.FileStorageService;
 import org.apache.catalina.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,16 +27,30 @@ public class UserService {
     @Autowired
     private UserRepository urepo;
 
+    private static final Logger logger = LoggerFactory.getLogger(UserService.class);
+
     @Autowired
     private PasswordEncoder passwordEncoder; //
-    @Autowired
-    private FileStorageService fileStorageService;
+//    @Autowired
+//    private FileStorageService fileStorageService;
 
     public UserService(){
         super();
 
     }
 
+    public byte[] getProfileImage(String filename) {
+        try {
+            String folder = "uploads/profileImages/";
+            Path path = Paths.get(folder + filename);
+            if (!Files.exists(path)) {
+                throw new FileNotFoundException("Profile image not found: " + filename);
+            }
+            return Files.readAllBytes(path);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read profile image: " + e.getMessage(), e);
+        }
+    }
 
     public boolean isUsernameTaken(String username) {
         return urepo.existsByUsername(username);
@@ -63,13 +80,6 @@ public class UserService {
 
     }
 
-    public UserEntity findbyGoogleSub(String sub){
-        Optional<UserEntity> user = urepo.findByGoogleSub(sub);
-        return  user.orElse(null);
-    }
-
-
-
     public UserEntity insertUserRecord(UserEntity user){
 
         if(user.getUsername()==null|| user.getUsername().isEmpty()){
@@ -82,6 +92,7 @@ public class UserService {
         if(isUsernameTaken(user.getUsername())){
             throw new IllegalArgumentException("Username is Already taken");
         }
+
         if(isEmailTaken(user.getEmail())){
             throw new IllegalArgumentException("Email is Already Registered");
         }
@@ -90,29 +101,62 @@ public class UserService {
         return urepo.save(user);
     }
 
+
+    @CacheEvict(value = {"publicProfiles", "ownProfiles"}, key = "#userId")
     public UserEntity updateUserDetails(long userId, UserEntity newUserDetails, MultipartFile profileImg) throws IOException {
         UserEntity existingUser = urepo.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
         // Update only the fields that are provided in the request
-        if (newUserDetails.getUsername() != null) {
-            existingUser.setUsername(newUserDetails.getUsername());
-        }
+
         if (newUserDetails.getEmail() != null) {
             existingUser.setEmail(newUserDetails.getEmail());
         }
         if (newUserDetails.getBiography() != null) {
             existingUser.setBiography(newUserDetails.getBiography());
         }
+        if(newUserDetails.getName()!=null){
+            existingUser.setName(newUserDetails.getName());
+        }
 
         // Handle profile image update
         if (profileImg != null && !profileImg.isEmpty()) {
-            String profilePictureUrl = fileStorageService.storeFile(profileImg);
-            existingUser.setProfilePicture(profilePictureUrl);
+            saveProfileImage(profileImg,existingUser);
+
         }
 
         // Save the updated user
         return urepo.save(existingUser);
+    }
+
+    /**
+     * Updates only the profile picture of a user
+     * @param userId ID of the user
+     * @param profileImg new profile image
+     * @return updated user entity
+     */
+    @CacheEvict(value = {"publicProfiles", "ownProfiles", "userProfiles"}, key = "#currentUser.id")
+    public UserEntity updateProfilePicture(MultipartFile profileImg, UserEntity currentUser) {
+        long userId = currentUser.getId();
+        logger.info("Updating profile picture for user ID: {}", userId);
+
+        try {
+            // Validate image
+            if (profileImg == null || profileImg.isEmpty()) {
+                logger.warn("Empty profile image provided for user ID: {}", userId);
+                throw new IllegalArgumentException("Profile image cannot be empty");
+            }
+
+            // Save image
+            saveProfileImage(profileImg, currentUser);
+            logger.info("Profile picture successfully updated for user ID: {}", userId);
+
+            // Save and return updated user
+            return urepo.save(currentUser);
+        } catch (Exception e) {
+            logger.error("Failed to update profile picture for user ID: {}: {}", userId, e.getMessage(), e);
+            throw new RuntimeException("Failed to update profile picture: " + e.getMessage(), e);
+        }
     }
     public String disableUser(long id ){
         String msg="";
@@ -122,4 +166,6 @@ public class UserService {
         return "User Account has been Deactivated";
 
     }
+
+
 }
