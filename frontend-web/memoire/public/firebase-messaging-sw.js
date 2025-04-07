@@ -22,7 +22,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: '/logo192.png'
+    icon: '/mmrlogo.png'
   };
   self.registration.showNotification(notificationTitle, notificationOptions);
 });

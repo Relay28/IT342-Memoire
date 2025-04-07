@@ -13,6 +13,18 @@ const getAuthHeaders = (contentType = 'application/json') => {
   };
 };
 
+
+// Helper function for image responses
+const getImageConfig = () => {
+  const token = sessionStorage.getItem('authToken');
+  return {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+    responseType: 'arraybuffer' // Important for binary data
+  };
+};
+
 export const profileService = {
   // Get current user
   async getCurrentUser() {
@@ -52,17 +64,21 @@ export const profileService = {
   async uploadProfilePicture(imageFile) {
     try {
       const formData = new FormData();
-      formData.append('profileImg', imageFile);
-
+      formData.append("profileImg", profileImage);
+  
       const response = await axios.put(
         `${API_BASE_URL}/profile-picture`,
         formData,
-        getAuthHeaders()
+        {
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`,
+            'Content-Type': 'multipart/form-data'
+          }
+        }
       );
-      
       return response.data;
     } catch (error) {
-      console.error('Profile picture upload failed:', error);
+      console.error('Failed to update profile picture:', error);
       throw error;
     }
   },
@@ -79,6 +95,26 @@ export const profileService = {
       return response.data;
     } catch (error) {
       console.error('Account deactivation failed:', error);
+      throw error;
+    }
+  },
+  async getProfilePicture() {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/profile-picture`,
+        getImageConfig()
+      );
+      
+      // Convert arraybuffer to base64 for easy use in img src
+      const base64 = btoa(
+        new Uint8Array(response.data).reduce(
+          (data, byte) => data + String.fromCharCode(byte),
+          ''
+        )
+      );
+      return `data:${response.headers['content-type']};base64,${base64}`;
+    } catch (error) {
+      console.error('Failed to fetch profile picture:', error);
       throw error;
     }
   },

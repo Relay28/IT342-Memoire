@@ -1,13 +1,39 @@
 // components/Header.jsx
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { FaSearch, FaMoon, FaBell } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import mmrlogo from '../assets/mmrlogo.png';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
+import { profileService } from '../components/ProfileFunctionalities';
 
 const Header = ({ userData }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [profilePicture, setProfilePicture] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Fetch profile picture on component mount
+  useEffect(() => {
+    const fetchProfilePicture = async () => {
+      try {
+        setIsLoading(true);
+        const picture = await profileService.getProfilePicture();
+        setProfilePicture(picture);
+      } catch (error) {
+        console.error('Error fetching profile picture:', error);
+        // Keep the default placeholder on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Only fetch if the user is logged in (check for auth token)
+    if (sessionStorage.getItem('authToken')) {
+      fetchProfilePicture();
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
 
   return (
     <header className="flex items-center justify-between p-4 bg-white shadow-md">
@@ -41,11 +67,19 @@ const Header = ({ userData }) => {
             aria-label="User menu"
           >
             <div className="relative">
-              <img 
-                src={userData?.profilePicture || ProfilePictureSample} 
-                alt="User profile" 
-                className="h-10 w-10 rounded-full border-2 border-[#AF3535] object-cover hover:brightness-95 transition-all duration-200"
-              />
+              {isLoading ? (
+                <div className="h-10 w-10 rounded-full border-2 border-[#AF3535] bg-gray-200 animate-pulse"></div>
+              ) : (
+                <img 
+                  src={profilePicture || userData?.profilePicture || ProfilePictureSample} 
+                  alt="User profile" 
+                  className="h-10 w-10 rounded-full border-2 border-[#AF3535] object-cover hover:brightness-95 transition-all duration-200"
+                  onError={(e) => {
+                    e.target.onerror = null; // Prevent infinite loop
+                    e.target.src = ProfilePictureSample; // Fallback image
+                  }}
+                />
+              )}
               {isProfileOpen && (
                 <div className="absolute inset-0 rounded-full bg-[#AF3535]/20 animate-pulse"></div>
               )}
@@ -57,9 +91,13 @@ const Header = ({ userData }) => {
               <div className="px-1 py-1">
                 <div className="flex items-center gap-3 px-4 py-3">
                   <img 
-                    src={userData?.profilePicture || ProfilePictureSample} 
+                    src={profilePicture || userData?.profilePicture || ProfilePictureSample} 
                     alt="User" 
                     className="h-10 w-10 rounded-full border-2 border-[#AF3535] object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = ProfilePictureSample;
+                    }}
                   />
                   <div>
                     <p className="text-sm font-medium text-gray-900">{userData?.username || "Loading..."}</p>
@@ -85,6 +123,8 @@ const Header = ({ userData }) => {
                 <button
                   className="group flex w-full items-center gap-2 rounded-md px-4 py-2 text-sm text-gray-900 hover:bg-[#AF3535]/10 hover:text-[#AF3535] transition-colors"
                   onClick={() => {
+                    // Clear auth token on logout
+                    sessionStorage.removeItem('authToken');
                     setIsProfileOpen(false);
                     navigate('/login');
                   }}
@@ -103,4 +143,4 @@ const Header = ({ userData }) => {
   );
 };
 
-export default Header;
+export  default Header;

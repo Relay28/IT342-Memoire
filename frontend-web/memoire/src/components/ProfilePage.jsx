@@ -5,8 +5,8 @@ import { FaSearch, FaMoon, FaBell, FaPlus, FaHome, FaStar, FaShareAlt } from 're
 import { Link, useNavigate } from "react-router-dom";
 import { PersonalInfoContext } from '../components/PersonalInfoContext';
 import { profileService } from '../components/ProfileFunctionalities';
-import Header from '../components/Header'; // Import the Header component
-import Sidebar from '../components/Sidebar'; // Import the Sidebar component
+import Header from '../components/Header';
+import Sidebar from '../components/Sidebar';
 
 const ProfilePage = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -23,21 +23,29 @@ const ProfilePage = () => {
   const fileInputRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch user data on component mount
+  // Fetch user data and profile picture on component mount
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        //setIsLoading(true);
+        setIsLoading(true);
+        // Fetch user data
         const userData = await profileService.getCurrentUser();
         setPersonalInfo(userData);
-        console.log("dasdsadas"+userData)
         setFormData({
           biography: userData.biography || '',
           email: userData.email || '',
           name: userData.name || '',
           username: userData.username || ''
         });
-        setPreviewImage(userData.profilePicture || ProfilePictureSample);
+
+        // Fetch profile picture
+        try {
+          const pictureUrl = await profileService.getProfilePicture();
+          setPreviewImage(pictureUrl);
+        } catch (pictureError) {
+          console.error('Failed to load profile picture:', pictureError);
+          setPreviewImage(ProfilePictureSample);
+        }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
         alert('Failed to load profile data. Please try again.');
@@ -46,7 +54,7 @@ const ProfilePage = () => {
       }
     };
 
-    if (!personalInfo.name) {
+    if (!personalInfo?.name) {
       fetchUserData();
     } else {
       setFormData({
@@ -55,7 +63,12 @@ const ProfilePage = () => {
         name: personalInfo.name || '',
         username: personalInfo.username || ''
       });
-      setPreviewImage(personalInfo.profilePicture || ProfilePictureSample);
+      // Try to load profile picture if not already loaded
+      if (!previewImage || previewImage === ProfilePictureSample) {
+        profileService.getProfilePicture()
+          .then(pictureUrl => setPreviewImage(pictureUrl))
+          .catch(() => setPreviewImage(ProfilePictureSample));
+      }
     }
   }, [personalInfo, setPersonalInfo]);
 
@@ -72,6 +85,7 @@ const ProfilePage = () => {
         setPreviewImage(reader.result);
       };
       reader.readAsDataURL(file);
+      handleSaveChanges();
     }
   };
 
@@ -94,17 +108,21 @@ const ProfilePage = () => {
       };
 
       let updatedUser;
-      
-      
- 
-     updatedUser = await profileService.updateUserDetails(userData);
-      
+      console.log("PROFIEELEE" +profileImage)
+      // First handle profile picture upload if there's a new image
+      if (profileImage) {
+        const pictureResponse = await profileService.uploadProfilePicture(profileImage);
+        if (pictureResponse.profilePicture) {
+          setPreviewImage(pictureResponse.profilePicture);
+        }
+      }
+      // Then update user details
+      updatedUser = await profileService.updateUserDetails(userData);
 
       // Update context and local state
       setPersonalInfo(prev => ({
         ...prev,
-        ...updatedUser,
-        // profilePicture: updatedUser.profilePicture || previewImage
+        ...updatedUser
       }));
 
       setFormData(prev => ({
@@ -144,7 +162,6 @@ const ProfilePage = () => {
   };
 
   const handleChangePassword = () => {
-    // Implement password change logic
     alert('Password change functionality will be implemented here');
   };
 
@@ -166,27 +183,22 @@ const ProfilePage = () => {
     );
   }
 
-
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex flex-col h-screen overflow-hidden">
-        {/* Header */}
         <Header userData={userData} />
         
         <div className="flex flex-1 h-screen overflow-hidden">
-          {/* Use the Sidebar component */}
           <Sidebar />
 
-          {/* Main Profile Content */}
           <section className="flex-1 p-8 overflow-y-auto">
             <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-              {/* Profile Header */}
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="relative">
                       <img 
-                        src={previewImage || userData.profilePicture || ProfilePictureSample} 
+                        src={previewImage} 
                         alt="Profile" 
                         className="h-24 w-24 rounded-full object-cover border-2 border-[#AF3535]"
                       />
@@ -224,10 +236,8 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              {/* Profile Edit Form */}
               <div className="p-6">
                 <div className="space-y-6">
-                  {/* Full Name Section */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                     <input
@@ -239,7 +249,6 @@ const ProfilePage = () => {
                     />
                   </div>
 
-                  {/* Biography Section */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Biography</label>
                     <textarea
@@ -251,7 +260,6 @@ const ProfilePage = () => {
                     />
                   </div>
 
-                  {/* Email Section */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                     <input
@@ -263,7 +271,6 @@ const ProfilePage = () => {
                     />
                   </div>
 
-                  {/* Account Actions */}
                   <div className="pt-4 border-t border-gray-200">
                     <h3 className="text-lg font-medium text-gray-900 mb-3">Account Actions</h3>
                     
@@ -292,7 +299,6 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Hidden file input for profile picture */}
       <input 
         type="file" 
         ref={fileInputRef}
