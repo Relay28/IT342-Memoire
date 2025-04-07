@@ -64,7 +64,7 @@ export const profileService = {
   async uploadProfilePicture(imageFile) {
     try {
       const formData = new FormData();
-      formData.append("profileImg", profileImage);
+      formData.append("profileImg", imageFile);
   
       const response = await axios.put(
         `${API_BASE_URL}/profile-picture`,
@@ -87,17 +87,47 @@ export const profileService = {
   // Disable/deactivate account
   async deactivateAccount() {
     try {
+      const token = sessionStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
       const response = await axios.patch(
         `${API_BASE_URL}/disable`,
-        {},
-        getAuthHeaders()
+        {}, // Empty body
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
       );
-      return response.data;
+      console.log(response)
+
+      if (response.data) {
+        return response.data;
+      }
+      throw new Error(response.data?.message || 'Account deactivation failed');
     } catch (error) {
-      console.error('Account deactivation failed:', error);
-      throw error;
+      console.error('Deactivation error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      // Enhanced error message
+      let errorMessage = 'Account deactivation failed';
+      if (error.response) {
+        errorMessage = error.response.data?.message || 
+                      (error.response.status === 401 ? 'Unauthorized - Please login again' : 
+                      error.response.status === 404 ? 'User not found' : 
+                      'Server error');
+      }
+      throw new Error(errorMessage);
     }
   },
+
+  //Get Profile Pic
   async getProfilePicture() {
     try {
       const response = await axios.get(

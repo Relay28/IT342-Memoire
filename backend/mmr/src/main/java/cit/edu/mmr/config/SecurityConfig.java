@@ -70,7 +70,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
                     corsConfig.setAllowedOrigins(List.of("http://localhost:5173")); // Allow your frontend URL
-                    corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
                     corsConfig.setAllowedHeaders(List.of("*"));
                     corsConfig.setAllowCredentials(true);
                     return corsConfig;

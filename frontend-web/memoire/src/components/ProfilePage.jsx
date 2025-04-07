@@ -78,15 +78,19 @@ const ProfilePage = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
+    console.log(file)
     if (file) {
       setProfileImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result);
       };
+     
       reader.readAsDataURL(file);
-      handleSaveChanges();
+     handleSaveChanges(file)
     }
+  
+ 
   };
 
   const handleInputChange = (e) => {
@@ -97,7 +101,9 @@ const ProfilePage = () => {
     }));
   };
 
-  const handleSaveChanges = async () => {
+  const handleSaveChanges = async (imageFile) => {
+    const fileToUpload = imageFile || previewImage;
+  
     try {
       setIsLoading(true);
       const userData = {
@@ -108,12 +114,14 @@ const ProfilePage = () => {
       };
 
       let updatedUser;
-      console.log("PROFIEELEE" +profileImage)
+      
       // First handle profile picture upload if there's a new image
-      if (profileImage) {
-        const pictureResponse = await profileService.uploadProfilePicture(profileImage);
-        if (pictureResponse.profilePicture) {
-          setPreviewImage(pictureResponse.profilePicture);
+      console.log(fileToUpload)
+      if (fileToUpload) {
+        const pictureResponse = await profileService.uploadProfilePicture(fileToUpload);
+        if (pictureResponse) {
+          console.log(pictureResponse)
+         
         }
       }
       // Then update user details
