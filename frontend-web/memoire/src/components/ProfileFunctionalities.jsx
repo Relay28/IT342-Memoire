@@ -42,7 +42,7 @@ export const profileService = {
   },
 
   // Update user details (with or without profile image)
-  async updateProfile(userData, profileImage = null) {
+  async updateProfile(userData) {
       try {
         const response = await axios.put(
           API_BASE_URL,

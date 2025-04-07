@@ -102,7 +102,7 @@ const ProfilePage = () => {
   };
 
   const handleSaveChanges = async (imageFile) => {
-    const fileToUpload = imageFile || previewImage;
+    const fileToUpload = imageFile || null  ;
   
     try {
       setIsLoading(true);
@@ -116,13 +116,9 @@ const ProfilePage = () => {
       let updatedUser;
       
       // First handle profile picture upload if there's a new image
-      console.log(fileToUpload)
       if (fileToUpload) {
         const pictureResponse = await profileService.uploadProfilePicture(fileToUpload);
-        if (pictureResponse) {
-          console.log(pictureResponse)
-         
-        }
+        
       }
       // Then update user details
       updatedUser = await profileService.updateUserDetails(userData);

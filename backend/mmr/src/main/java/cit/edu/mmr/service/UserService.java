@@ -144,14 +144,15 @@ public class UserService {
             // Validate image
             if (profileImg == null || profileImg.isEmpty()) {
                 logger.warn("Empty profile image provided for user ID: {}", userId);
-                throw new IllegalArgumentException("Profile image cannot be empty");
+               // throw new IllegalArgumentException("Profile image cannot be empty");
+            }else {
+
+                // Save image
+                saveProfileImage(profileImg, currentUser);
+                logger.info("Profile picture successfully updated for user ID: {}", userId);
+
+                // Save and return updated user
             }
-
-            // Save image
-            saveProfileImage(profileImg, currentUser);
-            logger.info("Profile picture successfully updated for user ID: {}", userId);
-
-            // Save and return updated user
             return urepo.save(currentUser);
         } catch (Exception e) {
             logger.error("Failed to update profile picture for user ID: {}: {}", userId, e.getMessage(), e);
