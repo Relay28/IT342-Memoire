@@ -123,7 +123,6 @@ public class UserController {
     @PutMapping
     public ResponseEntity<?> updateUser(
             @RequestBody UserEntity newUserDetails,
-            @RequestParam(value = "profileImg", required = false) MultipartFile profileImg,
             Authentication authentication) {
 
         logger.info("Request received to update user details");
@@ -143,7 +142,7 @@ public class UserController {
                         return new NoSuchElementException("User not found");
                     });
 
-            UserEntity updatedUser = userService.updateUserDetails(currentUser.getId(), newUserDetails, profileImg);
+            UserEntity updatedUser = userService.updateUserDetails(currentUser.getId(), newUserDetails, null);
             logger.info("Successfully updated user details for user ID: {}", currentUser.getId());
             return ResponseEntity.ok(updatedUser);
 
@@ -200,7 +199,7 @@ public class UserController {
 
     @PutMapping(value = "/profile-picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateProfilePicture(
-            @RequestParam("profileImg") MultipartFile profileImg,
+            @RequestParam(value = "profileImg", required = false) MultipartFile profileImg,
             Authentication authentication) {
 
         try {
