@@ -20,8 +20,9 @@ const getImageConfig = () => {
   return {
     headers: {
       'Authorization': `Bearer ${token}`,
+      'Cache-Control': 'no-store, max-age=0' // Add this line
     },
-    responseType: 'arraybuffer' // Important for binary data
+    responseType: 'arraybuffer'
   };
 };
 
@@ -131,7 +132,7 @@ export const profileService = {
   async getProfilePicture() {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/profile-picture`,
+        `${API_BASE_URL}/profile-picture?t=${Date.now()}`, // Add timestamp
         getImageConfig()
       );
       

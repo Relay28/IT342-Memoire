@@ -1,23 +1,27 @@
 // components/Header.jsx
-import React, { useState,useEffect } from 'react';
+import React, { useState,useEffect, useContext } from 'react';
 import { FaSearch, FaMoon, FaBell } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import mmrlogo from '../assets/mmrlogo.png';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { profileService } from '../components/ProfileFunctionalities';
-
+import { PersonalInfoContext } from './PersonalInfoContext';
 const Header = ({ userData }) => {
+  const { personalInfo, setPersonalInfo } = useContext(PersonalInfoContext);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
 
+  console.log(profilePicture)
   // Fetch profile picture on component mount
   useEffect(() => {
     const fetchProfilePicture = async () => {
       try {
         setIsLoading(true);
         const picture = await profileService.getProfilePicture();
+        
         setProfilePicture(picture);
       } catch (error) {
         console.error('Error fetching profile picture:', error);
@@ -35,6 +39,32 @@ const Header = ({ userData }) => {
     }
   }, []);
 
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post('/api/auth/logout', {}, {
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+        }
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear client-side tokens and state
+      setPersonalInfo(null),
+      sessionStorage.removeItem('authToken');
+      // Clear profile picture cache
+      setProfilePicture(null);
+      // Redirect to login
+      navigate('/login');
+    }
+  };
   return (
     <header className="flex items-center justify-between p-4 bg-white shadow-md">
       <Link to="/homepage" className="flex items-center space-x-2">
@@ -42,14 +72,16 @@ const Header = ({ userData }) => {
         <div className="text-2xl font-bold text-red-700">MÉMOIRE</div>
       </Link>
 
-      <div className="flex items-center px-4 py-2 bg-gray-100 rounded-full w-1/3">
+      <form onSubmit={handleSearch} className="flex items-center px-4 py-2 bg-gray-100 rounded-full w-1/3">
         <FaSearch className="text-red-700 mr-2" />
         <input 
           type="text" 
-          placeholder="Search here..." 
+          placeholder="Search by username or name..." 
           className="bg-transparent border-none outline-none w-full"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
-      </div>
+      </form>
 
       <div className="flex items-center space-x-4">
         <button className="p-2 rounded-full hover:bg-red-100">
@@ -122,12 +154,7 @@ const Header = ({ userData }) => {
               <div className="px-1 py-1">
                 <button
                   className="group flex w-full items-center gap-2 rounded-md px-4 py-2 text-sm text-gray-900 hover:bg-[#AF3535]/10 hover:text-[#AF3535] transition-colors"
-                  onClick={() => {
-                    // Clear auth token on logout
-                    sessionStorage.removeItem('authToken');
-                    setIsProfileOpen(false);
-                    navigate('/login');
-                  }}
+                  onClick={handleLogout}
                 >
                   <svg className="h-5 w-5 text-gray-400 group-hover:text-[#AF3535]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

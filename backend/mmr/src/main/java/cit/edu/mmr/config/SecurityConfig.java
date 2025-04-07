@@ -2,6 +2,7 @@ package cit.edu.mmr.config;
 
 import cit.edu.mmr.filter.JwtAuthenticationFilter;
 import cit.edu.mmr.security.CustomOAuth2UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -100,6 +101,23 @@ public class SecurityConfig {
                                 .userService(customOAuth2UserService)
                         )
                         .successHandler(oAuth2AuthenticationSuccessHandler) // Use the new handler
+                )
+
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            response.getWriter().write("Logout successful");
+                        })
+                        .addLogoutHandler((request, response, authentication) -> {
+                            // Add any custom logout logic here (token invalidation, etc.)
+                            String authHeader = request.getHeader("Authorization");
+                            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                                String jwt = authHeader.substring(7);
+                                // Add token to blacklist or perform other cleanup
+                            }
+                        })
+                        .permitAll()
                 );
 
         return http.build();

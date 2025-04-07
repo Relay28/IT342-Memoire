@@ -17,9 +17,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -130,5 +129,50 @@ public class ProfileController {
         }
     }
 
+
+    // Add to ProfileController.java
+
+    /**
+     * Search for user profiles by username or email
+     * @param query The search query (username or email)
+     * @param page Page number (default 0)
+     * @param size Page size (default 10)
+     * @return List of matching profiles
+     */
+    @GetMapping("/search")
+    public ResponseEntity<?> searchProfiles(
+            @RequestParam String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        logger.info("Received search request for query: '{}', page: {}, size: {}", query, page, size);
+
+        try {
+            // Sanitize and validate input
+            if (query == null || query.trim().isEmpty()) {
+                logger.warn("Empty search query provided");
+                return ResponseEntity.badRequest()
+                        .body(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Search query cannot be empty"));
+            }
+
+            // Limit page size to prevent excessive load
+            size = Math.min(size, 50);
+
+            // Perform search
+            List<ProfileDTO> results = profileService.searchProfiles(query, page, size);
+
+            // Prepare response
+            Map<String, Object> response = new HashMap<>();
+            response.put("results", results);
+            response.put("page", page);
+            response.put("size", results.size());
+
+            logger.info("Search completed successfully for query: '{}', found {} results", query, results.size());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error during profile search for query '{}': {}", query, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An error occurred during search"));
+        }
+    }
 
 }

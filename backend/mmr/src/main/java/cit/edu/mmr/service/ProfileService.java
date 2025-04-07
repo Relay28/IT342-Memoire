@@ -7,10 +7,14 @@ import cit.edu.mmr.exception.exceptions.DisabledAccountException;
 import cit.edu.mmr.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
 @Service
 public class ProfileService {
@@ -97,6 +102,37 @@ public class ProfileService {
      * @param includePrivateInfo whether to include private information
      * @return ProfileDTO with appropriate user information
      */
+
+
+    // In ProfileService.java
+    /**
+     * Search for user profiles by username or name
+     * @param query Search term (username or name)
+     * @param page Page number (0-based)
+     * @param size Page size
+     * @return List of matching ProfileDTOs
+     */
+
+
+    @Cacheable(value = "profileSearches", key = "#query.concat('-').concat(#page).concat('-').concat(#size)")
+    public List<ProfileDTO> searchProfiles(String query, int page, int size) {
+        logger.info("Searching profiles for query: '{}', page: {}, size: {}", query, page, size);
+
+        // Normalize the query (trim and make lowercase for case-insensitive search)
+        String normalizedQuery = query.trim().toLowerCase();
+
+        // Search for users by username or name
+        Page<UserEntity> users = userRepository.findByUsernameContainingIgnoreCaseOrNameContainingIgnoreCase(
+                normalizedQuery,
+                normalizedQuery,
+                PageRequest.of(page, size, Sort.by("username").ascending()));
+
+        // Convert to DTOs
+        return users.getContent().stream()
+                .filter(UserEntity::isEnabled) // Only include enabled accounts
+                .map(user -> convertToProfileDTO(user, false)) // Public profile only
+                .collect(Collectors.toList());
+    }
     private ProfileDTO convertToProfileDTO(UserEntity user, boolean includePrivateInfo) {
         logger.debug("Converting user entity to ProfileDTO, includePrivateInfo={}", includePrivateInfo);
 

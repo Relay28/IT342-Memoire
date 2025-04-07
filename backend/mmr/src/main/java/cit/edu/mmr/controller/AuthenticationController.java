@@ -9,6 +9,8 @@ import cit.edu.mmr.exception.exceptions.AuthenticationException;
 import cit.edu.mmr.exception.exceptions.RegistrationException;
 import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.AuthenticationService;
+import cit.edu.mmr.service.TokenBlacklistService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +34,9 @@ public class AuthenticationController {
 
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
 
     public AuthenticationController(AuthenticationService authService, JwtService jwtService) {
         this.authService = authService;
@@ -123,5 +128,16 @@ public class AuthenticationController {
             logger.error("Authentication failed for username {}: {}", request.getUsername(), e.getMessage(), e);
             throw new AuthenticationException("Authentication failed", e);
         }
+    }
+
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String jwt = authHeader.substring(7);
+            tokenBlacklistService.blacklistToken(jwt);
+        }
+        return ResponseEntity.ok("Logout successful");
     }
 }
