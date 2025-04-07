@@ -60,7 +60,7 @@ public class NotificationService {
                                 .build())
                         .putData("type", notification.getType())
                         .putData("itemType", notification.getItemType())
-                        .putData("itemId", String.valueOf(notification.getRelatedItemId()))
+                        .putData("itemId", String.valueOf((notification.getRelatedItemId())))
                         .build();
 
                 String response = firebaseMessaging.send(message);

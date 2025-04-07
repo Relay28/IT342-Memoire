@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { useParams, useLocation } from 'react-router-dom';
-import  apiService  from './apiService';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import apiService from './apiService';
 import Header from '../Header';
 import ProfilePictureSample from '../../assets/ProfilePictureSample.png';
 import { PersonalInfoContext } from '../PersonalInfoContext';
@@ -9,29 +9,120 @@ const ProfilePageOther = () => {
   const { personalInfo } = useContext(PersonalInfoContext);
   const { userId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(location.state?.profile || null);
   const [isLoading, setIsLoading] = useState(!location.state?.profile);
   const [error, setError] = useState(null);
+  const [friendshipStatus, setFriendshipStatus] = useState(null);
+  const [isLoadingFriendship, setIsLoadingFriendship] = useState(true);
 
+  console.log(profile)
+  // Check friendship status when profile or personalInfo changes
   useEffect(() => {
-    const fetchProfile = async () => {
+    const checkFriendshipStatus = async () => {
+      if (!personalInfo || !profile) return;
+      
       try {
-        setIsLoading(true);
-        const response = await apiService.get(`/api/profiles/view/${userId}`);
-        setProfile(response.data);
-        setError(null);
+        setIsLoadingFriendship(true);
+        const response = await apiService.get(`/api/friendships/areFriends/${profile.userId}`);
+        setFriendshipStatus(response.data ? 'friends' : 'not_friends');
       } catch (error) {
-        console.error('Error fetching profile:', error);
-        setError('Failed to load profile');
+        console.error('Error checking friendship status:', error);
+        setFriendshipStatus('error');
       } finally {
-        setIsLoading(false);
+        setIsLoadingFriendship(false);
       }
     };
 
+    checkFriendshipStatus();
+  }, [profile, personalInfo]);
+
+  const fetchProfile = async () => {
+    try {
+      setIsLoading(true);
+      const response = await apiService.get(`/api/profiles/view/${userId}`);
+      setProfile(response.data);
+      setError(null);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      setError('Failed to load profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     if (!location.state?.profile) {
       fetchProfile();
     }
   }, [userId, location.state]);
+
+  const handleSendFriendRequest = async () => {
+    try {
+      setIsLoadingFriendship(true);
+      console.log(profile.userId)
+      if(profile.userId!=0){
+      await apiService.post('/api/friendships/create', {
+        friendId: profile.userId
+      });
+    }
+      setFriendshipStatus('request_sent');
+    } catch (error) {
+      console.error('Error sending friend request:', error);
+      setError('Failed to send friend request');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
+  const renderFriendshipButton = () => {
+    if (isLoadingFriendship || !friendshipStatus) {
+      return (
+        <button className="px-4 py-2 bg-gray-200 text-gray-600 rounded-md">
+          Loading...
+        </button>
+      );
+    }
+
+    switch (friendshipStatus) {
+      case 'friends':
+        return (
+          <div className="flex items-center space-x-2">
+            <span className="text-green-600">✓ Friends</span>
+            <button 
+              onClick={() => navigate(`/friends`)}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+            >
+              View Friends
+            </button>
+          </div>
+        );
+      case 'request_sent':
+        return (
+          <button className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-md">
+            Request Sent
+          </button>
+        );
+      case 'not_friends':
+        return (
+          <button 
+            onClick={handleSendFriendRequest}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+          >
+            Add Friend
+          </button>
+        );
+      default:
+        return (
+          <button 
+            onClick={handleSendFriendRequest}
+            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+          >
+            Add Friend
+          </button>
+        );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -69,6 +160,9 @@ const ProfilePageOther = () => {
                     {profile.name && <p className="text-gray-600">{profile.name}</p>}
                   </div>
                 </div>
+                <div className="mt-4">
+                  {renderFriendshipButton()}
+                </div>
               </div>
               
               {/* Additional Profile Details */}
@@ -99,4 +193,4 @@ const ProfilePageOther = () => {
   );
 };
 
-export default ProfilePageOther; 
+export default ProfilePageOther;

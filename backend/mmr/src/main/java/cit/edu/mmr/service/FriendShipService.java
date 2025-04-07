@@ -69,16 +69,20 @@ public class FriendShipService {
         user.getFriendshipsAsUser().add(friendship);
         friend.getFriendshipsAsFriend().add(friendship);
 
+
+        logger.info("Saving new friendship between {} and {}", user.getUsername(), friend.getUsername());
+        FriendShipEntity savedFriendship = friendShipRepository.save(friendship);
+
         NotificationEntity notification = new NotificationEntity();
         notification.setType("FRIEND_REQUEST");
         notification.setText(user.getUsername() + " sent you a friend request");
-        notification.setRelatedItemId(friendship.getId());
+        notification.setRelatedItemId(savedFriendship.getId());
         notification.setItemType("FRIENDSHIP");
 
         notificationService.sendNotificationToUser(friend.getId(), notification);
 
-        logger.info("Saving new friendship between {} and {}", user.getUsername(), friend.getUsername());
-        return friendShipRepository.save(friendship);
+        return friendship;
+
     }
 
     @Cacheable(value = "contentMetadata", key = "'friendship_' + #id")
