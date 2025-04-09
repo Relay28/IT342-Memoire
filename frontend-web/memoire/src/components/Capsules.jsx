@@ -1,6 +1,6 @@
 import React, {useContext} from 'react';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
-import { PersonalInfoContext } from '../components/PersonalInfoContext';
+import { PersonalInfoContext } from './AuthProvider';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 

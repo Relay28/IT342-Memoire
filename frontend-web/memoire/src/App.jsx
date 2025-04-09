@@ -4,18 +4,18 @@ import AppRoutes from "./Routes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import FCMNotificationHandler from "./components/Firebase/FCMNotifcationHandler";
-import { PersonalInfoProvider } from './components/PersonalInfoContext'; 
+import { AuthProvider } from './components/AuthProvider';
 function App() {
   
   return (
-    <PersonalInfoProvider>
+    <AuthProvider>
     <GoogleOAuthProvider>
       <BrowserRouter>
         <AppRoutes />
 
       </BrowserRouter>
     </GoogleOAuthProvider>
-    </PersonalInfoProvider>
+    </AuthProvider>
     
   );
 }

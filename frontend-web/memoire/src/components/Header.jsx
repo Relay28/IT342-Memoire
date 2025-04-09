@@ -1,15 +1,26 @@
 // components/Header.jsx
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import { FaSearch, FaMoon, FaBell } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import mmrlogo from '../assets/mmrlogo.png';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { profileService } from '../components/ProfileFunctionalities';
-import { PersonalInfoContext } from './PersonalInfoContext';
 import axios from 'axios';
+import { Client } from '@stomp/stompjs';
+import { useAuth } from './AuthProvider'; // Import the useAuth hook
 
-const Header = ({ userData }) => {
-  const { personalInfo, setPersonalInfo } = useContext(PersonalInfoContext);
+const Header = () => {
+  // Use the auth context
+  const { 
+    user, 
+    authToken,
+    loading: authLoading,
+    error: authError,
+    isAuthenticated,
+    logout,
+    clearError
+  } = useAuth();
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,6 +28,7 @@ const Header = ({ userData }) => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const stompClient = useRef(null);
   const navigate = useNavigate();
 
   // Fetch notifications
@@ -24,11 +36,11 @@ const Header = ({ userData }) => {
     try {
       const response = await axios.get('http://localhost:8080/api/notifications', {
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${authToken}`
         }
       });
       
-      console.log(response)
+      console.log(response);
       // Handle both single notification and array cases
       let notificationsArray = [];
       if (Array.isArray(response.data)) {
@@ -48,12 +60,13 @@ const Header = ({ userData }) => {
       setUnreadCount(0);
     }
   };
-  // Fetch unread count separately (more efficient if you don't need all notifications)
+  
+  // Fetch unread count separately
   const fetchUnreadCount = async () => {
     try {
-      const response = await axios.get('/api/notifications/unread-count', {
+      const response = await axios.get('http://localhost:8080/api/notifications/unread-count', {
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${authToken}`
         }
       });
       setUnreadCount(response.data.count);
@@ -65,9 +78,9 @@ const Header = ({ userData }) => {
   // Mark notification as read
   const markAsRead = async (id) => {
     try {
-      await axios.patch(`/api/notifications/${id}/read`, {}, {
+      await axios.patch(`http://localhost:8080/api/notifications/${id}/read`, {}, {
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${authToken}`
         }
       });
       // Update local state - using 'read' instead of 'isRead'
@@ -83,9 +96,9 @@ const Header = ({ userData }) => {
   // Mark all as read
   const markAllAsRead = async () => {
     try {
-      await axios.patch('/api/notifications/read-all', {}, {
+      await axios.patch('http://localhost:8080/api/notifications/read-all', {}, {
         headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${authToken}`
         }
       });
       // Update local state - using 'read' instead of 'isRead'
@@ -98,31 +111,150 @@ const Header = ({ userData }) => {
     }
   };
 
-  useEffect(() => {
-    // Fetch profile picture
-    const fetchProfilePicture = async () => {
-      try {
-        setIsLoading(true);
-        const picture = await profileService.getProfilePicture();
-        setProfilePicture(picture);
-      } catch (error) {
-        console.error('Error fetching profile picture:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Initialize WebSocket connection using native WebSocket
+  // const connectWebSocket = () => {
+  //   // Close any existing connection
+  //   if (stompClient.current) {
+  //     try {
+  //       stompClient.current.deactivate();
+  //     } catch (e) {
+  //       console.error("Error disconnecting:", e);
+  //     }
+  //   }
+  
+  //   // Create new connection using @stomp/stompjs directly with WebSocket
+  //   const client = new Client({
+  //     // Use WebSocket directly instead of SockJS
+  //     webSocketFactory: () =>
+  //       new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//localhost:8080/ws-comments`),
+  //     connectHeaders: {
+  //       Authorization: `Bearer ${authToken}`
+  //     },
+  //     debug: function (str) {
+  //       // Disable for production
+  //       // console.log(str);
+  //     },
+  //     reconnectDelay: 5000,
+  //     heartbeatIncoming: 4000,
+  //     heartbeatOutgoing: 4000
+  //   });
+  
+  //   client.onConnect = function () {
+  //     console.log('Connected to WebSocket');
+      
+  //     // Subscribe to a general notifications topic (no user ID needed)
+  //     client.subscribe('http://localhost:8080/topic/notifications', message => {
+  //       try {
+  //         const notification = JSON.parse(message.body);
+  //         console.log('Received new notification:', notification);
+  
+  //         // Add the new notification to the state
+  //         setNotifications(prevNotifications => [notification, ...prevNotifications]);
+  
+  //         // Update unread count
+  //         setUnreadCount(prevCount => prevCount + 1);
+  
+  //         // Optional: Show browser notification
+  //         showBrowserNotification(notification);
+  //       } catch (e) {
+  //         console.error('Error processing notification message:', e);
+  //       }
+  //     });
+  
+  //     // Subscribe to notification count updates (no user ID needed)
+  //     client.subscribe('http://localhost:8080/topic/notifications/count', message => {
+  //       try {
+  //         const countData = JSON.parse(message.body);
+  //         console.log('Notification count update:', countData);
+  //         setUnreadCount(countData.count);
+  //       } catch (e) {
+  //         console.error('Error processing count message:', e);
+  //       }
+  //     });
+  
+  //     // Send subscription confirmation
+  //     client.publish({
+  //       destination: "/app/notifications/subscribe",
+  //       body: JSON.stringify({})
+  //     });
+  //   };
+  
+  //   client.onStompError = function (frame) {
+  //     console.error('STOMP error:', frame.headers.message);
+  //     console.error('Additional details:', frame.body);
+  //   };
+  
+  //   // Start the connection
+  //   client.activate();
+  
+  //   stompClient.current = client;
+  //   return client;
+  // };
+  
+  // // Show browser notification
+  // const showBrowserNotification = (notification) => {
+  //   if (Notification.permission === "granted" && 
+  //       document.visibilityState !== 'visible') {
+  //     const title = getNotificationTitle(notification.type);
+  //     new Notification(title, {
+  //       body: notification.text
+  //     });
+  //   }
+  // };
+  
+  // Get notification title
+  const getNotificationTitle = (type) => {
+    switch (type) {
+      case "FRIEND_REQUEST":
+        return "New Friend Request";
+      case "FRIEND_REQUEST_ACCEPTED":
+        return "Friend Request Accepted";
+      case "TIME_CAPSULE_OPEN":
+        return "Time Capsule Opened";
+      case "COMMENT":
+        return "New Comment on Your Time Capsule";
+      default:
+        return "New Notification";
+    }
+  };
 
-    // Only fetch if the user is logged in
-    if (sessionStorage.getItem('authToken')) {
+  useEffect(() => {
+    // Request notification permission
+    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+      Notification.requestPermission();
+    }
+    
+    // Only fetch if the user is authenticated
+    if (isAuthenticated) {
+      // Fetch profile picture
+      const fetchProfilePicture = async () => {
+        try {
+          setIsLoading(true);
+          const picture = await profileService.getProfilePicture();
+          setProfilePicture(picture);
+        } catch (error) {
+          console.error('Error fetching profile picture:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
       fetchProfilePicture();
       fetchNotifications();
-      // Optionally set up polling for new notifications
-      const interval = setInterval(fetchUnreadCount, 30000); // Check every 30 seconds
-      return () => clearInterval(interval);
+      
+      // Connect to WebSocket for real-time updates
+      // const client = connectWebSocket();
+      
+      // return () => {
+      //   // Clean up WebSocket connection when component unmounts
+      //   if (client) {
+      //     client.deactivate();
+      //   }
+      // };
     } else {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated]); // Run when authentication status changes
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -133,18 +265,15 @@ const Header = ({ userData }) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:8080/api/auth/logout', {}, {
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-        }
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setPersonalInfo(null);
-      sessionStorage.removeItem('authToken');
+      await logout(); // Use the logout function from auth context
+      // Disconnect WebSocket
+      if (stompClient.current) {
+        stompClient.current.deactivate();
+      }
       setProfilePicture(null);
       navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 
@@ -218,8 +347,6 @@ const Header = ({ userData }) => {
                       if (!notification.read) {
                         markAsRead(notification.id);
                       }
-                      // Navigate to relevant page based on notification type
-                      // navigate(getNotificationLink(notification));
                     }}
                   >
                     <div className="flex justify-between items-start">
@@ -253,7 +380,7 @@ const Header = ({ userData }) => {
                 <div className="h-10 w-10 rounded-full border-2 border-[#AF3535] bg-gray-200 animate-pulse"></div>
               ) : (
                 <img 
-                  src={profilePicture || userData?.profilePicture || ProfilePictureSample} 
+                  src={profilePicture || user?.profilePicture || ProfilePictureSample} 
                   alt="User profile" 
                   className="h-10 w-10 rounded-full border-2 border-[#AF3535] object-cover hover:brightness-95 transition-all duration-200"
                   onError={(e) => {
@@ -273,7 +400,7 @@ const Header = ({ userData }) => {
               <div className="px-1 py-1">
                 <div className="flex items-center gap-3 px-4 py-3">
                   <img 
-                    src={profilePicture || userData?.profilePicture || ProfilePictureSample} 
+                    src={profilePicture || user?.profilePicture || ProfilePictureSample} 
                     alt="User" 
                     className="h-10 w-10 rounded-full border-2 border-[#AF3535] object-cover"
                     onError={(e) => {
@@ -282,8 +409,8 @@ const Header = ({ userData }) => {
                     }}
                   />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{userData?.username || "Loading..."}</p>
-                    <p className="text-xs text-gray-500">{userData?.email || "loading@example.com"}</p>
+                    <p className="text-sm font-medium text-gray-900">{user?.username || "Loading..."}</p>
+                    <p className="text-xs text-gray-500">{user?.email || "loading@example.com"}</p>
                   </div>
                 </div>
               </div>

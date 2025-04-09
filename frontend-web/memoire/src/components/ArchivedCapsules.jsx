@@ -1,7 +1,7 @@
 import React, {useContext} from 'react';
 import bgmemoire from '../assets/bgmemoire.jpg';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
-import { PersonalInfoContext } from '../components/PersonalInfoContext';
+import { PersonalInfoContext } from './AuthProvider';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 

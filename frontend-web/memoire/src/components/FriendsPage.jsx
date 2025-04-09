@@ -1,7 +1,7 @@
 import React, {useState, useRef, useEffect, useContext} from 'react';
 import bgmemoire from '../assets/bgmemoire.jpg';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
-import { PersonalInfoContext } from '../components/PersonalInfoContext'; // Adjust the path as needed
+import { PersonalInfoContext } from './AuthProvider'; // Adjust the path as needed
 import Header from '../components/Header'; // Import the Header component
 import Sidebar from '../components/Sidebar'; // Import the Sidebar component
 

@@ -2,7 +2,7 @@
 import { Routes, Route } from "react-router-dom";
 import { lazy, Suspense, useContext } from "react";
 import { CircularProgress } from "@mui/material";
-import { PersonalInfoContext } from "./components/PersonalInfoContext";
+import { AuthProvider } from './components/AuthProvider';
 
 // Lazy-loaded components
 const Homepage = lazy(() => import("./components/Homepage"));
