@@ -1,22 +1,13 @@
 import React, {useContext} from 'react';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
-import { PersonalInfoContext } from './AuthProvider';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 
 const Capsules = () => {
-  const { personalInfo } = useContext(PersonalInfoContext);
-  const userData = personalInfo || {
-    username: "",
-    email: "",
-    bio: "",
-    profilePicture: ProfilePictureSample
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="flex flex-col h-screen">
-        <Header userData={userData} />
+        <Header/>
         
         <div className="flex flex-1 h-screen overflow-hidden">
           <Sidebar />
