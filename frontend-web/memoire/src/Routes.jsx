@@ -34,7 +34,8 @@ const AppRoutes = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/search" element={<SearchResult />} />
         <Route path="/profile/:userId" element={<ProfilePageOther />} />
-        <Route path="/create" element={<CreateCapsule />} />
+        <Route path="/create" element={<CreateCapsule mode="create" />} />
+        <Route path="/edit/:id" element={<CreateCapsule mode="edit" />} />
         <Route path="/capsules" element={<Capsules />} />
         <Route path="/archived_capsules" element={<ArchivedCapsules />} />
         <Route path="/friends" element={<FriendsPage />} />
