@@ -11,7 +11,6 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
@@ -20,12 +19,18 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic"); // Enable a simple memory-based message broker
         config.setApplicationDestinationPrefixes("/app");
+        config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint("/ws-comments") // WebSocket endpoint
+        registry.addEndpoint("/ws-notifications") // WebSocket endpoint for notifications
                 .setAllowedOriginPatterns("*")
                 .withSockJS(); // Fallback for browsers that don't support WebSocket
+
+        // Keep existing endpoint
+        registry.addEndpoint("/ws-comments")
+                .setAllowedOriginPatterns("*")
+                .withSockJS();
     }
 }

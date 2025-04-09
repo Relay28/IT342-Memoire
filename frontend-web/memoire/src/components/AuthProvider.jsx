@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
           username: userData.username,
           email: userData.email,
           name: userData.name || userData.username,
-          bio: userData.bio || "",
+          biography: userData.biography || "",
           profilePicture: userData.profilePicture || ""
         });
         

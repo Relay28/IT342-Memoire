@@ -1,229 +1,58 @@
 // components/Header.jsx
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo  } from 'react';
 import { FaSearch, FaMoon, FaBell } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import mmrlogo from '../assets/mmrlogo.png';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { profileService } from '../components/ProfileFunctionalities';
-import axios from 'axios';
-import { Client } from '@stomp/stompjs';
 import { useAuth } from './AuthProvider'; // Import the useAuth hook
+import  {useNotifications}  from '../context/NotificationContext'; // Import the notifications hook
 
 const Header = () => {
   // Use the auth context
   const { 
     user, 
     authToken,
-    loading: authLoading,
-    error: authError,
     isAuthenticated,
-    logout,
-    clearError
+    logout
   } = useAuth();
 
+  // Use the notification context
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    fetchNotifications,
+    fetchUnreadCount,
+    isConnected
+  } = useNotifications();
+  const memoizedNotifications = useMemo(() => notifications, [notifications]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const stompClient = useRef(null);
+  const notificationRef = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch notifications
-  const fetchNotifications = async () => {
-    try {
-      const response = await axios.get('http://localhost:8080/api/notifications', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
-      
-      console.log(response);
-      // Handle both single notification and array cases
-      let notificationsArray = [];
-      if (Array.isArray(response.data)) {
-        notificationsArray = response.data;
-      } else if (response.data && typeof response.data === 'object') {
-        notificationsArray = [response.data];
-      }
-      
-      setNotifications(notificationsArray);
-      
-      // Count unread notifications - note the property is 'read' not 'isRead'
-      const unread = notificationsArray.filter(notification => !notification.read).length;
-      setUnreadCount(unread);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      setNotifications([]);
-      setUnreadCount(0);
-    }
-  };
-  
-  // Fetch unread count separately
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await axios.get('http://localhost:8080/api/notifications/unread-count', {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
-      setUnreadCount(response.data.count);
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
-  };
-
-  // Mark notification as read
-  const markAsRead = async (id) => {
-    try {
-      await axios.patch(`http://localhost:8080/api/notifications/${id}/read`, {}, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
-      // Update local state - using 'read' instead of 'isRead'
-      setNotifications(notifications.map(notification => 
-        notification.id === id ? {...notification, read: true} : notification
-      ));
-      setUnreadCount(prev => prev > 0 ? prev - 1 : 0);
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  // Mark all as read
-  const markAllAsRead = async () => {
-    try {
-      await axios.patch('http://localhost:8080/api/notifications/read-all', {}, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`
-        }
-      });
-      // Update local state - using 'read' instead of 'isRead'
-      setNotifications(notifications.map(notification => 
-        ({...notification, read: true})
-      ));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    }
-  };
-
-  // Initialize WebSocket connection using native WebSocket
-  // const connectWebSocket = () => {
-  //   // Close any existing connection
-  //   if (stompClient.current) {
-  //     try {
-  //       stompClient.current.deactivate();
-  //     } catch (e) {
-  //       console.error("Error disconnecting:", e);
-  //     }
-  //   }
-  
-  //   // Create new connection using @stomp/stompjs directly with WebSocket
-  //   const client = new Client({
-  //     // Use WebSocket directly instead of SockJS
-  //     webSocketFactory: () =>
-  //       new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//localhost:8080/ws-comments`),
-  //     connectHeaders: {
-  //       Authorization: `Bearer ${authToken}`
-  //     },
-  //     debug: function (str) {
-  //       // Disable for production
-  //       // console.log(str);
-  //     },
-  //     reconnectDelay: 5000,
-  //     heartbeatIncoming: 4000,
-  //     heartbeatOutgoing: 4000
-  //   });
-  
-  //   client.onConnect = function () {
-  //     console.log('Connected to WebSocket');
-      
-  //     // Subscribe to a general notifications topic (no user ID needed)
-  //     client.subscribe('http://localhost:8080/topic/notifications', message => {
-  //       try {
-  //         const notification = JSON.parse(message.body);
-  //         console.log('Received new notification:', notification);
-  
-  //         // Add the new notification to the state
-  //         setNotifications(prevNotifications => [notification, ...prevNotifications]);
-  
-  //         // Update unread count
-  //         setUnreadCount(prevCount => prevCount + 1);
-  
-  //         // Optional: Show browser notification
-  //         showBrowserNotification(notification);
-  //       } catch (e) {
-  //         console.error('Error processing notification message:', e);
-  //       }
-  //     });
-  
-  //     // Subscribe to notification count updates (no user ID needed)
-  //     client.subscribe('http://localhost:8080/topic/notifications/count', message => {
-  //       try {
-  //         const countData = JSON.parse(message.body);
-  //         console.log('Notification count update:', countData);
-  //         setUnreadCount(countData.count);
-  //       } catch (e) {
-  //         console.error('Error processing count message:', e);
-  //       }
-  //     });
-  
-  //     // Send subscription confirmation
-  //     client.publish({
-  //       destination: "/app/notifications/subscribe",
-  //       body: JSON.stringify({})
-  //     });
-  //   };
-  
-  //   client.onStompError = function (frame) {
-  //     console.error('STOMP error:', frame.headers.message);
-  //     console.error('Additional details:', frame.body);
-  //   };
-  
-  //   // Start the connection
-  //   client.activate();
-  
-  //   stompClient.current = client;
-  //   return client;
-  // };
-  
-  // // Show browser notification
-  // const showBrowserNotification = (notification) => {
-  //   if (Notification.permission === "granted" && 
-  //       document.visibilityState !== 'visible') {
-  //     const title = getNotificationTitle(notification.type);
-  //     new Notification(title, {
-  //       body: notification.text
-  //     });
-  //   }
-  // };
-  
-  // Get notification title
-  const getNotificationTitle = (type) => {
-    switch (type) {
-      case "FRIEND_REQUEST":
-        return "New Friend Request";
-      case "FRIEND_REQUEST_ACCEPTED":
-        return "Friend Request Accepted";
-      case "TIME_CAPSULE_OPEN":
-        return "Time Capsule Opened";
-      case "COMMENT":
-        return "New Comment on Your Time Capsule";
-      default:
-        return "New Notification";
-    }
-  };
-
+  // Handle clicks outside notification dropdown
   useEffect(() => {
-    // Request notification permission
-    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
-      Notification.requestPermission();
+    function handleClickOutside(event) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
     }
     
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Fetch initial notifications data
+  useEffect(() => {
     // Only fetch if the user is authenticated
     if (isAuthenticated) {
       // Fetch profile picture
@@ -239,22 +68,21 @@ const Header = () => {
         }
       };
       
+      // Fetch initial notifications count
+      const getInitialNotifications = async () => {
+        try {
+          await fetchUnreadCount();
+        } catch (error) {
+          console.error('Error fetching notification count:', error);
+        }
+      };
+      
       fetchProfilePicture();
-      fetchNotifications();
-      
-      // Connect to WebSocket for real-time updates
-      // const client = connectWebSocket();
-      
-      // return () => {
-      //   // Clean up WebSocket connection when component unmounts
-      //   if (client) {
-      //     client.deactivate();
-      //   }
-      // };
+      getInitialNotifications();
     } else {
       setIsLoading(false);
     }
-  }, [isAuthenticated]); // Run when authentication status changes
+  }, [isAuthenticated, fetchUnreadCount]); 
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -266,14 +94,45 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await logout(); // Use the logout function from auth context
-      // Disconnect WebSocket
-      if (stompClient.current) {
-        stompClient.current.deactivate();
-      }
       setProfilePicture(null);
       navigate('/login');
     } catch (error) {
       console.error('Logout error:', error);
+    }
+  };
+
+  const handleOpenNotifications = async () => {
+    setIsNotificationsOpen(true);
+    if (isAuthenticated) {
+      setIsNotificationsLoading(true);
+      try {
+        await fetchNotifications();
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      } finally {
+        setIsNotificationsLoading(false);
+      }
+    }
+  };
+
+  const formatNotificationTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) {
+      return 'Just now';
+    } else if (diffMins < 60) {
+      return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    } else {
+      return date.toLocaleDateString();
     }
   };
 
@@ -301,20 +160,22 @@ const Header = () => {
         </button>
         
         {/* Notifications dropdown */}
-        <div className="relative">
+        <div className="relative" ref={notificationRef}>
           <button 
             className="p-2 rounded-full hover:bg-red-100 relative"
             onClick={() => {
-              setIsNotificationsOpen(!isNotificationsOpen);
-              if (!isNotificationsOpen) {
-                fetchNotifications(); // Refresh when opening
+              if (isNotificationsOpen) {
+                setIsNotificationsOpen(false);
+              } else {
+                handleOpenNotifications();
               }
             }}
+            aria-label="Notifications"
           >
             <FaBell size={24} className="text-[#AF3535]" />
             {unreadCount > 0 && (
               <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {unreadCount}
+                {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </button>
@@ -325,7 +186,11 @@ const Header = () => {
                 <h3 className="font-semibold text-gray-800">Notifications</h3>
                 {unreadCount > 0 && (
                   <button 
-                    onClick={markAllAsRead}
+                    onClick={() => {
+                      if (unreadCount > 0) {
+                        markAllAsRead();
+                      }
+                    }}
                     className="text-xs text-blue-500 hover:text-blue-700"
                   >
                     Mark all as read
@@ -333,36 +198,54 @@ const Header = () => {
                 )}
               </div>
               
-              {notifications.length === 0 ? (
+              {!isAuthenticated ? (
+                <div className="p-4 text-center text-gray-500">
+                  Please log in to view notifications
+                </div>
+              ) : isNotificationsLoading ? (
+                <div className="p-6 flex justify-center">
+                  <div className="w-6 h-6 border-2 border-[#AF3535] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : !isConnected ? (
+                <div className="p-4 text-center text-gray-500">
+                  Connecting to notification service...
+                </div>
+              ) : notifications.length === 0 ? (
                 <div className="p-4 text-center text-gray-500">
                   No notifications
                 </div>
               ) : (
                 <ul>
-                {notifications.map(notification => (
-                  <li 
-                    key={notification.id} 
-                    className={`p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
-                    onClick={() => {
-                      if (!notification.read) {
-                        markAsRead(notification.id);
-                      }
-                    }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{notification.text}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(notification.createdAt).toLocaleString()}
-                        </p>
+                  {notifications.map(notification => (
+                    <li 
+                      key={notification.id} 
+                      className={`p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
+                      onClick={() => {
+                        if (!notification.read) {
+                          markAsRead(notification.id);
+                        }
+                        
+                        // Handle notification navigation based on type
+                        if (notification.linkUrl) {
+                          navigate(notification.linkUrl);
+                          setIsNotificationsOpen(false);
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{notification.text}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatNotificationTime(notification.createdAt)}
+                          </p>
+                        </div>
+                        {!notification.read && (
+                          <span className="inline-block h-2 w-2 rounded-full bg-blue-500 flex-shrink-0 ml-2 mt-1"></span>
+                        )}
                       </div>
-                      {!notification.read && (
-                        <span className="inline-block h-2 w-2 rounded-full bg-blue-500"></span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
           )}

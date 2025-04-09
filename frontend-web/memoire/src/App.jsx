@@ -5,16 +5,19 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import FCMNotificationHandler from "./components/Firebase/FCMNotifcationHandler";
 import { AuthProvider } from './components/AuthProvider';
+import { NotificationProvider } from "./context/NotificationContext";
 function App() {
   
   return (
     <AuthProvider>
+       <NotificationProvider>
     <GoogleOAuthProvider>
       <BrowserRouter>
         <AppRoutes />
 
       </BrowserRouter>
     </GoogleOAuthProvider>
+    </NotificationProvider>
     </AuthProvider>
     
   );

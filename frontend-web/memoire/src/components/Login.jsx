@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { TextField, InputAdornment, IconButton } from '@mui/material';
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useFCMToken } from "../hooks/useFCMToken";
-import { useAuth } from '../components/AuthProvider'; // Import the new hook
+import { useAuth } from '../components/AuthProvider';
 import mmrlogo from "../assets/mmrlogo.png";
 import sunsetGif from "../assets/sunset.gif";
 
@@ -16,11 +16,18 @@ const Login = () => {
   });
   
   const navigate = useNavigate();
-  const { login, googleLogin, loading, error, user } = useAuth(); // Use the auth hook
+  const { login, googleLogin, loading, error, user, authToken } = useAuth(); // Get authToken from context
   
-  // Use the FCM token hook with user ID from auth context
-  useFCMToken(user?.id, sessionStorage.getItem("authToken"));
-
+  // Properly use the FCM token hook at component level
+  useFCMToken(user?.id, authToken);
+  
+  // Effect to navigate after successful login
+  useEffect(() => {
+    if (user && authToken) {
+      navigate("/homepage");
+    }
+  }, [user, authToken, navigate]);
+  
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
@@ -28,18 +35,13 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
-    const result = await login(formData);
-    if (result.success) {
-      navigate("/homepage");
-    }
+    await login(formData);
+    // Navigation is now handled by the useEffect above
   };
 
   const handleGoogleLoginSuccess = async (response) => {
-    const result = await googleLogin(response.credential);
-    if (result.success) {
-      navigate("/homepage");
-    }
+    await googleLogin(response.credential);
+    // Navigation is now handled by the useEffect above
   };
 
   const handleGoogleLoginError = () => {
