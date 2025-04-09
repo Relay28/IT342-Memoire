@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import { FaPlus, FaHome, FaStar, FaShareAlt } from 'react-icons/fa';
 
 const Sidebar = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const navigate = useNavigate();
+  const CreateTimeCapsule = () => {
+   
+    navigate("/create");;
+  }
   return (
     <>
       <aside className="w-64 p-4 shadow-md overflow-y-auto">
@@ -57,10 +61,7 @@ const Sidebar = () => {
                 Cancel
               </button>
               <button
-                onClick={() => {
-                  // Add your capsule creation logic here
-                  setIsModalOpen(false);
-                }}
+                onClick={CreateTimeCapsule}
                 className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
               >
                 Confirm
