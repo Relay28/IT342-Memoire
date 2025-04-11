@@ -25,7 +25,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -73,6 +75,15 @@ public class SecurityConfig {
                     corsConfig.setAllowedOrigins(List.of("http://localhost:5173")); // Allow your frontend URL
                     corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
                     corsConfig.setAllowedHeaders(List.of("*"));
+                    corsConfig.addAllowedHeader("Authorization");
+                    corsConfig.addAllowedHeader("Content-Type");
+                    corsConfig.addAllowedHeader("Accept");
+                    corsConfig.addAllowedHeader("simpUser");
+                    corsConfig.addAllowedHeader("*");
+                    corsConfig.setAllowedHeaders(Arrays.asList("*"));
+                    corsConfig.setAllowCredentials(true);
+                    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                    source.registerCorsConfiguration("/**", corsConfig);
                     corsConfig.setAllowCredentials(true);
                     return corsConfig;
                 }))
@@ -87,8 +98,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable()) // Disable CSRF if not needed
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow preflight
-                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**","/ws-notifications/**").permitAll()
+                        .requestMatchers("/app/**", "/topic/**", "/queue/**","user/**").authenticated()
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**","/ws-**/**").permitAll()
+
                         .anyRequest().authenticated()
+
                 )
 
                 .sessionManagement(session -> session

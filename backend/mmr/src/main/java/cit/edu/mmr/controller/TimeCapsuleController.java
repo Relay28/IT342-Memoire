@@ -43,9 +43,9 @@ public class TimeCapsuleController {
 
     // Get a specific time capsule
     @GetMapping("/{id}")
-    public ResponseEntity<TimeCapsuleDTO> getTimeCapsule(@PathVariable Long id) {
+    public ResponseEntity<TimeCapsuleDTO> getTimeCapsule(@PathVariable Long id,Authentication auth) {
         try {
-            return ResponseEntity.ok(timeCapsuleService.getTimeCapsule(id));
+            return ResponseEntity.ok(timeCapsuleService.getTimeCapsule(id,auth));
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -70,11 +70,11 @@ public class TimeCapsuleController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDirection) {
+            @RequestParam(defaultValue = "DESC") String sortDirection,Authentication auth) {
         try {
             Sort.Direction direction = Sort.Direction.fromString(sortDirection);
             PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
-            return ResponseEntity.ok(timeCapsuleService.getAllTimeCapsules(pageRequest));
+            return ResponseEntity.ok(timeCapsuleService.getAllTimeCapsules(pageRequest,auth));
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

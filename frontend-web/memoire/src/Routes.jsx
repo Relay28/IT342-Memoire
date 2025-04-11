@@ -3,6 +3,8 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense, useContext } from "react";
 import { CircularProgress } from "@mui/material";
 import { AuthProvider } from './components/AuthProvider';
+import { CapsuleContentProvider } from "./context/CapsuleWebContextProvider";
+
 
 // Lazy-loaded components
 const Homepage = lazy(() => import("./components/Homepage"));
@@ -34,8 +36,16 @@ const AppRoutes = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/search" element={<SearchResult />} />
         <Route path="/profile/:userId" element={<ProfilePageOther />} />
-        <Route path="/create" element={<CreateCapsule mode="create" />} />
-        <Route path="/edit/:id" element={<CreateCapsule mode="edit" />} />
+        
+        <Route path="/create" element={<CreateCapsule />} />
+        <Route 
+          path="/edit/:id" 
+          element={
+            <CapsuleContentProvider>
+              <CreateCapsule />
+            </CapsuleContentProvider>
+          } 
+        />
         <Route path="/capsules" element={<Capsules />} />
         <Route path="/archived_capsules" element={<ArchivedCapsules />} />
         <Route path="/friends" element={<FriendsPage />} />

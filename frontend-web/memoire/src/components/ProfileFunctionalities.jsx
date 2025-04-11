@@ -129,29 +129,31 @@ export const profileService = {
   },
 
   //Get Profile Pic
-  async getProfilePicture() {
-    try {
-      const response = await axios.get(
-        `${API_BASE_URL}/profile-picture?t=${Date.now()}`, // Add timestamp
-        getImageConfig()
-      );
-      
-      // Convert arraybuffer to base64 for easy use in img src
-      const base64 = btoa(
-        new Uint8Array(response.data).reduce(
-          (data, byte) => data + String.fromCharCode(byte),
-          ''
-        )
-      );
-      return `data:${response.headers['content-type']};base64,${base64}`;
-    } catch (error) {
-      console.error('Failed to fetch profile picture:', error);
-      throw error;
-    }
-  },
+ // Get Profile Pic with safe fallback
+async getProfilePicture() {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/profile-picture?t=${Date.now()}`,
+      getImageConfig()
+    );
 
-  // Update user details without changing profile picture
-  async updateUserDetails(userData) {
-    return this.updateProfile(userData); // Reuse the main update method
+    if (!response || !response.data || !response.headers['content-type']) {
+      console.warn('Empty profile picture response');
+      return null; // Or a fallback image URL if you prefer
+    }
+
+    const base64 = btoa(
+      new Uint8Array(response.data).reduce(
+        (data, byte) => data + String.fromCharCode(byte),
+        ''
+      )
+    );
+
+    return `data:${response.headers['content-type']};base64,${base64}`;
+  } catch (error) {
+    console.warn('No profile picture found or failed to fetch:', error?.response?.status || error.message);
+    return null; // Ensure null is returned on error to avoid further issues
   }
+}
+
 };

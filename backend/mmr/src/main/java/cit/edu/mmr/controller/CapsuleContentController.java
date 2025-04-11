@@ -23,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 @RestController
 @RequestMapping("/api/capsule-content")
@@ -180,6 +181,21 @@ public class CapsuleContentController {
             logger.error("Error fetching metadata for content ID: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error fetching content metadata"));
+        }
+    }
+
+    @GetMapping("/renderable/{capsuleId}")
+    public ResponseEntity<List<Map<String, Object>>> getRenderableContents(
+            @PathVariable Long capsuleId,
+            Authentication authentication) {
+        try {
+            List<Map<String, Object>> contents =
+                    capsuleContentService.getRenderableContentsByCapsuleId(capsuleId, authentication);
+            return ResponseEntity.ok(contents);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 }

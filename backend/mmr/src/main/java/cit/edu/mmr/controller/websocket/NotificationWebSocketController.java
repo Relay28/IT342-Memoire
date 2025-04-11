@@ -30,7 +30,7 @@ public class NotificationWebSocketController {
     @MessageMapping("/notifications/connect")
     @SendToUser("/topic/notifications/connect")
     public Map<String, Object> handleConnectionRequest(Authentication authentication) {
-        logger.info("WebSocket connection established for user: {}", authentication.getName());
+        logger.info("WebSocket connection established for user: {}", authentication);
 
         // Get current notification count
         long unreadCount = notificationService.getUnreadNotificationCount(authentication);

@@ -9,7 +9,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 @SpringBootApplication
-//@EnableConfigurationProperties(FileStorageProperties.class)
 @ComponentScan(basePackages = "cit.edu.mmr")
 @EnableCaching
 @EnableJpaRepositories("cit.edu.mmr.repository")
