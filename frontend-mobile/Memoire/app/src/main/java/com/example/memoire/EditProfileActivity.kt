@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -41,6 +42,12 @@ class EditProfileActivity : AppCompatActivity() {
 
         // Fetch the current profile data and populate the fields
         fetchCurrentProfile(editName, editBio)
+
+        // Back button functionality
+        findViewById<ImageView>(R.id.btn_back).setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
+            finish();
+        }
 
         // Save button click listener
         saveButton.setOnClickListener {

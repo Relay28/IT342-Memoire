@@ -34,17 +34,16 @@
 
             <TextView
                 android:id="@+id/tv_username"
-                android:layout_width="0dp"
+                android:layout_width="180dp"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
+                android:gravity="start"
                 android:maxLines="1"
                 android:text="_santos"
                 android:textColor="@color/black"
                 android:textSize="16sp"
-                android:textStyle="bold"
-                android:gravity="center"
+                android:textStyle="italic"
                 app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toStartOf="@+id/btn_more"
                 app:layout_constraintStart_toEndOf="@+id/btn_back"
                 app:layout_constraintTop_toTopOf="parent" />
 

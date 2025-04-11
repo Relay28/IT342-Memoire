@@ -31,6 +31,15 @@
             android:name=".com.example.memoire.HomeActivity"
             android:exported="false" />
         <activity
+            android:name=".com.example.memoire.NotificationActivity"
+            android:exported="false" />
+        <activity
+            android:name="com.example.memoire.com.example.memoire.SearchActivity"
+            android:exported="false" />
+        <activity
+            android:name=".com.example.memoire.CreateCapsuleActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

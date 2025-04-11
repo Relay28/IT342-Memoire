@@ -2,11 +2,11 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activity_home"
+    android:id="@+id/activity_notification"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"
-    tools:context=".com.example.memoire.HomeActivity">
+    tools:context=".com.example.memoire.NotificationActivity">
 
     <!-- AppBar with collapsing toolbar for header -->
     <com.google.android.material.appbar.AppBarLayout
@@ -32,6 +32,7 @@
 
                 <!-- Logo -->
                 <LinearLayout
+                    android:id="@+id/Logo"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:layout_alignParentStart="true"
@@ -141,24 +142,17 @@
                             android:src="@drawable/ic_placeholder" />
 
                         <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
+                            android:gravity="center|left"
                             android:orientation="vertical">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Georgia Santos"
-                                android:textColor="#000000"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Opened on February 24, 2025"
+                                android:text="Notification 1"
                                 android:textColor="#757575"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -166,80 +160,19 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
+                            android:layout_gravity="center"
                             android:contentDescription="More Options"
                             android:src="@drawable/three_dots" />
                     </LinearLayout>
 
                     <!-- Memory Content -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="Its been a year..."
-                        android:textColor="#000000"
-                        android:textSize="16sp" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="16dp"
-                        android:background="#E0E0E0" />
 
                     <!-- Memory Title and Date -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:baselineAligned="false"
-                        android:orientation="horizontal">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Memories of 2024"
-                                android:textColor="#000000"
-                                android:textSize="18sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Created on: February 24, 2024"
-                                android:textColor="#757575"
-                                android:textSize="12sp" />
-                        </LinearLayout>
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:layout_marginBottom="16dp"
-                        android:text="Hi Self! Open this after a year to reminisce wompwomp"
-                        android:textColor="#757575"
-                        android:textSize="14sp" />
 
                     <!-- Memory Images Grid -->
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvImages"
-                        android:layout_width="match_parent"
-                        android:layout_height="180dp" />
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Extra card to demonstrate scrolling -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -263,27 +196,20 @@
                             android:layout_width="40dp"
                             android:layout_height="40dp"
                             android:contentDescription="User Profile"
-                            android:src="@drawable/ic_google" />
+                            android:src="@drawable/ic_placeholder" />
 
                         <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_marginStart="8dp"
                             android:layout_weight="1"
+                            android:gravity="center|left"
                             android:orientation="vertical">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Another Memory"
-                                android:textColor="#000000"
-                                android:textSize="16sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Created on March 1, 2025"
+                                android:text="Notification 2"
                                 android:textColor="#757575"
                                 android:textSize="12sp" />
                         </LinearLayout>
@@ -291,21 +217,20 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
+                            android:layout_gravity="center"
                             android:contentDescription="More Options"
-                            android:src="@drawable/ic_launcher_background" />
+                            android:src="@drawable/three_dots" />
                     </LinearLayout>
 
                     <!-- Memory Content -->
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="Another memory example..."
-                        android:textColor="#000000"
-                        android:textSize="16sp" />
 
+                    <!-- Memory Title and Date -->
+
+                    <!-- Memory Images Grid -->
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
+
+            <!-- Extra card to demonstrate scrolling -->
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
@@ -320,7 +245,7 @@
         app:itemIconTint="@color/MemoireRed"
         android:paddingBottom="0dp"
         app:labelVisibilityMode="unlabeled"
-        android:layout_marginBottom="-50dp"
+        android:layout_marginBottom="-60dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

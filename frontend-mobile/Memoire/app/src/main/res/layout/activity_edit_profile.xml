@@ -227,7 +227,7 @@
                             android:inputType="textMultiLine"
                             android:minLines="3"
                             android:padding="8dp"
-                            android:text="KHBAKSJAHSKA BIOBIOBIOBIOBIO BIOGRAPHY Here"
+                            android:text="Sample Bio"
                             android:textColor="@color/black"
                             android:textSize="16sp" />
                     </com.google.android.material.textfield.TextInputLayout>
