@@ -10,6 +10,8 @@
     <string name="orLoginWith">OR LOGIN WITH</string>
     <string name="signUpGoogle">Sign in with Google</string>
     <string name="logi">Login</string>
+    <string name="StringSearch">Search here..</string>
+    <string name="capsulename">Title of Capsule here..</string>
 
     <!--    Register Strings-->
     <string name="full_name">USERNAME</string>
@@ -18,6 +20,5 @@
     <string name="alreadyHaveAcc">Already have an account? Log in</string>
     <string name="orRegisterWith">or register with</string>
     <string name="confirm_your_password">Confirm your password</string>
-
 
 </resources>
