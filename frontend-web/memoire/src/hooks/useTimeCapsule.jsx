@@ -69,6 +69,78 @@ export const useTimeCapsule = () => {
   }, [authToken]);
 
   /**
+   * Gets all UNPUBLISHED time capsules
+   * @returns {Promise} - Promise containing unpublished time capsules
+   */
+  const getUnpublishedTimeCapsules = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await timeCapsuleService.getUnpublishedTimeCapsules(authToken);
+      setLoading(false);
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to get unpublished time capsules');
+      setLoading(false);
+      throw err;
+    }
+  }, [authToken]);
+
+  /**
+   * Gets all CLOSED time capsules
+   * @returns {Promise} - Promise containing closed time capsules
+   */
+  const getClosedTimeCapsules = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await timeCapsuleService.getClosedTimeCapsules(authToken);
+      setLoading(false);
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to get closed time capsules');
+      setLoading(false);
+      throw err;
+    }
+  }, [authToken]);
+
+  /**
+   * Gets all PUBLISHED time capsules
+   * @returns {Promise} - Promise containing published time capsules
+   */
+  const getPublishedTimeCapsules = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await timeCapsuleService.getPublishedTimeCapsules(authToken);
+      setLoading(false);
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to get published time capsules');
+      setLoading(false);
+      throw err;
+    }
+  }, [authToken]);
+
+  /**
+   * Gets all ARCHIVED time capsules
+   * @returns {Promise} - Promise containing archived time capsules
+   */
+  const getArchivedTimeCapsules = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await timeCapsuleService.getArchivedTimeCapsules(authToken);
+      setLoading(false);
+      return response;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to get archived time capsules');
+      setLoading(false);
+      throw err;
+    }
+  }, [authToken]);
+
+  /**
    * Gets all time capsules with pagination
    * @param {Object} options - Pagination and sorting options
    * @returns {Promise} - Paginated time capsules
@@ -182,10 +254,16 @@ export const useTimeCapsule = () => {
   return {
     loading,
     error,
+    setLoading,  // Exporting state setters for direct use
+    setError,    // Exporting state setters for direct use
     clearError,
     createTimeCapsule,
     getTimeCapsule,
     getUserTimeCapsules,
+    getUnpublishedTimeCapsules,  // Added new method
+    getClosedTimeCapsules,       // Added new method
+    getPublishedTimeCapsules,    // Added new method
+    getArchivedTimeCapsules,     // Added new method
     getAllTimeCapsules,
     updateTimeCapsule,
     deleteTimeCapsule,

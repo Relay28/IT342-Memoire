@@ -65,6 +65,82 @@ class TimeCapsuleService {
   }
 
   /**
+   * Gets all UNPUBLISHED time capsules
+   * @param {string} authToken - The authentication token
+   * @returns {Promise} - Promise containing unpublished time capsules
+   */
+  async getUnpublishedTimeCapsules(authToken) {
+    try {
+      const response = await axios.get(`${API_URL}/status/unpublished`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError('Error fetching unpublished time capsules', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets all CLOSED time capsules
+   * @param {string} authToken - The authentication token
+   * @returns {Promise} - Promise containing closed time capsules
+   */
+  async getClosedTimeCapsules(authToken) {
+    try {
+      const response = await axios.get(`${API_URL}/status/closed`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError('Error fetching closed time capsules', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets all PUBLISHED time capsules
+   * @param {string} authToken - The authentication token
+   * @returns {Promise} - Promise containing published time capsules
+   */
+  async getPublishedTimeCapsules(authToken) {
+    try {
+      const response = await axios.get(`${API_URL}/status/published`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError('Error fetching published time capsules', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Gets all ARCHIVED time capsules
+   * @param {string} authToken - The authentication token
+   * @returns {Promise} - Promise containing archived time capsules
+   */
+  async getArchivedTimeCapsules(authToken) {
+    try {
+      const response = await axios.get(`${API_URL}/status/archived`, {
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+      return response.data;
+    } catch (error) {
+      this.handleError('Error fetching archived time capsules', error);
+      throw error;
+    }
+  }
+
+  /**
    * Gets all time capsules with pagination
    * @param {number} page - The page number (0-based)
    * @param {number} size - The page size

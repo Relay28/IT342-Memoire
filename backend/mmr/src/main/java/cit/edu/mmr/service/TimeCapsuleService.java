@@ -1,6 +1,5 @@
 package cit.edu.mmr.service;
 
-
 import cit.edu.mmr.dto.TimeCapsuleDTO;
 import cit.edu.mmr.entity.CapsuleAccessEntity;
 import cit.edu.mmr.entity.NotificationEntity;
@@ -25,6 +24,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.access.AccessDeniedException;
+
 @Service
 @Transactional
 public class TimeCapsuleService {
@@ -76,7 +76,7 @@ public class TimeCapsuleService {
         TimeCapsuleEntity capsule = tcRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
-        if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
+        if (!(capsule.getCreatedBy().getId() == (user.getId()))) {
             throw new AccessDeniedException("You do not have permission to update this capsule");
         }
 
@@ -121,22 +121,24 @@ public class TimeCapsuleService {
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
         // Check if user is the owner
-        boolean isOwner = capsule.getCreatedBy().getId()==(user.getId());
+        boolean isOwner = capsule.getCreatedBy().getId() == (user.getId());
 
         // If not owner, check if user has editor or viewer access
         boolean hasAccess = false;
+        String accessRole = null;
         if (!isOwner) {
             Optional<CapsuleAccessEntity> accessOptional = capsuleAccessRepository
                     .findByCapsuleIdAndUserId(capsule.getId(), user.getId());
 
             if (accessOptional.isPresent()) {
-                String role = accessOptional.get().getRole();
-                hasAccess = "EDITOR".equals(role) || "VIEWER".equals(role);
+                accessRole = accessOptional.get().getRole();
+                hasAccess = "EDITOR".equals(accessRole) || "VIEWER".equals(accessRole);
             }
         }
 
-        // If neither owner nor has proper access, deny access
-        if (!isOwner && !hasAccess) {
+        // For non-PUBLISHED capsules, only owners and editors can access
+        if (!isOwner && (!hasAccess ||
+                (!"PUBLISHED".equals(capsule.getStatus()) && "VIEWER".equals(accessRole)))) {
             throw new AccessDeniedException("You do not have permission to view this capsule");
         }
 
@@ -177,7 +179,7 @@ public class TimeCapsuleService {
         TimeCapsuleEntity capsule = tcRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
-        if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
+        if (!(capsule.getCreatedBy().getId() == (user.getId()))) {
             throw new AccessDeniedException("You do not have permission to delete this capsule");
         }
 
@@ -190,7 +192,7 @@ public class TimeCapsuleService {
         TimeCapsuleEntity capsule = tcRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
-        if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
+        if (!(capsule.getCreatedBy().getId() == (user.getId()))) {
             throw new AccessDeniedException("You do not have permission to lock this capsule");
         }
 
@@ -209,7 +211,7 @@ public class TimeCapsuleService {
         // Set open date and lock the capsule
         capsule.setOpenDate(openDate);
         capsule.setLocked(true);
-        capsule.setStatus("LOCKED");
+        capsule.setStatus("CLOSED");
         tcRepo.save(capsule);
 
         // Schedule automatic unlocking at the open date
@@ -226,6 +228,7 @@ public class TimeCapsuleService {
                         .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
                 updatedCapsule.setLocked(false);
+                updatedCapsule.setStatus("PUBLISHED");
                 tcRepo.save(updatedCapsule);
 
                 // Send notification
@@ -245,7 +248,7 @@ public class TimeCapsuleService {
         TimeCapsuleEntity capsule = tcRepo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
-        if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
+        if (!(capsule.getCreatedBy().getId() == (user.getId()))) {
             throw new AccessDeniedException("You do not have permission to unlock this capsule");
         }
 
@@ -289,6 +292,57 @@ public class TimeCapsuleService {
 
         // Convert to DTOs
         return allAccessibleCapsules.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // New method to get capsules by status with proper access control
+    public List<TimeCapsuleDTO> getTimeCapsulesByStatus(String status, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+
+        // Get all capsules with the specified status
+        List<TimeCapsuleEntity> statusCapsules = tcRepo.findByStatus(status);
+
+        // Filter based on access rights
+        List<TimeCapsuleEntity> accessibleCapsules = new ArrayList<>();
+
+        for (TimeCapsuleEntity capsule : statusCapsules) {
+            boolean isOwner = capsule.getCreatedBy().getId() == user.getId();
+
+            // For PUBLISHED status, include all capsules the user has access to
+            if ("PUBLISHED".equals(status)) {
+                if (isOwner) {
+                    accessibleCapsules.add(capsule);
+                    continue;
+                }
+
+                // Check if user has viewer or editor access
+                Optional<CapsuleAccessEntity> accessOptional = capsuleAccessRepository
+                        .findByCapsuleIdAndUserId(capsule.getId(), user.getId());
+
+                if (accessOptional.isPresent()) {
+                    accessibleCapsules.add(capsule);
+                }
+            }
+            // For non-PUBLISHED statuses, only include if user is owner or has editor access
+            else {
+                if (isOwner) {
+                    accessibleCapsules.add(capsule);
+                    continue;
+                }
+
+                // Check if user has editor access
+                Optional<CapsuleAccessEntity> accessOptional = capsuleAccessRepository
+                        .findByCapsuleIdAndUserId(capsule.getId(), user.getId());
+
+                if (accessOptional.isPresent() && "EDITOR".equals(accessOptional.get().getRole())) {
+                    accessibleCapsules.add(capsule);
+                }
+            }
+        }
+
+        // Convert to DTOs
+        return accessibleCapsules.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }

@@ -1,6 +1,5 @@
 package cit.edu.mmr.controller;
 
-
 import cit.edu.mmr.dto.LockRequest;
 import cit.edu.mmr.dto.TimeCapsuleDTO;
 import cit.edu.mmr.service.TimeCapsuleService;
@@ -17,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.persistence.EntityNotFoundException;
 
 import java.util.List;
+
 @RestController
 @RequestMapping("/api/timecapsules")
 //@CrossOrigin(origins = "*")
@@ -34,7 +34,7 @@ public class TimeCapsuleController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         try {
-            TimeCapsuleDTO created = timeCapsuleService.createTimeCapsule(timeCapsuleDTO,authentication);
+            TimeCapsuleDTO created = timeCapsuleService.createTimeCapsule(timeCapsuleDTO, authentication);
             return new ResponseEntity<>(created, HttpStatus.CREATED);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -43,11 +43,13 @@ public class TimeCapsuleController {
 
     // Get a specific time capsule
     @GetMapping("/{id}")
-    public ResponseEntity<TimeCapsuleDTO> getTimeCapsule(@PathVariable Long id,Authentication auth) {
+    public ResponseEntity<TimeCapsuleDTO> getTimeCapsule(@PathVariable Long id, Authentication auth) {
         try {
-            return ResponseEntity.ok(timeCapsuleService.getTimeCapsule(id,auth));
+            return ResponseEntity.ok(timeCapsuleService.getTimeCapsule(id, auth));
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
 
@@ -64,17 +66,77 @@ public class TimeCapsuleController {
         }
     }
 
+    // Get all UNPUBLISHED time capsules
+    @GetMapping("/status/unpublished")
+    public ResponseEntity<List<TimeCapsuleDTO>> getUnpublishedTimeCapsules(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getTimeCapsulesByStatus("UNPUBLISHED", auth));
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Get all CLOSED time capsules
+    @GetMapping("/status/closed")
+    public ResponseEntity<List<TimeCapsuleDTO>> getClosedTimeCapsules(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getTimeCapsulesByStatus("CLOSED", auth));
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Get all PUBLISHED time capsules
+    @GetMapping("/status/published")
+    public ResponseEntity<List<TimeCapsuleDTO>> getPublishedTimeCapsules(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getTimeCapsulesByStatus("PUBLISHED", auth));
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // Get all ARCHIVED time capsules
+    @GetMapping("/status/archived")
+    public ResponseEntity<List<TimeCapsuleDTO>> getArchivedTimeCapsules(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getTimeCapsulesByStatus("ARCHIVED", auth));
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
     // Get all time capsules with pagination
     @GetMapping
     public ResponseEntity<Page<TimeCapsuleDTO>> getAllTimeCapsules(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "DESC") String sortDirection,Authentication auth) {
+            @RequestParam(defaultValue = "DESC") String sortDirection,
+            Authentication auth) {
         try {
             Sort.Direction direction = Sort.Direction.fromString(sortDirection);
             PageRequest pageRequest = PageRequest.of(page, size, Sort.by(direction, sortBy));
-            return ResponseEntity.ok(timeCapsuleService.getAllTimeCapsules(pageRequest,auth));
+            return ResponseEntity.ok(timeCapsuleService.getAllTimeCapsules(pageRequest, auth));
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -90,7 +152,7 @@ public class TimeCapsuleController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         try {
-            return ResponseEntity.ok(timeCapsuleService.updateTimeCapsule(id, timeCapsuleDTO,authentication));
+            return ResponseEntity.ok(timeCapsuleService.updateTimeCapsule(id, timeCapsuleDTO, authentication));
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (AccessDeniedException e) {
@@ -105,7 +167,7 @@ public class TimeCapsuleController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         try {
-            timeCapsuleService.deleteTimeCapsule(id,authentication);
+            timeCapsuleService.deleteTimeCapsule(id, authentication);
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -121,7 +183,7 @@ public class TimeCapsuleController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         try {
-            timeCapsuleService.lockTimeCapsule(id,request.getOpenDate(),authentication);
+            timeCapsuleService.lockTimeCapsule(id, request.getOpenDate(), authentication);
             return ResponseEntity.ok().build();
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -137,7 +199,7 @@ public class TimeCapsuleController {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }
         try {
-            timeCapsuleService.unlockTimeCapsule(id,authentication);
+            timeCapsuleService.unlockTimeCapsule(id, authentication);
             return ResponseEntity.ok().build();
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
