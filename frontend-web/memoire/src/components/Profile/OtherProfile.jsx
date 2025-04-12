@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import apiService from './apiService';
 import Header from '../Header';
 import ProfilePictureSample from '../../assets/ProfilePictureSample.png';
-import { PersonalInfoContext } from '../PersonalInfoContext';
+import { useAuth } from '../AuthProvider';  // Import useAuth hook instead of PersonalInfoContext
 
 const ProfilePageOther = () => {
-  const { personalInfo } = useContext(PersonalInfoContext);
+  const { user } = useAuth();  // Use the auth context
   const { userId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -16,11 +16,10 @@ const ProfilePageOther = () => {
   const [friendshipStatus, setFriendshipStatus] = useState(null);
   const [isLoadingFriendship, setIsLoadingFriendship] = useState(true);
 
-  console.log(profile)
-  // Check friendship status when profile or personalInfo changes
+  // Check friendship status when profile or user changes
   useEffect(() => {
     const checkFriendshipStatus = async () => {
-      if (!personalInfo || !profile) return;
+      if (!user || !profile) return;
       
       try {
         setIsLoadingFriendship(true);
@@ -35,7 +34,7 @@ const ProfilePageOther = () => {
     };
 
     checkFriendshipStatus();
-  }, [profile, personalInfo]);
+  }, [profile, user]);
 
   const fetchProfile = async () => {
     try {
@@ -60,12 +59,11 @@ const ProfilePageOther = () => {
   const handleSendFriendRequest = async () => {
     try {
       setIsLoadingFriendship(true);
-      console.log(profile.userId)
-      if(profile.userId!=0){
-      await apiService.post('/api/friendships/create', {
-        friendId: profile.userId
-      });
-    }
+      if(profile.userId !== 0) {
+        await apiService.post('/api/friendships/create', {
+          friendId: profile.userId
+        });
+      }
       setFriendshipStatus('request_sent');
     } catch (error) {
       console.error('Error sending friend request:', error);
@@ -126,7 +124,7 @@ const ProfilePageOther = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header userData={user} />  {/* Pass user data to Header */}
       
       <main className="container mx-auto px-4 py-8">
         {isLoading ? (

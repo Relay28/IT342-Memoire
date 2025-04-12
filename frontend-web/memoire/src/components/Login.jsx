@@ -1,29 +1,33 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
-import axios from "axios";
-import { useFCMToken } from "../hooks/useFCMToken";
 import { TextField, InputAdornment, IconButton } from '@mui/material';
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import { useFCMToken } from "../hooks/useFCMToken";
+import { useAuth } from '../components/AuthProvider';
 import mmrlogo from "../assets/mmrlogo.png";
 import sunsetGif from "../assets/sunset.gif";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { PersonalInfoContext } from '../components/PersonalInfoContext'; // Add this import
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
-  
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
   });
-  const [errorMessage, setErrorMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState(null);
-  const { setPersonalInfo } = useContext(PersonalInfoContext); // Add this line
-
-  useFCMToken(userId, sessionStorage.getItem("authToken"));
-
+  
+  const navigate = useNavigate();
+  const { login, googleLogin, loading, error, user, authToken } = useAuth(); // Get authToken from context
+  
+  // Properly use the FCM token hook at component level
+  useFCMToken(user?.id, authToken);
+  
+  // Effect to navigate after successful login
+  useEffect(() => {
+    if (user && authToken) {
+      navigate("/homepage");
+    }
+  }, [user, authToken, navigate]);
+  
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
@@ -31,66 +35,15 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setErrorMessage("");
-    setLoading(true);
-
-    try {
-      const response = await axios.post(
-        "http://localhost:8080/api/auth/login",
-        formData,
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-      if (response.status === 200) {
-        const { token, userId, ...userData } = response.data; // Destructure user data
-        sessionStorage.setItem("authToken", token);
-        setUserId(userId);
-        
-        // Update the context with user data
-        setPersonalInfo({
-          username: userData.username,
-          email: userData.email,
-          fullName: userData.fullName || userData.username,
-          bio: userData.bio || "",
-          profilePicture: userData.profilePicture || ""
-        });
-        
-        navigate("/homepage");
-      }
-    } catch (error) {
-      setErrorMessage(error.response?.data?.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
+    await login(formData);
+    // Navigation is now handled by the useEffect above
   };
 
   const handleGoogleLoginSuccess = async (response) => {
-    try {
-      const res = await fetch(
-        `http://localhost:8080/api/auth/verify-token?idToken=${response.credential}`,
-        { method: "POST", credentials: "include" }
-      );
-      const data = await res.json();
-      
-      localStorage.setItem("token", data.token);
-      setUserId(data.userId);
-      
-      // Update the context with Google user data
-      setPersonalInfo({
-        username: data.username || data.email.split('@')[0],
-        email: data.email,
-        fullName: data.name || data.email.split('@')[0],
-        bio: "",
-        profilePicture: data.picture || ""
-      });
-      
-      navigate("/homepage");
-    } catch (error) {
-      alert("Google login failed");
-    }
+    await googleLogin(response.credential);
+    // Navigation is now handled by the useEffect above
   };
 
-  // ... rest of your component remains exactly the same ...
   const handleGoogleLoginError = () => {
     console.error("Google Login Failed");
     alert("Google login failed. Please try again.");
@@ -101,7 +54,6 @@ const Login = () => {
   };
 
   return (
-    // ... your existing JSX remains exactly the same ...
     <div className="flex w-screen h-screen">
       {/* Left Section - Same as register */}
       <div className="w-1/2 h-screen relative">
@@ -196,9 +148,9 @@ const Login = () => {
               {loading ? "LOGGING IN..." : "LOGIN"}
             </button>
 
-            {errorMessage && (
+            {error && (
               <p className="text-red-500 text-sm mt-2 w-full text-center">
-                {errorMessage}
+                {error}
               </p>
             )}
 

@@ -1,128 +1,79 @@
 // components/Header.jsx
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { FaSearch, FaMoon, FaBell } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import mmrlogo from '../assets/mmrlogo.png';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { profileService } from '../components/ProfileFunctionalities';
-import { PersonalInfoContext } from './PersonalInfoContext';
-import axios from 'axios';
+import { useAuth } from './AuthProvider'; // Import the useAuth hook
+import { useNotifications } from '../context/NotificationContext'; // Import the notifications hook
 
-const Header = ({ userData }) => {
-  const { personalInfo, setPersonalInfo } = useContext(PersonalInfoContext);
+const Header = () => {
+  // Use the auth context
+  const { 
+    user, 
+    authToken,
+    isAuthenticated,
+    logout
+  } = useAuth();
+
+  // Use the notification context
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    fetchNotifications,
+    fetchUnreadCount,
+    isConnected
+  } = useNotifications();
+  
+  const memoizedNotifications = useMemo(() => notifications, [notifications]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const notificationRef = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch notifications
-  const fetchNotifications = async () => {
-    try {
-      const response = await axios.get('http://localhost:8080/api/notifications', {
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-        }
-      });
-      
-      console.log(response)
-      // Handle both single notification and array cases
-      let notificationsArray = [];
-      if (Array.isArray(response.data)) {
-        notificationsArray = response.data;
-      } else if (response.data && typeof response.data === 'object') {
-        notificationsArray = [response.data];
-      }
-      
-      setNotifications(notificationsArray);
-      
-      // Count unread notifications - note the property is 'read' not 'isRead'
-      const unread = notificationsArray.filter(notification => !notification.read).length;
-      setUnreadCount(unread);
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      setNotifications([]);
-      setUnreadCount(0);
-    }
-  };
-  // Fetch unread count separately (more efficient if you don't need all notifications)
-  const fetchUnreadCount = async () => {
-    try {
-      const response = await axios.get('/api/notifications/unread-count', {
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-        }
-      });
-      setUnreadCount(response.data.count);
-    } catch (error) {
-      console.error('Error fetching unread count:', error);
-    }
-  };
-
-  // Mark notification as read
-  const markAsRead = async (id) => {
-    try {
-      await axios.patch(`/api/notifications/${id}/read`, {}, {
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-        }
-      });
-      // Update local state - using 'read' instead of 'isRead'
-      setNotifications(notifications.map(notification => 
-        notification.id === id ? {...notification, read: true} : notification
-      ));
-      setUnreadCount(prev => prev > 0 ? prev - 1 : 0);
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
-  };
-
-  // Mark all as read
-  const markAllAsRead = async () => {
-    try {
-      await axios.patch('/api/notifications/read-all', {}, {
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-        }
-      });
-      // Update local state - using 'read' instead of 'isRead'
-      setNotifications(notifications.map(notification => 
-        ({...notification, read: true})
-      ));
-      setUnreadCount(0);
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    }
-  };
-
+  // Handle clicks outside notification dropdown
   useEffect(() => {
-    // Fetch profile picture
-    const fetchProfilePicture = async () => {
-      try {
-        setIsLoading(true);
-        const picture = await profileService.getProfilePicture();
-        setProfilePicture(picture);
-      } catch (error) {
-        console.error('Error fetching profile picture:', error);
-      } finally {
-        setIsLoading(false);
+    function handleClickOutside(event) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
       }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, []);
 
-    // Only fetch if the user is logged in
-    if (sessionStorage.getItem('authToken')) {
+  // Fetch initial notifications data
+  useEffect(() => {
+    // Only fetch if the user is authenticated
+    if (isAuthenticated && authToken) {
+      // Fetch profile picture
+      const fetchProfilePicture = async () => {
+        try {
+          setIsLoading(true);
+          const picture = await profileService.getProfilePicture();
+          setProfilePicture(picture);
+        } catch (error) {
+          console.error('Error fetching profile picture:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
       fetchProfilePicture();
-      fetchNotifications();
-      // Optionally set up polling for new notifications
-      const interval = setInterval(fetchUnreadCount, 30000); // Check every 30 seconds
-      return () => clearInterval(interval);
     } else {
       setIsLoading(false);
     }
-  }, []);
+  }, [isAuthenticated, authToken]); 
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -133,23 +84,78 @@ const Header = ({ userData }) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post('http://localhost:8080/api/auth/logout', {}, {
-        headers: {
-          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
-        }
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      setPersonalInfo(null);
-      sessionStorage.removeItem('authToken');
+      await logout(); // Use the logout function from auth context
       setProfilePicture(null);
       navigate('/login');
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   };
 
+  const handleOpenNotifications = async () => {
+    setIsNotificationsOpen(true);
+    if (isAuthenticated) {
+      setIsNotificationsLoading(true);
+      try {
+        await fetchNotifications();
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      } finally {
+        setIsNotificationsLoading(false);
+      }
+    }
+  };
+
+  const formatNotificationTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) {
+      return 'Just now';
+    } else if (diffMins < 60) {
+      return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+    } else if (diffHours < 24) {
+      return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+    } else if (diffDays < 7) {
+      return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
+
+  // Show connection indicator for debugging - you can remove this in production
+  const connectionStatusIndicator = () => {
+    if (!isAuthenticated) return null;
+    
+    return (
+      <div className="hidden absolute bottom-2 right-2 text-xs px-2 py-1 rounded">
+        {isConnected ? 
+          <span className="text-green-700">●</span> : 
+          <span className="text-red-700">●</span>}
+      </div>
+    );
+  };
+
+  // Determine loading state for notifications
+  const showNotificationsLoading = isAuthenticated && isNotificationsLoading;
+  
+  // Determine if we're connecting but not yet connected
+  const showConnectingState = isAuthenticated && !isConnected && !isNotificationsLoading;
+  
+  // Determine if we have notifications to show
+  const hasNotifications = isAuthenticated && isConnected && memoizedNotifications.length > 0;
+  
+  // Determine if we should show the empty state
+  const showEmptyState = isAuthenticated && isConnected && memoizedNotifications.length === 0 && !isNotificationsLoading;
+
   return (
-    <header className="flex items-center justify-between p-4 bg-white shadow-md">
+    <header className="flex items-center justify-between p-4 bg-white shadow-md relative">
+      {connectionStatusIndicator()}
+      
       <Link to="/homepage" className="flex items-center space-x-2">
         <img src={mmrlogo} alt="Mémoire Logo" className="h-10 w-10" />
         <div className="text-2xl font-bold text-red-700">MÉMOIRE</div>
@@ -172,20 +178,22 @@ const Header = ({ userData }) => {
         </button>
         
         {/* Notifications dropdown */}
-        <div className="relative">
+        <div className="relative" ref={notificationRef}>
           <button 
             className="p-2 rounded-full hover:bg-red-100 relative"
             onClick={() => {
-              setIsNotificationsOpen(!isNotificationsOpen);
-              if (!isNotificationsOpen) {
-                fetchNotifications(); // Refresh when opening
+              if (isNotificationsOpen) {
+                setIsNotificationsOpen(false);
+              } else {
+                handleOpenNotifications();
               }
             }}
+            aria-label="Notifications"
           >
             <FaBell size={24} className="text-[#AF3535]" />
             {unreadCount > 0 && (
               <span className="absolute top-0 right-0 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                {unreadCount}
+                {unreadCount > 99 ? '99+' : unreadCount}
               </span>
             )}
           </button>
@@ -196,7 +204,12 @@ const Header = ({ userData }) => {
                 <h3 className="font-semibold text-gray-800">Notifications</h3>
                 {unreadCount > 0 && (
                   <button 
-                    onClick={markAllAsRead}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (unreadCount > 0) {
+                        markAllAsRead();
+                      }
+                    }}
                     className="text-xs text-blue-500 hover:text-blue-700"
                   >
                     Mark all as read
@@ -204,38 +217,58 @@ const Header = ({ userData }) => {
                 )}
               </div>
               
-              {notifications.length === 0 ? (
+              {!isAuthenticated ? (
+                <div className="p-4 text-center text-gray-500">
+                  Please log in to view notifications
+                </div>
+              ) : showNotificationsLoading ? (
+                <div className="p-6 flex justify-center">
+                  <div className="w-6 h-6 border-2 border-[#AF3535] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+              ) : showConnectingState ? (
+                <div className="p-4 text-center text-gray-500">
+                  Connecting to notification service...
+                </div>
+              ) : showEmptyState ? (
                 <div className="p-4 text-center text-gray-500">
                   No notifications
                 </div>
-              ) : (
+              ) : hasNotifications ? (
                 <ul>
-                {notifications.map(notification => (
-                  <li 
-                    key={notification.id} 
-                    className={`p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
-                    onClick={() => {
-                      if (!notification.read) {
-                        markAsRead(notification.id);
-                      }
-                      // Navigate to relevant page based on notification type
-                      // navigate(getNotificationLink(notification));
-                    }}
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{notification.text}</p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(notification.createdAt).toLocaleString()}
-                        </p>
+                  {memoizedNotifications.map(notification => (
+                    <li 
+                      key={notification.id} 
+                      className={`p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
+                      onClick={() => {
+                        if (!notification.read) {
+                          markAsRead(notification.id);
+                        }
+                        
+                        // Handle notification navigation based on type
+                        if (notification.linkUrl) {
+                          navigate(notification.linkUrl);
+                          setIsNotificationsOpen(false);
+                        }
+                      }}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{notification.text}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatNotificationTime(notification.createdAt)}
+                          </p>
+                        </div>
+                        {!notification.read && (
+                          <span className="inline-block h-2 w-2 rounded-full bg-blue-500 flex-shrink-0 ml-2 mt-1"></span>
+                        )}
                       </div>
-                      {!notification.read && (
-                        <span className="inline-block h-2 w-2 rounded-full bg-blue-500"></span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="p-4 text-center text-red-500">
+                  Error loading notifications
+                </div>
               )}
             </div>
           )}
@@ -253,7 +286,7 @@ const Header = ({ userData }) => {
                 <div className="h-10 w-10 rounded-full border-2 border-[#AF3535] bg-gray-200 animate-pulse"></div>
               ) : (
                 <img 
-                  src={profilePicture || userData?.profilePicture || ProfilePictureSample} 
+                  src={profilePicture || user?.profilePicture || ProfilePictureSample} 
                   alt="User profile" 
                   className="h-10 w-10 rounded-full border-2 border-[#AF3535] object-cover hover:brightness-95 transition-all duration-200"
                   onError={(e) => {
@@ -273,7 +306,7 @@ const Header = ({ userData }) => {
               <div className="px-1 py-1">
                 <div className="flex items-center gap-3 px-4 py-3">
                   <img 
-                    src={profilePicture || userData?.profilePicture || ProfilePictureSample} 
+                    src={profilePicture || user?.profilePicture || ProfilePictureSample} 
                     alt="User" 
                     className="h-10 w-10 rounded-full border-2 border-[#AF3535] object-cover"
                     onError={(e) => {
@@ -282,8 +315,8 @@ const Header = ({ userData }) => {
                     }}
                   />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{userData?.username || "Loading..."}</p>
-                    <p className="text-xs text-gray-500">{userData?.email || "loading@example.com"}</p>
+                    <p className="text-sm font-medium text-gray-900">{user?.username || "Loading..."}</p>
+                    <p className="text-xs text-gray-500">{user?.email || "loading@example.com"}</p>
                   </div>
                 </div>
               </div>

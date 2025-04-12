@@ -1,13 +1,13 @@
 // components/Profile/SearchResult.jsx
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import apiService  from './apiService';
+import apiService from './apiService';
 import ProfilePictureSample from '../../assets/ProfilePictureSample.png';
 import Header from '../Header';
-import { PersonalInfoContext } from '../PersonalInfoContext';
+import { useAuth } from '../AuthProvider';  // Import useAuth hook instead of PersonalInfoContext
 
 const SearchResult = () => {
-  const { personalInfo } = useContext(PersonalInfoContext);
+  const { user } = useAuth();  // Use the auth context
   const location = useLocation();
   const navigate = useNavigate();
   const [results, setResults] = useState([]);
@@ -15,9 +15,8 @@ const SearchResult = () => {
   const [error, setError] = useState(null);
 
   const queryParams = new URLSearchParams(location.search);
-  const searchQuery = queryParams.get('q') || 
+  const searchQuery = queryParams.get('q') || '';
 
-  console.log(searchQuery)
   useEffect(() => {
     const fetchResults = async () => {
       try {
@@ -51,7 +50,7 @@ const SearchResult = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header  />
+      <Header userData={user} />  {/* Pass user data to Header */}
       
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold text-gray-800 mb-6">

@@ -337,6 +337,9 @@ public class CapsuleAccessService {
         }
     }
 
+
+
+
     /**
      * Check if a user has specific access to a capsule
      *

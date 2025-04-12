@@ -1,8 +1,10 @@
 // AppRoutes.jsx
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense, useContext } from "react";
 import { CircularProgress } from "@mui/material";
-import { PersonalInfoContext } from "./components/PersonalInfoContext";
+import { AuthProvider } from './components/AuthProvider';
+import { CapsuleContentProvider } from "./context/CapsuleWebContextProvider";
+
 
 // Lazy-loaded components
 const Homepage = lazy(() => import("./components/Homepage"));
@@ -27,13 +29,23 @@ const AppRoutes = () => {
   return (
     <Suspense fallback={<RouteLoader />}>
       <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/homepage" element={<Homepage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/search" element={<SearchResult />} />
         <Route path="/profile/:userId" element={<ProfilePageOther />} />
+        
         <Route path="/create" element={<CreateCapsule />} />
+        <Route 
+          path="/edit/:id" 
+          element={
+            <CapsuleContentProvider>
+              <CreateCapsule />
+            </CapsuleContentProvider>
+          } 
+        />
         <Route path="/capsules" element={<Capsules />} />
         <Route path="/archived_capsules" element={<ArchivedCapsules />} />
         <Route path="/friends" element={<FriendsPage />} />

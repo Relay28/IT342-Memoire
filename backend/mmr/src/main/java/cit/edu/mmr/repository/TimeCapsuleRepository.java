@@ -2,6 +2,8 @@ package cit.edu.mmr.repository;
 
 import cit.edu.mmr.entity.TimeCapsuleEntity;
 import cit.edu.mmr.entity.UserEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -12,7 +14,7 @@ import java.util.List;
 public interface TimeCapsuleRepository extends JpaRepository<TimeCapsuleEntity, Long> {
     // Get all capsules created by a specific user
     List<TimeCapsuleEntity> findByCreatedBy(UserEntity user);
-    
+    Page<TimeCapsuleEntity> findByCreatedById(Long userId, Pageable pageable);
     // Get capsules by their current status
     List<TimeCapsuleEntity> findByStatus(String status);
 

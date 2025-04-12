@@ -1,5 +1,6 @@
 package cit.edu.mmr.service;
 
+import cit.edu.mmr.dto.websocket.NotificationDTO;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
 import com.google.firebase.messaging.*;
@@ -14,15 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+
 @Service
 public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
@@ -30,14 +30,17 @@ public class NotificationService {
     private final FirebaseMessaging firebaseMessaging;
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate; // For WebSocket communication
 
     @Autowired
     public NotificationService(FirebaseMessaging firebaseMessaging,
                                NotificationRepository notificationRepository,
-                               UserRepository userRepository) {
+                               UserRepository userRepository,
+                               SimpMessagingTemplate messagingTemplate) {
         this.firebaseMessaging = firebaseMessaging;
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @CacheEvict(value = "notifications", key = "'userNotifications_' + #userId")
@@ -48,7 +51,10 @@ public class NotificationService {
 
             // Save notification to database
             notification.setUser(user);
-            notificationRepository.save(notification);
+            NotificationEntity savedNotification = notificationRepository.save(notification);
+
+            // Send WebSocket notification
+            sendNotificationViaWebSocket(user.getUsername(), savedNotification);
 
             // Check if user has FCM token
             if (user.getFcmToken() != null && !user.getFcmToken().isEmpty()) {
@@ -75,6 +81,34 @@ public class NotificationService {
         }
     }
 
+    // New method to send notification via WebSocket
+    private void sendNotificationViaWebSocket(String username, NotificationEntity notification) {
+        try {
+            // Convert notification to DTO if needed
+            NotificationDTO notificationDTO = convertToDTO(notification);
+
+            // Send to user-specific topic
+            messagingTemplate.convertAndSend("/topic/notifications/" + username, notificationDTO);
+            logger.info("WebSocket notification sent to user: {}", username);
+        } catch (Exception e) {
+            logger.error("Failed to send WebSocket notification: {}", e.getMessage());
+        }
+    }
+
+    // Helper method to convert Entity to DTO
+    private NotificationDTO convertToDTO(NotificationEntity notification) {
+        NotificationDTO dto = new NotificationDTO();
+        dto.setId(notification.getId());
+        dto.setType(notification.getType());
+        dto.setText(notification.getText());
+        dto.setRead(notification.isRead());
+        dto.setCreatedAt(notification.getCreatedAt());
+        dto.setItemType(notification.getItemType());
+        dto.setRelatedItemId(notification.getRelatedItemId());
+        return dto;
+    }
+
+    // Existing methods remain unchanged...
     @Cacheable(value = "notifications", key = "'notification_' + #id + '_' + #auth.name")
     public NotificationEntity getNotification(Long id, Authentication auth) {
         UserEntity currentUser = getAuthenticatedUser(auth);
@@ -97,6 +131,9 @@ public class NotificationService {
     public void markAllNotificationsAsRead(Authentication auth) {
         UserEntity currentUser = getAuthenticatedUser(auth);
         notificationRepository.markAllAsReadForUser(currentUser.getId());
+
+        // Send WebSocket update for notification count
+        sendNotificationCountUpdate(currentUser.getUsername(), 0);
     }
 
     @Cacheable(value = "notifications", key = "'unreadCount_' + #auth.name")
@@ -124,6 +161,16 @@ public class NotificationService {
 
         notification.setRead(true);
         notificationRepository.save(notification);
+
+        // After marking as read, send updated count via WebSocket
+        long newCount = notificationRepository.countByUserIdAndIsReadFalse(currentUser.getId());
+        sendNotificationCountUpdate(currentUser.getUsername(), newCount);
+    }
+
+    // Method to send notification count updates via WebSocket
+    private void sendNotificationCountUpdate(String username, long count) {
+        Map<String, Long> countUpdate = Collections.singletonMap("count", count);
+        messagingTemplate.convertAndSend("/topic/notifications/count/" + username, countUpdate);
     }
 
     @CacheEvict(value = "notifications", allEntries = true)

@@ -1,16 +1,16 @@
-import React, { useState, useRef, useEffect, useContext } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import mmrlogo from '../assets/mmrlogo.png';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { FaSearch, FaMoon, FaBell, FaPlus, FaHome, FaStar, FaShareAlt } from 'react-icons/fa';
 import { Link, useNavigate } from "react-router-dom";
-import { PersonalInfoContext } from '../components/PersonalInfoContext';
+import { useAuth } from './AuthProvider';  // Import useAuth hook instead of PersonalInfoContext
 import { profileService } from '../components/ProfileFunctionalities';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 
 const ProfilePage = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const { personalInfo, setPersonalInfo } = useContext(PersonalInfoContext);
+  const { user, updateUserProfile, uploadProfileImage, logout } = useAuth();  // Use the auth context
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     biography: '',
@@ -30,7 +30,7 @@ const ProfilePage = () => {
         setIsLoading(true);
         // Fetch user data
         const userData = await profileService.getCurrentUser();
-        setPersonalInfo(userData);
+        
         setFormData({
           biography: userData.biography || '',
           email: userData.email || '',
@@ -54,14 +54,14 @@ const ProfilePage = () => {
       }
     };
 
-    if (!personalInfo?.name) {
+    if (!user?.name) {
       fetchUserData();
     } else {
       setFormData({
-        biography: personalInfo.biography || '',
-        email: personalInfo.email || '',
-        name: personalInfo.name || '',
-        username: personalInfo.username || ''
+        biography: user.biography || '',
+        email: user.email || '',
+        name: user.name || '',
+        username: user.username || ''
       });
       // Try to load profile picture if not already loaded
       if (!previewImage || previewImage === ProfilePictureSample) {
@@ -70,7 +70,7 @@ const ProfilePage = () => {
           .catch(() => setPreviewImage(ProfilePictureSample));
       }
     }
-  }, [personalInfo, setPersonalInfo]);
+  }, [user]);
 
   const toggleProfile = () => {
     setIsProfileOpen(!isProfileOpen);
@@ -78,7 +78,7 @@ const ProfilePage = () => {
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
-    console.log(file)
+    console.log(file);
     if (file) {
       setProfileImage(file);
       const reader = new FileReader();
@@ -87,10 +87,8 @@ const ProfilePage = () => {
       };
      
       reader.readAsDataURL(file);
-     handleSaveChanges(file)
+      handleSaveChanges(file);
     }
-  
- 
   };
 
   const handleInputChange = (e) => {
@@ -102,43 +100,29 @@ const ProfilePage = () => {
   };
 
   const handleSaveChanges = async (imageFile) => {
-    const fileToUpload = imageFile || null  ;
+    const fileToUpload = imageFile || null;
   
     try {
       setIsLoading(true);
       const userData = {
-        biography: formData.biography,
+        biography: formData.biography,  // Map to the fields expected by AuthProvider
         email: formData.email,
         name: formData.name,
         username: formData.username
       };
 
-      let updatedUser;
-      
       // First handle profile picture upload if there's a new image
       if (fileToUpload) {
-        const pictureResponse = await profileService.uploadProfilePicture(fileToUpload);
-        
+        await uploadProfileImage(fileToUpload);  // Use AuthProvider method
       }
+      
       // Then update user details
-      updatedUser = await profileService.updateUserDetails(userData);
+      const { success } = await updateUserProfile(userData);  // Use AuthProvider method
 
-      // Update context and local state
-      setPersonalInfo(prev => ({
-        ...prev,
-        ...updatedUser
-      }));
-
-      setFormData(prev => ({
-        ...prev,
-        biography: updatedUser.biography || prev.biography,
-        email: updatedUser.email || prev.email,
-        name: updatedUser.name || prev.name,
-        username: updatedUser.username || prev.username
-      }));
-
-      setProfileImage(null);
-      alert('Profile updated successfully!');
+      if (success) {
+        setProfileImage(null);
+        alert('Profile updated successfully!');
+      }
     } catch (error) {
       console.error('Failed to update profile:', {
         error: error,
@@ -155,6 +139,7 @@ const ProfilePage = () => {
       try {
         setIsLoading(true);
         await profileService.deactivateAccount();
+        logout();  // Use AuthProvider method to log out after deactivation
         navigate('/login');
       } catch (error) {
         console.error('Failed to deactivate account:', error);
@@ -169,7 +154,7 @@ const ProfilePage = () => {
     alert('Password change functionality will be implemented here');
   };
 
-  const userData = personalInfo || {
+  const userData = user || {
     username: "",
     email: "",
     biography: "",
@@ -202,7 +187,7 @@ const ProfilePage = () => {
                   <div className="flex items-center space-x-4">
                     <div className="relative">
                       <img 
-                        src={previewImage} 
+                        src={previewImage || user?.profilePicture || ProfilePictureSample} 
                         alt="Profile" 
                         className="h-24 w-24 rounded-full object-cover border-2 border-[#AF3535]"
                       />
@@ -233,7 +218,7 @@ const ProfilePage = () => {
                   
                   <button 
                     className="px-4 py-2 bg-[#AF3535] text-white rounded-md hover:bg-[#AF3535]/90 transition-colors"
-                    onClick={handleSaveChanges}
+                    onClick={() => handleSaveChanges()}
                   >
                     Save Changes
                   </button>
