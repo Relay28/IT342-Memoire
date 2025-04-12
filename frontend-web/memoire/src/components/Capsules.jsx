@@ -6,6 +6,7 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { format } from 'date-fns';
+import LockDateModal from '../components/modals/LockDateModal'; // Import the LockDateModal component
 
 const Capsules = () => {
   const { authToken } = useAuth();
@@ -17,12 +18,15 @@ const Capsules = () => {
     getClosedTimeCapsules,
     getPublishedTimeCapsules,
     getArchivedTimeCapsules,
-    deleteTimeCapsule
+    deleteTimeCapsule,
+    unlockTimeCapsule
   } = useTimeCapsule();
   
   const [capsules, setCapsules] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'unpublished', 'closed', 'published', 'archived'
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+  const [selectedCapsuleId, setSelectedCapsuleId] = useState(null);
   const menuRef = useRef(null);
   const navigate = useNavigate();
 
@@ -88,9 +92,33 @@ const Capsules = () => {
     }
   };
 
+  const handleUnlockCapsule = async (id) => {
+    try {
+      await unlockTimeCapsule(id);
+      // Refresh the list after unlocking
+      fetchCapsulesByFilter(activeFilter);
+      setOpenMenuId(null);
+    } catch (err) {
+      console.error('Failed to unlock time capsule:', err);
+      // Error is handled in the hook
+    }
+  };
+
   const handleToggleMenu = (e, id) => {
     e.stopPropagation();
     setOpenMenuId(openMenuId === id ? null : id);
+  };
+
+  const handleOpenLockModal = (e, id) => {
+    e.stopPropagation();
+    setSelectedCapsuleId(id);
+    setIsLockModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  const handleLockSuccess = () => {
+    // Refresh the list after locking
+    fetchCapsulesByFilter(activeFilter);
   };
 
   const formatDate = (dateString) => {
@@ -234,7 +262,7 @@ const Capsules = () => {
                       />
                     </div>
                     <div className="text-center">
-                      {formatDate(capsule.createdAt)}
+                      {formatDate(capsule.updatedAt || capsule.createdAt)}
                     </div>
                     <div className="text-center">
                       <span className={`px-2 py-1 rounded-full text-xs ${getStatusStyle(capsule.status)}`}>
@@ -285,9 +313,7 @@ const Capsules = () => {
                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  // Unlock functionality would go here
-                                  alert('Unlock functionality to be implemented');
-                                  setOpenMenuId(null);
+                                  handleUnlockCapsule(capsule.id);
                                 }}
                               >
                                 Unlock
@@ -295,17 +321,13 @@ const Capsules = () => {
                             ) : (
                               <button
                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  // Lock functionality would go here
-                                  navigate(`/lock/${capsule.id}`);
-                                }}
+                                onClick={(e) => handleOpenLockModal(e, capsule.id)}
                               >
                                 Lock
                               </button>
                             )}
                             
-                            {/* Delete Option - Only show for non-locked capsules */}
+                            {/* Delete Option */}
                             <button
                               className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                               onClick={(e) => {
@@ -326,6 +348,14 @@ const Capsules = () => {
           </section>
         </div>
       </div>
+
+      {/* Lock Date Modal */}
+      <LockDateModal
+        isOpen={isLockModalOpen}
+        onClose={() => setIsLockModalOpen(false)}
+        timeCapsuleId={selectedCapsuleId}
+        onSuccess={handleLockSuccess}
+      />
     </div>
   );
 };
