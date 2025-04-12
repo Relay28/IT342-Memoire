@@ -13,6 +13,7 @@ class WebSocketService {
 
   connect(authToken, endpoint) {
     // Validate token format to avoid base64 issues
+    console.log("Connecting to "+endpoint+" with token "+authToken)
     if (!this._validateToken(authToken)) {
       return Promise.reject(new Error("Invalid authentication token format"));
     }

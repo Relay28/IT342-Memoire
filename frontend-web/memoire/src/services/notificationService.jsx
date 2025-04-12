@@ -1,49 +1,57 @@
-import SockJS from 'sockjs-client';
-import { Stomp } from '@stomp/stompjs';
-import { useAuth } from '../components/AuthProvider';
+// NotificationService.js
+import webSocketService from './websocketService';
+
 class NotificationService {
   constructor() {
-    this.stompClient = null;
-    this.connected = false;
     this.username = null;
     this.notificationHandlers = [];
     this.countHandlers = [];
+    this.connectionSubscription = null;
+    this.notificationSubscription = null;
+    this.countSubscription = null;
+    this.endpoint = "/ws-notifications";
   }
 
   connect(username, token) {
     this.username = username;
+    console.log(`Connecting notification service for ${username} to ${this.endpoint}`);
     
-    const socket = new SockJS('http://localhost:8080/ws-notifications');
-    this.stompClient = Stomp.over(socket);
-    
-    // Configure STOMP client
-    const headers = {
-      'Authorization': `Bearer ${token}`
-    };
-    
-    this.stompClient.connect(headers, this.onConnected.bind(this), this.onError.bind(this));
-    return this; // For chaining
+    return webSocketService.connect(token, this.endpoint)
+      .then(() => {
+        // Subscribe to personal notification channel
+        this.notificationSubscription = webSocketService.subscribe(
+          `/topic/notifications/${this.username}`, 
+          this.onNotificationReceived.bind(this),
+          {},
+          this.endpoint
+        );
+        
+        // Subscribe to notification count updates
+        this.countSubscription = webSocketService.subscribe(
+          `/topic/notifications/count/${this.username}`, 
+          this.onCountReceived.bind(this),
+          {},
+          this.endpoint
+        );
+        
+        // Subscribe to user-specific channel for connection confirmation
+        this.connectionSubscription = webSocketService.subscribe(
+          `/user/${this.username}/topic/notifications/connect`, 
+          this.onConnectionConfirmed.bind(this),
+          {},
+          this.endpoint
+        );
+        
+        // Send connection message to get initial data
+        return webSocketService.send("/app/notifications/connect", {}, {}, this.endpoint);
+      })
+      .catch(error => {
+        console.error("Failed to connect notification service:", error);
+        throw error;
+      });
   }
   
-  onConnected() {
-    this.connected = true;
-    console.log('Connected to notification websocket');
-    
-    // Subscribe to personal notification channel
-    this.stompClient.subscribe(`/topic/notifications/${this.username}`, this.onNotificationReceived.bind(this));
-    
-    // Subscribe to notification count updates
-    this.stompClient.subscribe(`/topic/notifications/count/${this.username}`, this.onCountReceived.bind(this));
-    
-    // Subscribe to user-specific channel for connection confirmation
-    this.stompClient.subscribe(`/user/topic/notifications/connect`, this.onConnectionConfirmed.bind(this));
-    
-    // Send connection message to get initial data
-    this.stompClient.send("/app/notifications/connect", {}, JSON.stringify({}));
-  }
-  
-  onConnectionConfirmed(response) {
-    const data = JSON.parse(response.body);
+  onConnectionConfirmed(data) {
     console.log('Initial notification data:', data);
     
     // Update notification count
@@ -57,8 +65,7 @@ class NotificationService {
     }
   }
   
-  onNotificationReceived(payload) {
-    const notification = JSON.parse(payload.body);
+  onNotificationReceived(notification) {
     console.log('New notification received:', notification);
     
     // Notify all handlers
@@ -68,8 +75,7 @@ class NotificationService {
     this.playNotificationSound();
   }
   
-  onCountReceived(payload) {
-    const data = JSON.parse(payload.body);
+  onCountReceived(data) {
     console.log('Notification count update:', data);
     
     // Notify count handlers
@@ -86,24 +92,26 @@ class NotificationService {
     }
   }
   
-  onError(error) {
-    console.error('WebSocket connection error:', error);
-    this.connected = false;
-    
-    // Try to reconnect after 5 seconds
-    setTimeout(() => {
-      if (this.username) {
-        this.connect(this.username, sessionStorage.getItem('authToken'));
-      }
-    }, 5000);
-  }
-  
   disconnect() {
-    if (this.stompClient !== null) {
-      this.stompClient.disconnect();
-      this.connected = false;
-      console.log('Disconnected from notification service');
+    if (this.notificationSubscription) {
+      webSocketService.unsubscribe(this.notificationSubscription);
+      this.notificationSubscription = null;
     }
+    
+    if (this.countSubscription) {
+      webSocketService.unsubscribe(this.countSubscription);
+      this.countSubscription = null;
+    }
+    
+    if (this.connectionSubscription) {
+      webSocketService.unsubscribe(this.connectionSubscription);
+      this.connectionSubscription = null;
+    }
+    
+    // We don't disconnect from the WebSocketService here since other services might be using it
+    // The WebSocketService will handle disconnection when reference count reaches 0
+    webSocketService.disconnect(this.endpoint);
+    console.log('Disconnected from notification service');
   }
   
   // Add handler for new notifications
@@ -138,6 +146,5 @@ class NotificationService {
 }
 
 // Create a singleton instance
-const notificationServiceInstance = new NotificationService();
-export default notificationServiceInstance;
-
+const notificationService = new NotificationService();
+export default notificationService;
