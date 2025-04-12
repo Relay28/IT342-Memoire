@@ -1,12 +1,12 @@
 // components/Header.jsx
-import React, { useState, useEffect, useRef, useMemo  } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { FaSearch, FaMoon, FaBell } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import mmrlogo from '../assets/mmrlogo.png';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { profileService } from '../components/ProfileFunctionalities';
 import { useAuth } from './AuthProvider'; // Import the useAuth hook
-import  {useNotifications}  from '../context/NotificationContext'; // Import the notifications hook
+import { useNotifications } from '../context/NotificationContext'; // Import the notifications hook
 
 const Header = () => {
   // Use the auth context
@@ -27,6 +27,7 @@ const Header = () => {
     fetchUnreadCount,
     isConnected
   } = useNotifications();
+  
   const memoizedNotifications = useMemo(() => notifications, [notifications]);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
@@ -54,7 +55,7 @@ const Header = () => {
   // Fetch initial notifications data
   useEffect(() => {
     // Only fetch if the user is authenticated
-    if (isAuthenticated) {
+    if (isAuthenticated && authToken) {
       // Fetch profile picture
       const fetchProfilePicture = async () => {
         try {
@@ -68,21 +69,11 @@ const Header = () => {
         }
       };
       
-      // Fetch initial notifications count
-      const getInitialNotifications = async () => {
-        try {
-          await fetchUnreadCount();
-        } catch (error) {
-          console.error('Error fetching notification count:', error);
-        }
-      };
-      
       fetchProfilePicture();
-      getInitialNotifications();
     } else {
       setIsLoading(false);
     }
-  }, [isAuthenticated, fetchUnreadCount]); 
+  }, [isAuthenticated, authToken]); 
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -136,8 +127,35 @@ const Header = () => {
     }
   };
 
+  // Show connection indicator for debugging - you can remove this in production
+  const connectionStatusIndicator = () => {
+    if (!isAuthenticated) return null;
+    
+    return (
+      <div className="hidden absolute bottom-2 right-2 text-xs px-2 py-1 rounded">
+        {isConnected ? 
+          <span className="text-green-700">●</span> : 
+          <span className="text-red-700">●</span>}
+      </div>
+    );
+  };
+
+  // Determine loading state for notifications
+  const showNotificationsLoading = isAuthenticated && isNotificationsLoading;
+  
+  // Determine if we're connecting but not yet connected
+  const showConnectingState = isAuthenticated && !isConnected && !isNotificationsLoading;
+  
+  // Determine if we have notifications to show
+  const hasNotifications = isAuthenticated && isConnected && memoizedNotifications.length > 0;
+  
+  // Determine if we should show the empty state
+  const showEmptyState = isAuthenticated && isConnected && memoizedNotifications.length === 0 && !isNotificationsLoading;
+
   return (
-    <header className="flex items-center justify-between p-4 bg-white shadow-md">
+    <header className="flex items-center justify-between p-4 bg-white shadow-md relative">
+      {connectionStatusIndicator()}
+      
       <Link to="/homepage" className="flex items-center space-x-2">
         <img src={mmrlogo} alt="Mémoire Logo" className="h-10 w-10" />
         <div className="text-2xl font-bold text-red-700">MÉMOIRE</div>
@@ -186,7 +204,8 @@ const Header = () => {
                 <h3 className="font-semibold text-gray-800">Notifications</h3>
                 {unreadCount > 0 && (
                   <button 
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (unreadCount > 0) {
                         markAllAsRead();
                       }
@@ -202,21 +221,21 @@ const Header = () => {
                 <div className="p-4 text-center text-gray-500">
                   Please log in to view notifications
                 </div>
-              ) : isNotificationsLoading ? (
+              ) : showNotificationsLoading ? (
                 <div className="p-6 flex justify-center">
                   <div className="w-6 h-6 border-2 border-[#AF3535] border-t-transparent rounded-full animate-spin"></div>
                 </div>
-              ) : !isConnected ? (
+              ) : showConnectingState ? (
                 <div className="p-4 text-center text-gray-500">
                   Connecting to notification service...
                 </div>
-              ) : notifications.length === 0 ? (
+              ) : showEmptyState ? (
                 <div className="p-4 text-center text-gray-500">
                   No notifications
                 </div>
-              ) : (
+              ) : hasNotifications ? (
                 <ul>
-                  {notifications.map(notification => (
+                  {memoizedNotifications.map(notification => (
                     <li 
                       key={notification.id} 
                       className={`p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${!notification.read ? 'bg-blue-50' : ''}`}
@@ -246,6 +265,10 @@ const Header = () => {
                     </li>
                   ))}
                 </ul>
+              ) : (
+                <div className="p-4 text-center text-red-500">
+                  Error loading notifications
+                </div>
               )}
             </div>
           )}

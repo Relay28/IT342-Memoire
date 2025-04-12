@@ -12,7 +12,7 @@ const Capsules = () => {
   const { getUserTimeCapsules, loading, error } = useTimeCapsule();
   const [capsules, setCapsules] = useState([]);
   const navigate = useNavigate();
-  console.log(useAuth())
+
   useEffect(() => {
     const fetchCapsules = async () => {
       try {
