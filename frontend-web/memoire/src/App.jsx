@@ -6,23 +6,25 @@ import "react-toastify/dist/ReactToastify.css";
 import FCMNotificationHandler from "./components/Firebase/FCMNotifcationHandler";
 import { AuthProvider } from './components/AuthProvider';
 import { NotificationProvider } from "./context/NotificationContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
 function App() {
-  
   return (
-    <AuthProvider>
-       <NotificationProvider>
-    <GoogleOAuthProvider>
-   
-      <BrowserRouter>
-        <AppRoutes />
-
-      </BrowserRouter>
-    
-    </GoogleOAuthProvider>
-    </NotificationProvider>
-    </AuthProvider>
-    
+    <ThemeProvider>
+      <AuthProvider>
+        <NotificationProvider>
+          <GoogleOAuthProvider>
+            <BrowserRouter>
+              <AppRoutes />
+              <ToastContainer 
+                position="bottom-right"
+                theme="colored" 
+              />
+            </BrowserRouter>
+          </GoogleOAuthProvider>
+        </NotificationProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
