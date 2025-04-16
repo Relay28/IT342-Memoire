@@ -144,17 +144,32 @@ const Capsules = () => {
   };
 
   const getStatusStyle = (status) => {
-    switch (status) {
-      case 'UNPUBLISHED':
-        return 'bg-blue-100 text-blue-800';
-      case 'CLOSED':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'PUBLISHED':
-        return 'bg-green-100 text-green-800';
-      case 'ARCHIVED':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+    if (isDark) {
+      switch (status) {
+        case 'UNPUBLISHED':
+          return 'bg-blue-900 text-blue-200';
+        case 'CLOSED':
+          return 'bg-yellow-900 text-yellow-200';
+        case 'PUBLISHED':
+          return 'bg-green-900 text-green-200';
+        case 'ARCHIVED':
+          return 'bg-gray-700 text-gray-200';
+        default:
+          return 'bg-gray-700 text-gray-200';
+      }
+    } else {
+      switch (status) {
+        case 'UNPUBLISHED':
+          return 'bg-blue-100 text-blue-800';
+        case 'CLOSED':
+          return 'bg-yellow-100 text-yellow-800';
+        case 'PUBLISHED':
+          return 'bg-green-100 text-green-800';
+        case 'ARCHIVED':
+          return 'bg-gray-100 text-gray-800';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
     }
   };
 
