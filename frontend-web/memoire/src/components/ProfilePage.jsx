@@ -175,7 +175,7 @@ const ProfilePage = () => {
   }
 
   return (
-    <div className={`min-h-screen ${isDark ? 'dark bg-gray-900' : 'bg-gray-100'}`}>
+    <div className={`min-h-screen ${isDark ? 'dark bg-gray-800' : 'bg-gray-100'}`}>
       <div className="flex flex-col h-screen overflow-hidden">
         <Header userData={user} />
         
@@ -184,7 +184,7 @@ const ProfilePage = () => {
 
           <section className="flex-1 p-8 overflow-y-auto">
             <div className={`max-w-4xl mx-auto rounded-lg shadow-md overflow-hidden ${
-              isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+              isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'
             }`}>
               <div className={`p-6 border-b ${
                 isDark ? 'border-gray-700' : 'border-gray-200'
