@@ -8,7 +8,13 @@ import { getAnalytics } from "firebase/analytics";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-      //Check Discord Pinned Messages
+  apiKey: "AIzaSyBRpmpQ8PRFPd5mAlKgaVbcvLoAqgP7PlY",
+  authDomain: "memoire-b5584.firebaseapp.com",
+  projectId: "memoire-b5584",
+  storageBucket: "memoire-b5584.appspot.com", // Fixed typo in your original config
+  messagingSenderId: "117689149240",
+  appId: "1:117689149240:web:0002e222f8e8c1563c43cd",
+  measurementId: "G-CR7SQ95VBY"
 };
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

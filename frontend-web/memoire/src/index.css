@@ -1,1 +1,24 @@
 @import "tailwindcss";
+
+/* Light mode as default */
+:root {
+  --color-primary: #AF3535;
+  --color-text: #333333;
+  --color-bg: #ffffff;
+  --color-border: #e5e7eb;
+}
+
+/* Dark mode overrides */
+.dark {
+  --color-primary: #f87171;
+  --color-text: #f3f4f6;
+  --color-bg: #111827;
+  --color-border: #374151;
+}
+
+/* Apply variables to elements */
+body {
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}

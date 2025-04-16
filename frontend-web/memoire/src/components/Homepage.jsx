@@ -5,8 +5,10 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from '../components/AuthProvider'; // Ensure correct path
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
+import { useThemeMode } from '../context/ThemeContext';
 
 const Homepage = () => {
+  const { isDark } = useThemeMode();
   const navigate = useNavigate();
   const [isReportOpen, setIsReportOpen] = useState(false);
   const reportRef = useRef(null);
@@ -48,16 +50,15 @@ const Homepage = () => {
   // If still checking authentication or not authenticated, show loading or nothing
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gray-100">
-        <div className="animate-pulse text-lg text-gray-600">Loading...</div>
+      <div className={`min-h-screen flex justify-center items-center ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+        <div className={`animate-pulse text-lg ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>Loading...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <div className="flex flex-col h-screen">
-        {/* Header with user data - passing auth methods directly from context */}
         <Header 
           userData={userData} 
           logout={logout} 
@@ -65,19 +66,18 @@ const Homepage = () => {
         />
         
         <div className="flex flex-1 h-screen overflow-hidden">
-          {/* Sidebar with user data */}
           <Sidebar 
             user={userData} 
             isAuthenticated={isAuthenticated}
           />
 
-          {/* Main Capsule Content */}
-          <section className="flex-1 p-8 overflow-y-auto">
-            <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-              {/* Ellipsis Button and Dropdown */}
+          {/* Main Content with dark mode */}
+          <section className={`flex-1 p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
+            <div className={`max-w-2xl mx-auto rounded-lg shadow-md overflow-hidden ${isDark ? 'bg-gray-700 text-white' : 'bg-white text-gray-900'}`}>
+              {/* Ellipsis Button */}
               <div className="relative">
                 <button 
-                  className="absolute top-4 right-4 p-2 rounded-full hover:bg-[#AF3535]/10 text-gray-500 hover:text-[#AF3535] transition-colors"
+                  className={`absolute top-4 right-4 p-2 rounded-full ${isDark ? 'hover:bg-gray-600 text-gray-300 hover:text-[#AF3535]' : 'hover:bg-[#AF3535]/10 text-gray-500 hover:text-[#AF3535]'} transition-colors`}
                   onClick={() => setIsReportOpen(!isReportOpen)}
                   aria-label="More options"
                 >
@@ -89,17 +89,15 @@ const Homepage = () => {
                 {/* Report Dropdown Menu */}
                 {isReportOpen && (
                   <div 
-                    className="absolute right-0 top-12 w-48 origin-top-right rounded-lg bg-white shadow-lg ring-1 ring-black/5 focus:outline-none z-50 animate-enter"
+                    className={`absolute right-0 top-12 w-48 origin-top-right rounded-lg shadow-lg ring-1 focus:outline-none z-50 animate-enter ${isDark ? 'bg-gray-700 ring-gray-600' : 'bg-white ring-black/5'}`}
                     ref={reportRef}
                   >
                     <div className="px-1 py-1">
                       <button
-                        className="group flex w-full items-center gap-2 rounded-md px-4 py-2 text-sm text-gray-900 hover:bg-[#AF3535]/10 hover:text-[#AF3535] transition-colors"
-                        onClick={() => {
-                          setIsReportOpen(false);
-                        }}
+                        className={`group flex w-full items-center gap-2 rounded-md px-4 py-2 text-sm ${isDark ? 'text-gray-200 hover:bg-gray-600' : 'text-gray-900 hover:bg-[#AF3535]/10'} hover:text-[#AF3535] transition-colors`}
+                        onClick={() => setIsReportOpen(false)}
                       >
-                        <svg className="h-5 w-5 text-gray-400 group-hover:text-[#AF3535]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className={`h-5 w-5 ${isDark ? 'text-gray-400' : 'text-gray-400'} group-hover:text-[#AF3535]`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                         Report
@@ -118,16 +116,20 @@ const Homepage = () => {
                   />
                   <div>
                     <strong className="block">{userData.fullName || userData.username}</strong>
-                    <p className="text-sm text-gray-500">Opened on {new Date().toLocaleDateString()}</p>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Opened on {new Date().toLocaleDateString()}
+                    </p>
                   </div>
                 </div>
 
                 <div className="mb-4">
                   <p className="mb-4">Its been a year...</p>
-                  <hr className="my-2" />
+                  <hr className={`my-2 ${isDark ? 'border-gray-600' : 'border-gray-200'}`} />
                   <div className="my-4">
                     <div className="text-xl font-semibold">Memories of {new Date().getFullYear() - 1}</div>
-                    <div className="text-sm text-gray-500">Created on {new Date().toLocaleDateString()}</div>
+                    <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                      Created on {new Date().toLocaleDateString()}
+                    </p>
                   </div>
                   <p>Hi {userData.username}! Open this after a year to reminisce wompwomp</p>
                 </div>
