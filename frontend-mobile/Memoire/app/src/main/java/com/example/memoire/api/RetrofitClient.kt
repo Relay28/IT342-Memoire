@@ -9,7 +9,7 @@ import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.1.12:8080/"
+    private const val BASE_URL = "http://192.168.1.9:8080/"
 
     private lateinit var sessionManager: SessionManager
 

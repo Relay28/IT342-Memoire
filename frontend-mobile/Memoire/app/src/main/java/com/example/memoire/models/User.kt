@@ -14,14 +14,5 @@ data class User(
 )
 
 
-data class ProfileDTO(
-    val userId: Long?,
-    val username: String,
-    val email: String,
-    val profilePicture: String?,
-    val biography: String?,
-    val createdAt: String?,
-    val role: String,
-    val oauthUser: Boolean
-)
+
 

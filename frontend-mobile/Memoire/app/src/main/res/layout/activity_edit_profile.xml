@@ -63,6 +63,18 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progress_indicator"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="8dp"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorColor="@color/MemoireRed"
+                app:layout_constraintBottom_toBottomOf="@id/btn_save"
+                app:layout_constraintEnd_toStartOf="@id/btn_save"
+                app:layout_constraintTop_toTopOf="@id/btn_save" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -147,24 +159,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp"
-                    >
-
-
-
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="8dp"
-                        android:background="#EEEEEE" />
+                    android:padding="16dp">
 
                     <!-- Username -->
                     <TextView
                         android:id="@+id/tv_username_label"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
                         android:text="Username"
                         android:textColor="@color/gray"
                         android:textSize="14sp" />
@@ -185,7 +186,42 @@
                             android:hint="Your username"
                             android:inputType="text"
                             android:padding="8dp"
-                            android:text="_santos"
+                            android:textColor="@color/black"
+                            android:textSize="16sp" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="8dp"
+                        android:background="#EEEEEE" />
+
+                    <!-- Name -->
+                    <TextView
+                        android:id="@+id/tv_name_label"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Name"
+                        android:textColor="@color/gray"
+                        android:textSize="14sp" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        app:boxBackgroundColor="@color/white"
+                        app:boxBackgroundMode="none"
+                        app:hintEnabled="false">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/et_name"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@null"
+                            android:hint="Your name"
+                            android:inputType="textPersonName"
+                            android:padding="8dp"
                             android:textColor="@color/black"
                             android:textSize="16sp" />
                     </com.google.android.material.textfield.TextInputLayout>
@@ -227,7 +263,6 @@
                             android:inputType="textMultiLine"
                             android:minLines="3"
                             android:padding="8dp"
-                            android:text="Sample Bio"
                             android:textColor="@color/black"
                             android:textSize="16sp" />
                     </com.google.android.material.textfield.TextInputLayout>
@@ -235,7 +270,4 @@
             </com.google.android.material.card.MaterialCardView>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
-
-    <!-- Modern floating action button for save -->
-
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
