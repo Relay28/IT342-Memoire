@@ -2,8 +2,10 @@ package com.example.memoire.api
 
 import com.example.memoire.models.AuthenticationRequest
 import com.example.memoire.models.AuthenticationResponse
+import com.example.memoire.models.LockRequest
 import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.RegisterRequest
+import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.models.UserEntity
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
@@ -58,6 +60,48 @@ interface ApiService {
     @POST("api/auth/verify-token")
     @FormUrlEncoded
     fun verifyGoogleToken(@Field("idToken") idToken: String): Call<Map<String, String>>
+
+
+
+    // TimeCapsules
+    @GET("api/timecapsules/user")
+    fun getUserTimeCapsules(): Call<List<TimeCapsuleDTO>>
+
+    @GET("api/timecapsules/{id}")
+    fun getTimeCapsule(@Path("id") id: Long): Call<TimeCapsuleDTO>
+
+    @GET("api/timecapsules/status/published")
+    fun getPublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
+
+    @GET("api/timecapsules/status/closed")
+    fun getClosedTimeCapsules(): Call<List<TimeCapsuleDTO>>
+
+    @GET("api/timecapsules/status/unpublished")
+    fun getUnpublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
+
+    @GET("api/timecapsules/status/archived")
+    fun getArchivedTimeCapsules(): Call<List<TimeCapsuleDTO>>
+
+    @POST("api/timecapsules")
+    fun createTimeCapsule(@Body timeCapsuleDTO: TimeCapsuleDTO): Call<TimeCapsuleDTO>
+
+    @PUT("api/timecapsules/{id}")
+    fun updateTimeCapsule(
+        @Path("id") id: Long,
+        @Body timeCapsuleDTO: TimeCapsuleDTO
+    ): Call<TimeCapsuleDTO>
+
+    @DELETE("api/timecapsules/{id}")
+    fun deleteTimeCapsule(@Path("id") id: Long): Call<Void>
+
+    @PATCH("api/timecapsules/{id}/lock")
+    fun lockTimeCapsule(
+        @Path("id") id: Long,
+        @Body request: LockRequest
+    ): Call<Void>
+
+    @PATCH("api/timecapsules/{id}/unlock")
+    fun unlockTimeCapsule(@Path("id") id: Long): Call<Void>
 }
 data class AuthenticationRequest(val username: String, val password: String)
 data class GoogleAuthRequest(val idToken: String)

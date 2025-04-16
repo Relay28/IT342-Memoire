@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.memoire.CapsuleListActivity
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -71,13 +72,13 @@ class HomeActivity : AppCompatActivity() {
                     val intent = Intent(this, CreateCapsuleActivity::class.java)
                     startActivity(intent)
                     true
-                }/*
+                }
                 R.id.navigation_tags -> {
                     // Navigate to the Tags activity
-                    val intent = Intent(this, TagsActivity::class.java)
+                    val intent = Intent(this, CapsuleListActivity::class.java)
                     startActivity(intent)
                     true
-                }
+                }/*
                 R.id.navigation_timer -> {
                     // Navigate to the Timer activity
                     val intent = Intent(this, TimerActivity::class.java)
