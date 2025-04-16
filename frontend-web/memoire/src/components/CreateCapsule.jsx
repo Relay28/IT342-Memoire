@@ -6,8 +6,10 @@ import { FiLock, FiShare2, FiUsers, FiEye, FiPlus, FiArrowLeft } from 'react-ico
 import { useTimeCapsule } from '../hooks/useTimeCapsule';
 import { useAuth } from './AuthProvider';
 import CapsuleContentGallery from './MediaShower/CapsuleContentGallery';
+import { useThemeMode } from '../context/ThemeContext';
 
 export default function CreateCapsule() {
+  const { isDark } = useThemeMode();
   const { id } = useParams();
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
@@ -46,11 +48,11 @@ export default function CreateCapsule() {
 
   if (loading) {
     return (
-      <div className="flex flex-col h-screen bg-gray-50">
+      <div className={`flex flex-col h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <Header />
         <div className="flex flex-1 h-screen overflow-hidden">
           <Sidebar />
-          <main className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
+          <main className={`flex-1 overflow-y-auto p-6 flex items-center justify-center ${isDark ? 'text-gray-300' : ''}`}>
             <div>Loading capsule details...</div>
           </main>
         </div>
@@ -60,11 +62,11 @@ export default function CreateCapsule() {
 
   if (error) {
     return (
-      <div className="flex flex-col h-screen bg-gray-50">
+      <div className={`flex flex-col h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <Header />
         <div className="flex flex-1 h-screen overflow-hidden">
           <Sidebar />
-          <main className="flex-1 overflow-y-auto p-6 flex items-center justify-center">
+          <main className={`flex-1 overflow-y-auto p-6 flex items-center justify-center ${isDark ? 'text-gray-300' : ''}`}>
             <div className="text-red-500">Error: {error}</div>
           </main>
         </div>
@@ -73,40 +75,48 @@ export default function CreateCapsule() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className={`flex flex-col h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       <Header />
       
       <div className="flex flex-1 h-screen overflow-hidden">
         <Sidebar />
         
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className={`flex-1 overflow-y-auto p-6 ${isDark ? 'bg-gray-800' : ''}`}>
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center">
               <button 
                 onClick={() => navigate('/capsules')}
-                className="mr-4 p-2 text-gray-600 hover:text-red-600 rounded-full hover:bg-gray-100"
+                className={`mr-4 p-2 rounded-full hover:bg-gray-100 ${
+                  isDark ? 'text-gray-300 hover:text-red-500 hover:bg-gray-700' : 'text-gray-600 hover:text-red-600'
+                }`}
               >
                 <FiArrowLeft className="text-lg" />
               </button>
-              <h1 className="text-2xl font-bold text-gray-800">
+              <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
                 {capsuleData ? capsuleData.title : 'Create your capsule'}
               </h1>
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-gray-600">
-                <div className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded">
+              <div className={`flex items-center space-x-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+                  isDark ? 'bg-gray-700' : 'bg-gray-100'
+                }`}>
                   <FiUsers className="text-red-600" />
                   <span className="text-sm">3</span>
                 </div>
                 
-                <div className="flex items-center space-x-1 bg-gray-100 px-2 py-1 rounded">
+                <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
+                  isDark ? 'bg-gray-700' : 'bg-gray-100'
+                }`}>
                   <FiEye className="text-red-600" />
                   <span className="text-sm">5</span>
                 </div>
               </div>
               
-              <button className="p-2 text-gray-600 hover:text-red-600 transition-colors">
+              <button className={`p-2 transition-colors ${
+                isDark ? 'text-gray-300 hover:text-red-500' : 'text-gray-600 hover:text-red-600'
+              }`}>
                 <FiLock className="text-lg" />
               </button>
               
@@ -117,14 +127,18 @@ export default function CreateCapsule() {
             </div>
           </div>
           
-          <div className="border-t border-gray-200 my-4"></div>
+          <div className={`border-t my-4 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}></div>
 
-          <div className="space-y-6 bg-white p-6 rounded-lg shadow-sm">
+          <div className={`space-y-6 p-6 rounded-lg shadow-sm ${
+            isDark ? 'bg-gray-700' : 'bg-white'
+          }`}>
             <div>
               <input
                 type="text"
                 placeholder="Title"
-                className="w-full text-2xl font-bold p-2 border-b border-gray-200 focus:outline-none focus:border-red-600"
+                className={`w-full text-2xl font-bold p-2 border-b focus:outline-none focus:border-red-600 ${
+                  isDark ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'border-gray-200'
+                }`}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
@@ -134,7 +148,9 @@ export default function CreateCapsule() {
               <input
                 type="text"
                 placeholder="Description"
-                className="w-full text-lg p-2 border-b border-gray-200 focus:outline-none focus:border-red-600"
+                className={`w-full text-lg p-2 border-b focus:outline-none focus:border-red-600 ${
+                  isDark ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'border-gray-200'
+                }`}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />

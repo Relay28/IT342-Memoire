@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { FaSearch, FaMoon, FaBell, FaSun } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import mmrlogo from '../assets/mmrlogo.png';
+import logolight from '../assets/logolight.png';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { profileService } from '../components/ProfileFunctionalities';
 import { useAuth } from './AuthProvider'; // Import the useAuth hook
@@ -158,17 +159,19 @@ const Header = () => {
 
   return (
     <header className={`flex items-center justify-between p-4 ${
-      mode === 'dark' ? 'bg-gray-900 shadow-gray-900' : 'bg-white shadow-md'
+      mode === 'dark' 
+        ? 'bg-gray-900 shadow-lg shadow-gray-950/10' 
+        : 'bg-white shadow-md shadow-gray-200/50'
     } relative`}>
       {connectionStatusIndicator()}
       
       <Link to="/homepage" className="flex items-center space-x-2">
-        <img src={mmrlogo} alt="Mémoire Logo" className="h-10 w-10" />
-        <div className="text-2xl font-bold text-red-700 dark:text-red-500">MÉMOIRE</div>
+        <img src={mode === 'dark' ? logolight : mmrlogo}  alt="Mémoire Logo" className="h-10 w-10" />
+        <div className="text-2xl font-bold text-[#AF3535] dark:text-red-500">MÉMOIRE</div>
       </Link>
 
       <form onSubmit={handleSearch} className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full w-1/3">
-        <FaSearch className="text-red-700 dark:text-red-500 mr-2" />
+        <FaSearch className="text-[#AF3535] dark:text-red-500 mr-2" />
         <input 
           type="text" 
           placeholder="Search by username or name..." 

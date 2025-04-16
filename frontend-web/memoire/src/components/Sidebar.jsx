@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaPlus, FaHome, FaStar, FaShareAlt } from 'react-icons/fa';
 import { useTimeCapsule } from '../hooks/useTimeCapsule';
+import { useThemeMode } from '../context/ThemeContext';
 
 const Sidebar = () => {
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(false);
@@ -11,6 +12,7 @@ const Sidebar = () => {
   const [description, setDescription] = useState('');
   const navigate = useNavigate();
   const { createTimeCapsule, loading, error } = useTimeCapsule();
+  const { mode, isDark } = useThemeMode();
 
   const handleCreateClick = () => {
     setIsFirstModalOpen(true);
@@ -34,38 +36,50 @@ const Sidebar = () => {
 
   return (
     <>
-      <aside className="w-64 p-4 shadow-md overflow-y-auto">
+      <aside className={`w-64 p-4 shadow-md overflow-y-auto ${isDark ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
         {/* Create Capsule Button */}
         <div 
           onClick={handleCreateClick}
-          className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer"
+          className={`flex items-center p-3 rounded-lg ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} cursor-pointer`}
         >
-          <FaPlus className="text-red-700 mr-3" size={20} />
+          <FaPlus className="text-[#AF3535] mr-3" size={20} />
           <span>Create your capsule</span>
         </div>
 
-        <hr className="my-2" />
+        <hr className={`my-2 ${isDark ? 'border-gray-700' : 'border-gray-200'}`} />
 
-        <Link to="/homepage" className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-          <FaHome className="text-red-700 mr-3" size={20} />
+        <Link 
+          to="/homepage" 
+          className={`flex items-center p-3 rounded-lg ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} cursor-pointer`}
+        >
+          <FaHome className="text-[#AF3535] mr-3" size={20} />
           <span>Home</span>
         </Link>
 
-        <Link to="/capsules" className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-          <FaStar className="text-red-700 mr-3" size={20} />
+        <Link 
+          to="/capsules" 
+          className={`flex items-center p-3 rounded-lg ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} cursor-pointer`}
+        >
+          <FaStar className="text-[#AF3535] mr-3" size={20} />
           <span>Capsules</span>
         </Link>
 
-        <Link to="/archived_capsules" className="flex items-center p-3 rounded-lg hover:bg-gray-100 cursor-pointer">
-          <FaShareAlt className="text-red-700 mr-3" size={20} />
+        <Link 
+          to="/archived_capsules" 
+          className={`flex items-center p-3 rounded-lg ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} cursor-pointer`}
+        >
+          <FaShareAlt className="text-[#AF3535] mr-3" size={20} />
           <span>Archived Capsules</span>
         </Link>
         
-        <hr className="my-2" />
+        <hr className={`my-2 ${isDark ? 'border-gray-700' : 'border-gray-200'}`} />
 
         <div className="flex justify-between items-center p-3">
           <h4 className="text-lg font-semibold">Friends</h4>
-          <Link to="/friends" className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
+          <Link 
+            to="/friends" 
+            className={`text-sm ${isDark ? 'text-[#AF3535] hover:text-red-300' : 'text-[#AF3535] hover:text-red-800'} hover:underline`}
+          >
             See more...
           </Link>
         </div>
@@ -74,12 +88,12 @@ const Sidebar = () => {
       {/* First Modal - Confirmation */}
       {isFirstModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className={`rounded-lg p-6 w-full max-w-md ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
             <h2 className="text-xl font-semibold mb-6">Create new time capsule</h2>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setIsFirstModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                className={`px-4 py-2 border ${isDark ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'} rounded transition-colors`}
               >
                 Cancel
               </button>
@@ -97,15 +111,15 @@ const Sidebar = () => {
       {/* Second Modal - Title and Description */}
       {isSecondModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className={`rounded-lg p-6 w-full max-w-md ${isDark ? 'bg-gray-800 text-white' : 'bg-white text-gray-900'}`}>
             <h2 className="text-xl font-semibold mb-6">Enter capsule details</h2>
             
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Title</label>
                 <input
                   type="text"
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                  className={`w-full p-2 border rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter capsule title"
@@ -113,9 +127,9 @@ const Sidebar = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className={`block text-sm font-medium mb-1 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Description</label>
                 <textarea
-                  className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500"
+                  className={`w-full p-2 border rounded focus:outline-none focus:ring-1 focus:ring-red-500 focus:border-red-500 ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'border-gray-300'}`}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Enter capsule description"
@@ -129,7 +143,7 @@ const Sidebar = () => {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => setIsSecondModalOpen(false)}
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100 transition-colors"
+                className={`px-4 py-2 border ${isDark ? 'border-gray-600 hover:bg-gray-700' : 'border-gray-300 hover:bg-gray-100'} rounded transition-colors`}
               >
                 Cancel
               </button>

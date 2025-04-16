@@ -7,8 +7,10 @@ import Sidebar from '../components/Sidebar';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { format } from 'date-fns';
 import LockDateModal from '../components/modals/LockDateModal'; // Import the LockDateModal component
+import { useThemeMode } from '../context/ThemeContext';
 
 const Capsules = () => {
+  const { isDark } = useThemeMode();
   const { authToken } = useAuth();
   const { 
     loading, 
@@ -202,17 +204,17 @@ const Capsules = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <div className="flex flex-col h-screen">
         <Header />
         
         <div className="flex flex-1 h-screen overflow-hidden">
           <Sidebar />
 
-          <section className="flex-1 p-8 overflow-y-auto">
+          <section className={`flex-1 p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
             <div className="max-w-4xl mx-auto">
               {/* Status Filter Tabs */}
-              <div className="mb-6 border-b border-gray-200">
+              <div className={`mb-6 border-b ${isDark ? 'border-gray-700' : 'border-gray-200'}`}>
                 <nav className="flex space-x-8">
                   {tabs.map((tab) => (
                     <button
@@ -220,8 +222,8 @@ const Capsules = () => {
                       onClick={() => setActiveFilter(tab.id)}
                       className={`py-3 px-1 border-b-2 font-medium text-sm ${
                         activeFilter === tab.id
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          ? `${isDark ? 'border-blue-400 text-blue-400' : 'border-blue-500 text-blue-600'}`
+                          : `${isDark ? 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-500' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`
                       }`}
                     >
                       {tab.label}
@@ -231,7 +233,7 @@ const Capsules = () => {
               </div>
 
               {/* Header Row */}
-              <div className="grid grid-cols-6 items-center gap-4 font-bold pb-4 mb-2 border-b border-gray-200">
+              <div className={`grid grid-cols-6 items-center gap-4 font-bold pb-4 mb-2 border-b ${isDark ? 'border-gray-700 text-gray-300' : 'border-gray-200 text-gray-900'}`}>
                 <div className="col-span-2 pl-4">Name</div>
                 <div className="text-center">Owner</div>
                 <div className="text-center">Modified last</div>
@@ -240,7 +242,7 @@ const Capsules = () => {
               </div>
 
               {capsules.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
+                <div className={`text-center py-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   No {activeFilter !== 'all' ? activeFilter : ''} capsules found. 
                   {activeFilter === 'all' && " Create your first one!"}
                 </div>
@@ -248,10 +250,12 @@ const Capsules = () => {
                 capsules.map((capsule) => (
                   <div 
                     key={capsule.id} 
-                    className="grid grid-cols-6 items-center gap-4 p-4 mb-3 bg-white rounded-lg shadow-md hover:bg-gray-50 transition-colors cursor-pointer"
+                    className={`grid grid-cols-6 items-center gap-4 p-4 mb-3 rounded-lg shadow-md hover:bg-gray-50 transition-colors cursor-pointer ${
+                      isDark ? 'bg-gray-700 hover:bg-gray-600' : 'bg-white hover:bg-gray-50'
+                    }`}
                     onClick={() => handleCapsuleClick(capsule)}
                   >
-                    <div className="col-span-2 font-semibold truncate pl-4">
+                    <div className={`col-span-2 font-semibold truncate pl-4 ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>
                       {capsule.title}
                     </div>
                     <div className="flex justify-center">
@@ -261,17 +265,22 @@ const Capsules = () => {
                         className="h-8 w-8 rounded-full object-cover"
                       />
                     </div>
-                    <div className="text-center">
+                    <div className={`text-center ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
                       {formatDate(capsule.updatedAt || capsule.createdAt)}
                     </div>
                     <div className="text-center">
-                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusStyle(capsule.status)}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusStyle(capsule.status)} ${
+                        isDark ? capsule.status === 'UNPUBLISHED' ? 'bg-blue-900 text-blue-200' :
+                                capsule.status === 'CLOSED' ? 'bg-yellow-900 text-yellow-200' :
+                                capsule.status === 'PUBLISHED' ? 'bg-green-900 text-green-200' :
+                                'bg-gray-900 text-gray-200' : ''
+                      }`}>
                         {getStatusLabel(capsule.status)}
                       </span>
                     </div>
                     <div className="flex justify-center relative" ref={openMenuId === capsule.id ? menuRef : null}>
                       <button 
-                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
+                        className={`${isDark ? 'text-gray-400 hover:text-gray-300' : 'text-gray-400 hover:text-gray-600'} focus:outline-none`}
                         onClick={(e) => handleToggleMenu(e, capsule.id)}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -281,11 +290,15 @@ const Capsules = () => {
                       
                       {/* Dropdown Menu */}
                       {openMenuId === capsule.id && (
-                        <div className="absolute right-0 top-6 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                        <div className={`absolute right-0 top-6 mt-2 w-48 rounded-md shadow-lg z-10 ${
+                          isDark ? 'bg-gray-700 border border-gray-600' : 'bg-white'
+                        }`}>
                           <div className="py-1">
                             {/* View Option */}
                             <button
-                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              className={`w-full text-left px-4 py-2 text-sm ${
+                                isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                              }`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 navigate(`/view/${capsule.id}`);
@@ -297,7 +310,9 @@ const Capsules = () => {
                             {/* Edit Option - Don't show for locked capsules */}
                             {capsule.status !== 'CLOSED' && (
                               <button
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                className={`w-full text-left px-4 py-2 text-sm ${
+                                  isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                                }`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   navigate(`/edit/${capsule.id}`);
@@ -310,7 +325,9 @@ const Capsules = () => {
                             {/* Lock/Unlock Option */}
                             {capsule.status === 'CLOSED' ? (
                               <button
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                className={`w-full text-left px-4 py-2 text-sm ${
+                                  isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                                }`}
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   handleUnlockCapsule(capsule.id);
@@ -320,7 +337,9 @@ const Capsules = () => {
                               </button>
                             ) : (
                               <button
-                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                className={`w-full text-left px-4 py-2 text-sm ${
+                                  isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+                                }`}
                                 onClick={(e) => handleOpenLockModal(e, capsule.id)}
                               >
                                 Lock
@@ -329,7 +348,9 @@ const Capsules = () => {
                             
                             {/* Delete Option */}
                             <button
-                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                              className={`w-full text-left px-4 py-2 text-sm ${
+                                isDark ? 'text-red-400 hover:bg-gray-600' : 'text-red-600 hover:bg-gray-100'
+                              }`}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteCapsule(capsule.id);

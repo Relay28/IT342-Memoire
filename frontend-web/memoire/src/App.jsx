@@ -19,6 +19,7 @@ function App() {
               <ToastContainer 
                 position="bottom-right"
                 theme="colored" 
+                className="dark:!bg-gray-800 dark:!text-white"
               />
             </BrowserRouter>
           </GoogleOAuthProvider>
