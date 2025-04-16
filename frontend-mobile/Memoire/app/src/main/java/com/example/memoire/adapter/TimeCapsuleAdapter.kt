@@ -87,7 +87,7 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         // Set click listeners
         holder.cardView.setOnClickListener {
             val intent = Intent(context, CapsuleDetailActivity::class.java)
-            intent.putExtra("CAPSULE_ID", capsule.id)
+            intent.putExtra("capsuleId", capsule.id.toString())  // Make sure the key matches and convert to string
             context.startActivity(intent)
         }
 

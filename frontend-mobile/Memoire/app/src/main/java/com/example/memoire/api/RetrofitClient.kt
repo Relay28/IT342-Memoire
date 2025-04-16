@@ -49,4 +49,12 @@ object RetrofitClient {
             .build()
             .create(ApiService::class.java)
     }
+    val capsuleContentInstance: CapsuleContentService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(CapsuleContentService::class.java)
+    }
 }
