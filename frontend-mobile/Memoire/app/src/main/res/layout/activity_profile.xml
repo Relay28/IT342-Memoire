@@ -60,6 +60,14 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
     </com.google.android.material.appbar.AppBarLayout>
 
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progress_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:indicatorColor="@color/MemoireRed" />
     <!-- Main content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
@@ -91,7 +99,7 @@
                 android:layout_marginStart="12dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Georgia Santos"
+                android:text=""
                 android:textColor="@color/black"
                 android:textSize="16sp"
                 android:textStyle="bold"
@@ -205,7 +213,7 @@
                 android:layout_marginTop="20dp"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="KHBAKSJAHSKA"
+                android:text="Name Should be displayed here"
                 android:textColor="@color/black"
                 android:textSize="14sp"
                 android:textStyle="bold"

@@ -51,8 +51,9 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:20.7.0")
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation("com.github.bumptech.glide:glide:4.15.1")
+    annotationProcessor("com.github.bumptech.glide:compiler:4.15.1")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
 
-    // implementation("com.github.bumptech.glide:compiler:4.15.1")
+
 
 }

@@ -54,7 +54,7 @@ class EditProfileActivity : AppCompatActivity() {
 
     private val REQUEST_STORAGE_PERMISSION = 100
     private val TAG = "EditProfileActivity"
-    private val API_BASE_URL = "http://your-api-base-url.com/" // Define the API base URL here or get it from a config
+    private val API_BASE_URL = "http://192.168.1.8:8080/" // Define the API base URL here or get it from a config
 
     // Activity result launcher for image picking
     private val pickImageLauncher = registerForActivityResult(

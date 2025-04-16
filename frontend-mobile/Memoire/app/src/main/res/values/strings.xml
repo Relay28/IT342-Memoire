@@ -2,9 +2,11 @@
     <string name="app_name">Memoire</string>
     <string name="logo">Memoire</string>
     <string name="app">Memoire</string>
-    <string name="email">EMAIL</string>
+    <string name="username">Username</string>
     <string name="password">PASSWORD</string>
-    <string name="entEmail">Enter your email</string>
+    <string name="entUser">Enter your Username</string>
+    <string name="entEmail">Enter your Username</string>
+    <string name="email">Enter your Username</string>
     <string name="entPassword">Enter your password</string>
     <string name="dontHaveAcc">Don\'t have an Account? Register Here</string>
     <string name="orLoginWith">OR LOGIN WITH</string>
@@ -20,5 +22,8 @@
     <string name="alreadyHaveAcc">Already have an account? Log in</string>
     <string name="orRegisterWith">or register with</string>
     <string name="confirm_your_password">Confirm your password</string>
+
+
+    <string name="noBio"></string>
 
 </resources>

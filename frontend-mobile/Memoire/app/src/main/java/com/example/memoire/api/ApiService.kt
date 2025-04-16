@@ -4,7 +4,6 @@ import com.example.memoire.models.AuthenticationRequest
 import com.example.memoire.models.AuthenticationResponse
 import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.RegisterRequest
-import com.example.memoire.models.User
 import com.example.memoire.models.UserEntity
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
@@ -13,10 +12,6 @@ import retrofit2.Response
 import retrofit2.http.*
 
 interface ApiService {
-    @GET("/users/{id}")
-    suspend fun getUserById(
-        @Path("id") id: Long
-    ): Response<User>
 
     // Current user profile endpoint
     @GET("api/users")
@@ -25,7 +20,7 @@ interface ApiService {
     // Get profile image endpoint
     @GET("api/users/profile-picture")
     @Streaming
-    fun getProfilePicture(@Header("Authorization") authToken: String): Call<ResponseBody>
+    fun getProfilePicture(): Call<ResponseBody>
 
     // Profile endpoint for accessing other users' profiles
     @GET("api/profiles/view/{userId}")

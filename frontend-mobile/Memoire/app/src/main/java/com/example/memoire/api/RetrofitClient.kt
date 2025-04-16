@@ -9,12 +9,15 @@ import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.1.9:8080/"
+    public const val BASE_URL = "http://192.168.1.8:8080/"
 
     private lateinit var sessionManager: SessionManager
 
     fun init(context: Context) {
         sessionManager = SessionManager(context)
+    }
+    fun getBaseUrl(): String {
+        return BASE_URL
     }
 
     private val client: OkHttpClient by lazy {
