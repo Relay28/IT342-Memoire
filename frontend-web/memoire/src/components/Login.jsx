@@ -14,14 +14,16 @@ const Login = () => {
     username: "",
     password: "",
   });
+  const [fieldErrors, setFieldErrors] = useState({
+    username: "",
+    password: "",
+  });
   
   const navigate = useNavigate();
-  const { login, googleLogin, loading, error, user, authToken } = useAuth(); // Get authToken from context
+  const { login, googleLogin, loading, error, user, authToken } = useAuth();
   
-  // Properly use the FCM token hook at component level
   useFCMToken(user?.id, authToken);
   
-  // Effect to navigate after successful login
   useEffect(() => {
     if (user && authToken) {
       navigate("/homepage");
@@ -31,17 +33,58 @@ const Login = () => {
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData((prev) => ({ ...prev, [id]: value }));
+    // Clear error when user starts typing
+    if (fieldErrors[id]) {
+      setFieldErrors(prev => ({ ...prev, [id]: "" }));
+    }
+  };
+
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = { username: "", password: "" };
+
+    if (!formData.username.trim()) {
+      newErrors.username = "Username is required";
+      isValid = false;
+    }
+
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+      isValid = false;
+    }
+
+    setFieldErrors(newErrors);
+    return isValid;
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    await login(formData);
-    // Navigation is now handled by the useEffect above
+    
+    if (!validateForm()) return;
+    
+    try {
+      await login(formData);
+    } catch (err) {
+      // Handle specific error messages from backend
+      const errorMessage = err.message.toLowerCase();
+      
+      if (errorMessage.includes("username") || errorMessage.includes("user not found")) {
+        setFieldErrors(prev => ({ ...prev, username: "Username is incorrect" }));
+      } else if (errorMessage.includes("password") || errorMessage.includes("incorrect password")) {
+        setFieldErrors(prev => ({ ...prev, password: "Password is incorrect" }));
+      } else {
+        // Fallback for other errors
+        setFieldErrors({
+          username: "",
+          password: "",
+        });
+        // This will show the generic error message from useAuth
+      }
+    }
   };
 
   const handleGoogleLoginSuccess = async (response) => {
     await googleLogin(response.credential);
-    // Navigation is now handled by the useEffect above
   };
 
   const handleGoogleLoginError = () => {
@@ -55,7 +98,7 @@ const Login = () => {
 
   return (
     <div className="flex w-screen h-screen">
-      {/* Left Section - Same as register */}
+      {/* Left Section */}
       <div className="w-1/2 h-screen relative">
         <img 
           src={sunsetGif} 
@@ -96,9 +139,11 @@ const Login = () => {
               margin="normal"
               value={formData.username}
               onChange={handleInputChange}
+              error={!!fieldErrors.username}
+              helperText={fieldErrors.username}
               sx={{
                 '& .MuiOutlinedInput-root': { borderRadius: '8px' },
-                mb: 2
+                mb: fieldErrors.username ? 0 : 2
               }}
             />
 
@@ -112,9 +157,11 @@ const Login = () => {
               margin="normal"
               value={formData.password}
               onChange={handleInputChange}
+              error={!!fieldErrors.password}
+              helperText={fieldErrors.password}
               sx={{
                 '& .MuiOutlinedInput-root': { borderRadius: '8px' },
-                mb: 2
+                mb: fieldErrors.password ? 0 : 2
               }}
               InputProps={{
                 endAdornment: (
@@ -148,7 +195,7 @@ const Login = () => {
               {loading ? "LOGGING IN..." : "LOGIN"}
             </button>
 
-            {error && (
+            {error && !fieldErrors.username && !fieldErrors.password && (
               <p className="text-red-500 text-sm mt-2 w-full text-center">
                 {error}
               </p>

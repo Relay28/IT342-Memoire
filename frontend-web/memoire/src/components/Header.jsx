@@ -171,15 +171,15 @@ const Header = () => {
       </Link>
 
       <form onSubmit={handleSearch} className="flex items-center px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-full w-1/3">
-        <FaSearch className="text-[#AF3535] dark:text-red-500 mr-2" />
-        <input 
-          type="text" 
-          placeholder="Search by username or name..." 
-          className="bg-transparent border-none outline-none w-full dark:text-white dark:placeholder-gray-400"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </form>
+  <FaSearch className="text-[#AF3535] dark:text-red-500 mr-2" />
+  <input 
+    type="text" 
+    placeholder="Search by username or name..." 
+    className="bg-transparent border-none outline-none w-full text-gray-800 dark:text-gray-200 dark:placeholder-gray-400"
+    value={searchQuery}
+    onChange={(e) => setSearchQuery(e.target.value)}
+  />
+</form>
 
       <div className="flex items-center space-x-4">
         <button 

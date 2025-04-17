@@ -7,6 +7,8 @@ import { useAuth } from './AuthProvider';  // Import useAuth hook instead of Per
 import { profileService } from '../components/ProfileFunctionalities';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
+import { useThemeMode } from '../context/ThemeContext';
+import ChangePasswordModal from './ChangePasswordModal'; // Adjust path as needed
 
 const ProfilePage = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -22,6 +24,8 @@ const ProfilePage = () => {
   const [previewImage, setPreviewImage] = useState('');
   const fileInputRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { isDark } = useThemeMode();
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // Fetch user data and profile picture on component mount
   useEffect(() => {
@@ -134,6 +138,7 @@ const ProfilePage = () => {
     }
   };
 
+  
   const handleDeactivateAccount = async () => {
     if (window.confirm('Are you sure you want to deactivate your account? This action cannot be undone.')) {
       try {
@@ -151,7 +156,36 @@ const ProfilePage = () => {
   };
 
   const handleChangePassword = () => {
-    alert('Password change functionality will be implemented here');
+    setIsPasswordModalOpen(true);
+  };
+  
+  // Add this function to handle the actual password change
+  const handlePasswordChangeSubmit = async (currentPassword, newPassword) => {
+    console.log('Attempting password change with:', {
+      currentPassword,
+      newPassword
+    });
+    
+    try {
+      const result = await profileService.changePassword(currentPassword, newPassword);
+      console.log('Change password result:', result);
+      alert('Password changed successfully!');
+      setIsPasswordModalOpen(false);
+      
+      // Immediately test the new password
+      try {
+        console.log('Attempting to login with new password...');
+        // Add your login API call here using the new password
+      } catch (loginError) {
+        console.error('Login with new password failed:', loginError);
+      }
+    } catch (error) {
+      console.error('Password change error:', {
+        message: error.message,
+        response: error.response?.data
+      });
+      throw error;
+    }
   };
 
   const userData = user || {
@@ -163,36 +197,44 @@ const ProfilePage = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className={`min-h-screen ${isDark ? 'dark bg-gray-900' : 'bg-gray-100'} flex items-center justify-center`}>
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#AF3535] mx-auto"></div>
-          <p className="mt-4 text-gray-700">Loading profile...</p>
+          <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'text-[#AF3535]' : 'border-[#AF3535]'} mx-auto`}></div>
+          <p className={`mt-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Loading profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className={`min-h-screen ${isDark ? 'dark bg-gray-800' : 'bg-gray-100'}`}>
       <div className="flex flex-col h-screen overflow-hidden">
-        <Header userData={userData} />
+        <Header userData={user} />
         
         <div className="flex flex-1 h-screen overflow-hidden">
           <Sidebar />
 
           <section className="flex-1 p-8 overflow-y-auto">
-            <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="p-6 border-b border-gray-200">
+            <div className={`max-w-4xl mx-auto rounded-lg shadow-md overflow-hidden ${
+              isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'
+            }`}>
+              <div className={`p-6 border-b ${
+                isDark ? 'border-gray-700' : 'border-gray-200'
+              }`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="relative">
                       <img 
                         src={previewImage || user?.profilePicture || ProfilePictureSample} 
                         alt="Profile" 
-                        className="h-24 w-24 rounded-full object-cover border-2 border-[#AF3535]"
+                        className={`h-24 w-24 rounded-full object-cover border-2 ${
+                          isDark ? 'border-[#AF3535]' : 'border-[#AF3535]'
+                        }`}
                       />
                       <button 
-                        className="absolute bottom-0 right-0 bg-[#AF3535] text-white p-1.5 rounded-full hover:bg-[#AF3535]/90 transition-colors"
+                        className={`absolute bottom-0 right-0 ${
+                          isDark ? 'bg-[#AF3535] hover:bg-red-600' : 'bg-[#AF3535] hover:bg-[#AF3535]/90'
+                        } text-white p-1.5 rounded-full transition-colors`}
                         onClick={() => fileInputRef.current.click()}
                       >
                         <svg 
@@ -211,13 +253,17 @@ const ProfilePage = () => {
                     </div>
                     
                     <div>
-                      <h1 className="text-2xl font-bold">{formData.name || userData.username || "Loading..."}</h1>
-                      <p className="text-gray-600">@{userData.username || "loading"}</p>
+                      <h1 className={`text-2xl font-bold ${
+                        isDark ? 'text-white' : 'text-gray-900'
+                      }`}>{formData.name || user?.username || "Loading..."}</h1>
+                      <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>@{user?.username || "loading"}</p>
                     </div>
                   </div>
                   
                   <button 
-                    className="px-4 py-2 bg-[#AF3535] text-white rounded-md hover:bg-[#AF3535]/90 transition-colors"
+                    className={`px-4 py-2 ${
+                      isDark ? 'bg-[#AF3535] hover:bg-red-600' : 'bg-[#AF3535] hover:bg-[#AF3535]/90'
+                    } text-white rounded-md transition-colors`}
                     onClick={() => handleSaveChanges()}
                   >
                     Save Changes
@@ -228,21 +274,33 @@ const ProfilePage = () => {
               <div className="p-6">
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>Full Name</label>
                     <input
                       type="text"
                       name="name"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#AF3535]"
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                        isDark 
+                          ? 'bg-gray-700 border-gray-600 text-white focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-[#AF3535]'
+                      }`}
                       value={formData.name}
                       onChange={handleInputChange}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Biography</label>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>Biography</label>
                     <textarea
                       name="biography"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#AF3535]"
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                        isDark 
+                          ? 'bg-gray-700 border-gray-600 text-white focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-[#AF3535]'
+                      }`}
                       rows="3"
                       value={formData.biography}
                       onChange={handleInputChange}
@@ -250,34 +308,58 @@ const ProfilePage = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>Email</label>
                     <input
                       type="email"
                       name="email"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#AF3535]"
+                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                        isDark 
+                          ? 'bg-gray-700 border-gray-600 text-white focus:ring-red-500' 
+                          : 'border-gray-300 focus:ring-[#AF3535]'
+                      }`}
                       value={formData.email}
                       onChange={handleInputChange}
                     />
                   </div>
 
-                  <div className="pt-4 border-t border-gray-200">
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">Account Actions</h3>
+                  <div className={`pt-4 border-t ${
+                    isDark ? 'border-gray-700' : 'border-gray-200'
+                  }`}>
+                    <h3 className={`text-lg font-medium ${
+                      isDark ? 'text-gray-300' : 'text-gray-900'
+                    } mb-3`}>Account Actions</h3>
                     
                     <div className="space-y-3">
                       <button 
-                        className="w-full text-left px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                        className={`w-full text-left px-4 py-3 rounded-md transition-colors ${
+                          isDark 
+                            ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
+                            : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
                         onClick={handleChangePassword}
                       >
-                        <div className="font-medium">Change Password</div>
-                        <p className="text-sm text-gray-500">Update your account password</p>
+                        <div className={`font-medium ${
+                          isDark ? 'text-white' : 'text-gray-900'
+                        }`}>Change Password</div>
+                        <p className={`text-sm ${
+                          isDark ? 'text-gray-400' : 'text-gray-500'
+                        }`}>Update your account password</p>
                       </button>
                       
                       <button 
-                        className="w-full text-left px-4 py-3 bg-red-50 hover:bg-red-100 text-red-600 rounded-md transition-colors"
+                        className={`w-full text-left px-4 py-3 rounded-md transition-colors ${
+                          isDark 
+                            ? 'bg-red-900/50 hover:bg-red-900/70 text-red-200' 
+                            : 'bg-red-50 hover:bg-red-100 text-red-600'
+                        }`}
                         onClick={handleDeactivateAccount}
                       >
                         <div className="font-medium">Deactivate Account</div>
-                        <p className="text-sm text-red-500">Hide your profile and content</p>
+                        <p className={`text-sm ${
+                          isDark ? 'text-red-300' : 'text-red-500'
+                        }`}>Hide your profile and content</p>
                       </button>
                     </div>
                   </div>
@@ -295,6 +377,12 @@ const ProfilePage = () => {
         accept="image/*"
         onChange={handleImageChange}
       />
+
+<ChangePasswordModal
+  isOpen={isPasswordModalOpen}
+  onClose={() => setIsPasswordModalOpen(false)}
+  onChangePassword={handlePasswordChangeSubmit}
+/>
     </div>
   );
 };

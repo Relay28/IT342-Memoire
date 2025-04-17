@@ -1,5 +1,6 @@
 package cit.edu.mmr.controller;
 
+import cit.edu.mmr.dto.ChangePasswordRequest;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.UserService;
@@ -267,6 +268,46 @@ public class UserController {
                 return "image/gif";
             default:
                 return "application/octet-stream";
+        }
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(
+            @RequestBody ChangePasswordRequest request,
+            Authentication authentication) {
+
+        logger.info("Request received to change password");
+
+        try {
+            if (authentication == null || !authentication.isAuthenticated()) {
+                logger.warn("Unauthorized access attempt to change password");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+            }
+
+            String username = authentication.getName();
+            logger.debug("Changing password for username: {}", username);
+
+            userService.changePassword(
+                    username,
+                    request.getCurrentPassword(),
+                    request.getNewPassword()
+            );
+
+            logger.info("Password successfully changed for user: {}", username);
+            return ResponseEntity.ok().body(Map.of(
+                    "message", "Password changed successfully"
+            ));
+
+        } catch (NoSuchElementException e) {
+            logger.error("User not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid password change request: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Unexpected error changing password: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to change password: " + e.getMessage());
         }
     }
 }
