@@ -8,6 +8,7 @@ import { profileService } from '../components/ProfileFunctionalities';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { useThemeMode } from '../context/ThemeContext';
+import ChangePasswordModal from './ChangePasswordModal'; // Adjust path as needed
 
 const ProfilePage = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -24,6 +25,7 @@ const ProfilePage = () => {
   const fileInputRef = useRef(null);
   const [isLoading, setIsLoading] = useState(false);
   const { isDark } = useThemeMode();
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   // Fetch user data and profile picture on component mount
   useEffect(() => {
@@ -136,6 +138,7 @@ const ProfilePage = () => {
     }
   };
 
+  
   const handleDeactivateAccount = async () => {
     if (window.confirm('Are you sure you want to deactivate your account? This action cannot be undone.')) {
       try {
@@ -153,7 +156,36 @@ const ProfilePage = () => {
   };
 
   const handleChangePassword = () => {
-    alert('Password change functionality will be implemented here');
+    setIsPasswordModalOpen(true);
+  };
+  
+  // Add this function to handle the actual password change
+  const handlePasswordChangeSubmit = async (currentPassword, newPassword) => {
+    console.log('Attempting password change with:', {
+      currentPassword,
+      newPassword
+    });
+    
+    try {
+      const result = await profileService.changePassword(currentPassword, newPassword);
+      console.log('Change password result:', result);
+      alert('Password changed successfully!');
+      setIsPasswordModalOpen(false);
+      
+      // Immediately test the new password
+      try {
+        console.log('Attempting to login with new password...');
+        // Add your login API call here using the new password
+      } catch (loginError) {
+        console.error('Login with new password failed:', loginError);
+      }
+    } catch (error) {
+      console.error('Password change error:', {
+        message: error.message,
+        response: error.response?.data
+      });
+      throw error;
+    }
   };
 
   const userData = user || {
@@ -345,6 +377,12 @@ const ProfilePage = () => {
         accept="image/*"
         onChange={handleImageChange}
       />
+
+<ChangePasswordModal
+  isOpen={isPasswordModalOpen}
+  onClose={() => setIsPasswordModalOpen(false)}
+  onChangePassword={handlePasswordChangeSubmit}
+/>
     </div>
   );
 };

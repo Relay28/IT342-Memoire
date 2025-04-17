@@ -144,7 +144,7 @@ public class UserService {
             // Validate image
             if (profileImg == null || profileImg.isEmpty()) {
                 logger.warn("Empty profile image provided for user ID: {}", userId);
-               // throw new IllegalArgumentException("Profile image cannot be empty");
+                // throw new IllegalArgumentException("Profile image cannot be empty");
             }else {
 
                 // Save image
@@ -168,5 +168,40 @@ public class UserService {
 
     }
 
+    public void changePassword(String username, String currentPassword, String newPassword) {
+        logger.info("Attempting to change password for user: {}", username);
+
+        // Find user
+        UserEntity user = urepo.findByUsername(username)
+                .orElseThrow(() -> {
+                    logger.error("User not found with username: {}", username);
+                    return new NoSuchElementException("User not found");
+                });
+
+        // Verify current password
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            logger.warn("Current password verification failed for user: {}", username);
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+
+        // Validate new password
+        if (newPassword == null || newPassword.length() < 8) {
+            logger.warn("New password validation failed for user: {}", username);
+            throw new IllegalArgumentException("New password must be at least 8 characters long");
+        }
+
+        // Check if new password is same as current
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            logger.warn("New password same as current password for user: {}", username);
+            throw new IllegalArgumentException("New password must be different from current password");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        // THIS IS CRUCIAL - Make sure you're saving the updated user
+        urepo.save(user); // This line must be present
+        logger.info("Password successfully changed for user: {}", username);
+    }
 
 }

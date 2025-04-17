@@ -84,7 +84,32 @@ export const profileService = {
     }
   },
 
-
+// Add this to your profileService object
+async changePassword(currentPassword, newPassword) {
+  try {
+    const response = await axios.post(
+      `${API_BASE_URL}/change-password`,
+      {
+        currentPassword,
+        newPassword
+      },
+      getAuthHeaders()
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Failed to change password:', error);
+    
+    // Enhanced error handling
+    let errorMessage = 'Password change failed';
+    if (error.response) {
+      errorMessage = error.response.data?.message || 
+                    (error.response.status === 401 ? 'Current password is incorrect' : 
+                    error.response.status === 400 ? 'New password does not meet requirements' : 
+                    'Server error');
+    }
+    throw new Error(errorMessage);
+  }
+},
   // Disable/deactivate account
   async deactivateAccount() {
     try {
@@ -155,5 +180,6 @@ async getProfilePicture() {
     return null; // Ensure null is returned on error to avoid further issues
   }
 }
+
 
 };
