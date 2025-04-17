@@ -56,6 +56,50 @@
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Connection Status Bar -->
+    <LinearLayout
+        android:id="@+id/connectionStatusBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="#F5F5F5"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout">
+
+        <TextView
+            android:id="@+id/connectionStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Connecting..."
+            android:textColor="#FFA500"
+            android:textSize="12sp" />
+
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+        <Button
+            android:id="@+id/reconnectButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Force Reconnect"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/connectionStatus" />
+
+        <TextView
+            android:id="@+id/activeUsersText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 users online"
+            android:textColor="#757575"
+            android:textSize="12sp"
+            android:visibility="gone" />
+    </LinearLayout>
+
     <!-- Scrollable Content Area -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/nestedScrollView"
@@ -67,7 +111,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/appBarLayout">
+        app:layout_constraintTop_toBottomOf="@id/connectionStatusBar">
 
         <LinearLayout
             android:layout_width="match_parent"
