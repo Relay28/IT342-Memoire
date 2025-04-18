@@ -20,6 +20,9 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.nio.file.AccessDeniedException;
+
 @Service
 public class AuthenticationService {
 
@@ -56,11 +59,11 @@ public class AuthenticationService {
             throw new EmailAlreadyExistsException("Email is already registered");
         }
 
-        var user = new UserEntity();
+            var user = new UserEntity();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setRole("USER");
+        user.setRole("ROLE_USER");
         user.setActive(true);
         user.setName(request.getUsername());
 
@@ -75,7 +78,7 @@ public class AuthenticationService {
         var jwtToken = jwtService.generateToken(
                 User.withUsername(user.getUsername())
                         .password(user.getPassword())
-                        .authorities("ROLE_" + user.getRole())
+                        .authorities(user.getRole())
                         .build()
         );
 
@@ -84,6 +87,7 @@ public class AuthenticationService {
                 .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .role(user.getRole())
                 .build();
     }
 
@@ -123,6 +127,53 @@ public class AuthenticationService {
                 .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
+                .build();
+    }
+
+
+    @Cacheable(value = "userAuthentication", key = "#request.username", unless = "#result == null")
+    public AuthenticationResponse authenticateAdmin(AuthenticationRequest request) {
+        logger.debug("Cache miss: Authenticating user: {}", request.getUsername());
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()
+                    )
+            );
+        } catch (BadCredentialsException e) {
+            logger.warn("Authentication failed: Bad credentials for username: {}", request.getUsername());
+            throw new InvalidCredentialsException("Invalid username or password");
+        }
+
+        var user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> {
+                    logger.error("User not found after successful authentication: {}", request.getUsername());
+                    return new UsernameNotFoundException("User not found");
+                });
+
+            try {
+                if(!user.getRole().equals("ROLE_ADMIN"))
+                     throw new AccessDeniedException("Cannot access Data");
+            } catch (AccessDeniedException e) {
+                throw new RuntimeException(e);
+            }
+        var jwtToken = jwtService.generateToken(
+                User.withUsername(user.getUsername())
+                        .password(user.getPassword())
+                        .authorities("ROLE_" + user.getRole())
+                        .build()
+        );
+
+        logger.info("User '{}' authenticated successfully", request.getUsername());
+
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole())
                 .build();
     }
 }

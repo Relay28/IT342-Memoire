@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Optional;
 @Service
@@ -90,6 +91,22 @@ public class ReportService {
     @Cacheable(value = "reports", key = "'reportsByType_' + #itemType")
     public List<ReportEntity> getReportsByItemType(String itemType) {
         return reportRepository.findByItemType(itemType);
+    }
+
+    public List<ReportEntity> getReports(Authentication auth) {
+        List<ReportEntity> list = null;
+      UserEntity user=  getAuthenticatedUser(auth);
+
+          try {
+              if(!user.getRole().equals("ROLE_ADMIN"))
+                 throw new AccessDeniedException("ACCESS DENIED");
+              else
+                  list = reportRepository.findAll();
+          } catch (AccessDeniedException e) {
+              throw new RuntimeException(e);
+          }
+
+       return list;
     }
 
     @Caching(evict = {
