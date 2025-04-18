@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.nio.file.AccessDeniedException;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 @Service
@@ -55,6 +56,7 @@ public class ReportService {
         ReportEntity report = new ReportEntity();
         report.setReportedID(reportedID);
         report.setItemType(itemType);
+        report.setDate((new Date()));
         report.setReporter(reporter);
         report.setStatus(status);
 

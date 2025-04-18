@@ -19,7 +19,6 @@ const AdminLogin = () => {
     
     const navigate = useNavigate();
     const { Adminlogin, loading, error, user, authToken } = useAuth();
-    console.log(user.role)
     useEffect(() => {
       // Redirect if already logged in and has admin role
       if (user && authToken && user.role === "ROLE_ADMIN") {

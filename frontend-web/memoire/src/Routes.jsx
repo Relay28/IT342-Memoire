@@ -19,12 +19,15 @@ const FriendsPage = lazy(() => import("./components/FriendsPage"));
 const ErrorPage = lazy(() => import("./components/ErrorPage"));
 const AdminLogin = lazy(() => import("./components/admin/AdminLogin"));
 const AdminDashboard = lazy(() => import("./components/admin/AdminDashboard"));
+const ReportDetailsPage = lazy(()  =>  import("./components/admin/ReportDetailsPage"));
+const ReportListPage = lazy(()  =>  import("./components/admin/ReportListPage"));
 
 const RouteLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
     <CircularProgress size={60} />
   </div>
 );
+
 
 const AppRoutes = () => {
   return (
@@ -33,7 +36,8 @@ const AppRoutes = () => {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
-
+        <Route path="/admin/reports" element={<ReportListPage/>} />
+        <Route path="/admin/reports/:reportId" element={<ReportDetailsPage/>} />
         <Route path="/homepage" element={<Homepage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
