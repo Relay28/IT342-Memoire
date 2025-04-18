@@ -2,7 +2,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { lazy, Suspense, useContext } from "react";
 import { CircularProgress } from "@mui/material";
-import { AuthProvider } from './components/AuthProvider';
 import { CapsuleContentProvider } from "./context/CapsuleWebContextProvider";
 
 
@@ -18,6 +17,8 @@ const Capsules = lazy(() => import("./components/Capsules"));
 const ArchivedCapsules = lazy(() => import("./components/ArchivedCapsules"));
 const FriendsPage = lazy(() => import("./components/FriendsPage"));
 const ErrorPage = lazy(() => import("./components/ErrorPage"));
+const AdminLogin = lazy(() => import("./components/admin/AdminLogin"));
+const AdminDashboard = lazy(() => import("./components/admin/AdminDashboard"));
 
 const RouteLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -30,6 +31,9 @@ const AppRoutes = () => {
     <Suspense fallback={<RouteLoader />}>
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
         <Route path="/homepage" element={<Homepage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
@@ -49,7 +53,13 @@ const AppRoutes = () => {
         <Route path="/capsules" element={<Capsules />} />
         <Route path="/archived_capsules" element={<ArchivedCapsules />} />
         <Route path="/friends" element={<FriendsPage />} />
+
+       
+
+
         <Route path="*" element={<ErrorPage />} />
+
+      
       </Routes>
     </Suspense>
   );

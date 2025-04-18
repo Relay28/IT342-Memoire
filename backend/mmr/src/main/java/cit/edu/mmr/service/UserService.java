@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -16,9 +18,11 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -101,6 +105,26 @@ public class UserService {
         return urepo.save(user);
     }
 
+
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return urepo.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+    public List<UserEntity> getAllUsers(Authentication auth){
+        UserEntity user = getAuthenticatedUser(auth);
+
+            List<UserEntity> list=null;
+            try {
+                if(!user.getRole().equals("ROLE_ADMIN"))
+                  throw new AccessDeniedException("CANNOT ACCESS ENDPOINT");
+                else
+                   list= urepo.findAll();
+            } catch (AccessDeniedException e) {
+                throw new RuntimeException(e);
+            }
+            return list;
+    }
 
     @CacheEvict(value = {"publicProfiles", "ownProfiles"}, key = "#userId")
     public UserEntity updateUserDetails(long userId, UserEntity newUserDetails, MultipartFile profileImg) throws IOException {
