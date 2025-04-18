@@ -18,6 +18,7 @@ const Capsules = lazy(() => import("./components/Capsules"));
 const ArchivedCapsules = lazy(() => import("./components/ArchivedCapsules"));
 const FriendsPage = lazy(() => import("./components/FriendsPage"));
 const ErrorPage = lazy(() => import("./components/ErrorPage"));
+const ForgotPassword = lazy(() => import("./components/ForgotPassword"));
 
 const RouteLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -35,6 +36,7 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/search" element={<SearchResult />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/profile/:userId" element={<ProfilePageOther />} />
         
         <Route path="/create" element={<CreateCapsule />} />

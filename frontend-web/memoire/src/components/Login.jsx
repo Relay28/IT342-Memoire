@@ -180,7 +180,7 @@ const Login = () => {
 
             <div className="w-full flex justify-end mb-4">
               <Link 
-                to="#" 
+                to="/forgot-password" 
                 className="text-[#b22222] text-sm no-underline hover:underline"
               >
                 Forgot Password?
