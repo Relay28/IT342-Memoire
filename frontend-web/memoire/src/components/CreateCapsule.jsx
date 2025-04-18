@@ -19,7 +19,26 @@ export default function CreateCapsule() {
   const [error, setError] = useState(null);
   
   const { isAuthenticated } = useAuth();
-  const { getTimeCapsule } = useTimeCapsule();
+  const { getTimeCapsule, updateTimeCapsule } = useTimeCapsule();
+
+  // Save changes automatically with debounce
+  useEffect(() => {
+    if (!capsuleData || !id) return;
+
+    const timer = setTimeout(() => {
+      if (title !== capsuleData.title || description !== capsuleData.description) {
+        updateTimeCapsule(id, { title, description })
+          .then(updatedData => {
+            setCapsuleData(updatedData);
+          })
+          .catch(err => {
+            console.error('Failed to update capsule:', err);
+          });
+      }
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timer);
+  }, [title, description, id, capsuleData]);
 
   // Load capsule data
   useEffect(() => {
@@ -158,15 +177,6 @@ export default function CreateCapsule() {
           
             {/* Integrated MediaViewer component */}
             <CapsuleContentGallery capsuleId={id} />
-            
-            {isAuthenticated && (
-              <div className="pt-4">
-                <button className="flex items-center space-x-2 bg-red-600 text-white px-6 py-2 rounded-md hover:bg-red-700 transition-colors">
-                  <FiPlus />
-                  <span>{capsuleData ? 'Update Capsule' : 'Save Capsule'}</span>
-                </button>
-              </div>
-            )}
           </div>
         </main>
       </div>
