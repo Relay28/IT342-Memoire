@@ -71,8 +71,10 @@ const ReportDetailsPage = () => {
       if (!response.ok) {
         throw new Error('Failed to fetch report details. Please ensure you have admin privileges.');
       }
+
       
       const data = await response.json();
+      console.log("Data check "+JSON.stringify(data,2,null))
       setReport(data.report);
       setReportedEntity(data.reportedEntity);
     } catch (err) {
@@ -457,7 +459,7 @@ const ReportDetailsPage = () => {
                   Reported Date
                 </Typography>
                 <Typography variant="body1">
-                  {formatDate(report.createdAt || report.createdDate)}
+                  {formatDate(report.date || report.createdDate)}
                 </Typography>
               </Box>
             </Box>
