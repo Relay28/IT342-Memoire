@@ -58,7 +58,7 @@ public class ReportService {
         report.setItemType(itemType);
         report.setDate((new Date()));
         report.setReporter(reporter);
-        report.setStatus(status);
+        report.setStatus("Pending");
 
         logger.info("Creating report: {}", report);
         return reportRepository.save(report);

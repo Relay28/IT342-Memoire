@@ -114,7 +114,7 @@ const ReportListComponent = ({
   const handleRefresh = () => {
     fetchReports();
   };
-  console.log(reports   )
+  console.log(reports)
   
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -138,6 +138,7 @@ const ReportListComponent = ({
   const navigateToFullList = () => {
     navigate('/admin/reports');
   };
+
 
   return (
     

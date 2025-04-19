@@ -47,9 +47,10 @@ const ReportDetailsPage = () => {
     severity: 'success'
   });
 
+  
   // Retrieve auth token from localStorage
   const authToken = sessionStorage.getItem('authToken');
-
+  console.log(authToken)
   useEffect(() => {
     fetchReportDetails();
   }, [reportId]);
@@ -120,25 +121,49 @@ const ReportDetailsPage = () => {
 
       switch (confirmAction) {
         case 'report-approve':
-          response = await fetch(`http://localhost:8080/api/reports/${reportId}/status?status=APPROVED`, {
+          // Use the new report resolution endpoint with 'GOOD' resolution
+          response = await fetch(`http://localhost:8080/api/admin/reports/${reportId}/resolve`, {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${authToken}`,
               'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({
+              resolution: 'GOOD'
+            })
           });
           message = 'Report approved successfully';
           break;
         
         case 'report-reject':
-          response = await fetch(`http://localhost:8080/api/reports/${reportId}/status?status=REJECTED`, {
-            method: 'PUT',
-            headers: {
-              'Authorization': `Bearer ${authToken}`,
-              'Content-Type': 'application/json'
+          // Use the new report resolution endpoint with 'BAD' resolution
+          try {
+            response = await fetch(`http://localhost:8080/api/admin/reports/${reportId}/resolve`, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                resolution: 'BAD'
+              })
+            });
+        
+            // First check if response is OK
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('BAD Resolution Error:', errorText);
+              throw new Error(errorText || 'Failed to reject report');
             }
-          });
-          message = 'Report rejected successfully';
+        
+            // Try to parse JSON only if response is OK
+            const data = await response.json();
+            message = 'Report rejected and content confiscated successfully';
+          } catch (err) {
+            console.error('Error in BAD resolution:', err);
+            throw err; // Re-throw to be caught by the outer catch
+          }
+         
           break;
         
         case 'report-delete':
@@ -169,7 +194,8 @@ const ReportDetailsPage = () => {
       }
 
       if (!response.ok) {
-        throw new Error('Failed to perform action');
+        const errorData = await response.json();
+        throw new Error(errorData || 'Failed to perform action');
       }
 
       // Show success message
@@ -199,9 +225,9 @@ const ReportDetailsPage = () => {
   const getDialogMessage = () => {
     switch (confirmAction) {
       case 'report-approve':
-        return `Are you sure you want to approve report #${reportId}? This will mark the report as APPROVED.`;
+        return `Are you sure you want to approve report #${reportId}? This will mark the report as resolved with no action needed.`;
       case 'report-reject':
-        return `Are you sure you want to reject report #${reportId}? This will mark the report as REJECTED.`;
+        return `Are you sure you want to reject report #${reportId}? This will mark the report as resolved and confiscate the reported content by transferring ownership to you.`;
       case 'report-delete':
         return `Are you sure you want to delete report #${reportId}? This action cannot be undone.`;
       default:
@@ -212,7 +238,7 @@ const ReportDetailsPage = () => {
   const getDialogTitle = () => {
     switch (confirmAction) {
       case 'report-approve': return 'Approve Report';
-      case 'report-reject': return 'Reject Report';
+      case 'report-reject': return 'Reject & Confiscate Content';
       case 'report-delete': return 'Delete Report';
       default: return 'Confirm Action';
     }
@@ -222,7 +248,7 @@ const ReportDetailsPage = () => {
     if (!reportedEntity) return null;
 
     // Handle TimeCapsule type
-    if (report.itemType === 'TIMECAPSULE') {
+    if (report.itemType === 'TIMECAPSULE' || report.itemType === 'TIME_CAPSULE') {
       return (
         <Card sx={{ mt: 3 }} elevation={2}>
           <CardHeader 
@@ -237,7 +263,7 @@ const ReportDetailsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2">Creator:</Typography>
-                <Typography variant="body1">{reportedEntity.creator?.username || 'Unknown'}</Typography>
+                <Typography variant="body1">{reportedEntity.creator?.username || reportedEntity.createdBy?.username || 'Unknown'}</Typography>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle2">Title:</Typography>
@@ -254,6 +280,10 @@ const ReportDetailsPage = () => {
               <Grid item xs={12}>
                 <Typography variant="subtitle2">Unlocked Date:</Typography>
                 <Typography variant="body1">{formatDate(reportedEntity.unlockDate)}</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="subtitle2">Status:</Typography>
+                <Typography variant="body1">{reportedEntity.status || 'Active'}</Typography>
               </Grid>
             </Grid>
           </CardContent>
@@ -277,15 +307,15 @@ const ReportDetailsPage = () => {
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2">Author:</Typography>
-                <Typography variant="body1">{reportedEntity.author?.username || 'Unknown'}</Typography>
+                <Typography variant="body1">{reportedEntity.author?.username || reportedEntity.user?.username || 'Unknown'}</Typography>
               </Grid>
               <Grid item xs={12}>
                 <Typography variant="subtitle2">Content:</Typography>
-                <Typography variant="body1">{reportedEntity.content || 'No content'}</Typography>
+                <Typography variant="body1">{reportedEntity.content || reportedEntity.text || 'No content'}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2">Created Date:</Typography>
-                <Typography variant="body1">{formatDate(reportedEntity.createDate)}</Typography>
+                <Typography variant="body1">{formatDate(reportedEntity.createDate || reportedEntity.createdAt)}</Typography>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <Typography variant="subtitle2">Parent Type:</Typography>
@@ -315,6 +345,11 @@ const ReportDetailsPage = () => {
         </CardContent>
       </Card>
     );
+  };
+
+  // New function to view all confiscated content
+  const handleViewConfiscatedContent = () => {
+    navigate('/admin/confiscated/content');
   };
 
   if (loading) {
@@ -359,16 +394,27 @@ const ReportDetailsPage = () => {
     );
   }
 
+  const isPending = report.status === 'Pending';
+
   return (
     <Box sx={{ p: 3, maxWidth: '1000px', margin: '0 auto' }}>
-      <Button 
-        startIcon={<ArrowBack />} 
-        variant="outlined" 
-        onClick={handleBackToList}
-        sx={{ mb: 3 }}
-      >
-        Back to Reports List
-      </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Button 
+          startIcon={<ArrowBack />} 
+          variant="outlined" 
+          onClick={handleBackToList}
+        >
+          Back to Reports List
+        </Button>
+        
+        <Button 
+          variant="outlined" 
+          color="primary"
+          onClick={handleViewConfiscatedContent}
+        >
+          View All Confiscated Content
+        </Button>
+      </Box>
       
       <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -378,8 +424,8 @@ const ReportDetailsPage = () => {
           <Chip 
             color={
               report.status === 'PENDING' ? 'warning' :
-              report.status === 'APPROVED' ? 'success' :
-              report.status === 'REJECTED' ? 'error' : 'default'
+              report.status === 'RESOLVED_GOOD' || report.status === 'APPROVED' ? 'success' :
+              report.status === 'RESOLVED_BAD' || report.status === 'REJECTED' ? 'error' : 'default'
             } 
             label={report.status} 
             icon={<Flag />}
@@ -434,9 +480,18 @@ const ReportDetailsPage = () => {
               {report.reportedID}
             </Typography>
           </Grid>
+          
+          <Grid item xs={12}>
+            <Typography variant="body2" color="text.secondary">
+              Reason for Report
+            </Typography>
+            <Typography variant="body1">
+              {report.reason || "No reason provided"}
+            </Typography>
+          </Grid>
         </Grid>
         
-        {report.status === 'PENDING' && (
+        {isPending && (
           <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
             <Button
               variant="contained"
@@ -444,7 +499,7 @@ const ReportDetailsPage = () => {
               startIcon={<CheckCircle />}
               onClick={() => openConfirmDialog('report-approve')}
             >
-              Approve Report
+              Mark as Good
             </Button>
             
             <Button
@@ -453,12 +508,12 @@ const ReportDetailsPage = () => {
               startIcon={<Block />}
               onClick={() => openConfirmDialog('report-reject')}
             >
-              Reject Report
+              Mark as Bad & Confiscate
             </Button>
           </Box>
         )}
         
-        <Box sx={{ mt: report.status === 'PENDING' ? 2 : 3 }}>
+        <Box sx={{ mt: isPending ? 2 : 3 }}>
           <Button
             variant="outlined"
             color="error"

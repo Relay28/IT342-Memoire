@@ -68,6 +68,8 @@ const AdminSidebar = ({ mobileOpen, handleDrawerToggle, pendingReportsCount = 0 
             <Flag />
           </ListItemIcon>
           <ListItemText primary="Reports" />
+          
+
           {pendingReportsCount > 0 && (
             <Box 
               sx={{ 
@@ -86,6 +88,19 @@ const AdminSidebar = ({ mobileOpen, handleDrawerToggle, pendingReportsCount = 0 
             </Box>
           )}
         </ListItem>
+        
+        <ListItem 
+          button 
+          component={Link} 
+          to="/admin/confiscated/content"
+          selected={isActive('/admin/confiscated/content')}
+          
+        >
+            <ListItemIcon>
+            <Flag />
+          </ListItemIcon>
+          <ListItemText primary="Conficated Content" />
+          </ListItem>
       </List>
       <Divider />
       <List>
