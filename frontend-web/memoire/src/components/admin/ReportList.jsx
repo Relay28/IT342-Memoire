@@ -114,6 +114,7 @@ const ReportListComponent = ({
   const handleRefresh = () => {
     fetchReports();
   };
+  console.log(reports   )
   
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -139,7 +140,9 @@ const ReportListComponent = ({
   };
 
   return (
+    
     <Box>
+        
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5" component="h2">
           {preview ? 'Recent Reports' : 'All Reports'}
@@ -226,7 +229,7 @@ const ReportListComponent = ({
                         label={report.status} 
                       />
                     </TableCell>
-                    <TableCell>{formatDate(report.createdAt || report.createdDate)}</TableCell>
+                    <TableCell>{formatDate(report.date)}</TableCell>
                     <TableCell>
                       <IconButton 
                         size="small" 

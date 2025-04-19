@@ -32,6 +32,7 @@ import {
   Visibility
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import AdminLayout from './AdminLayout';
 
 const ReportsListPage = () => {
   const [reports, setReports] = useState([]);
@@ -47,6 +48,7 @@ const ReportsListPage = () => {
     message: '',
     severity: 'success'
   });
+  const [pendingReportsCount, setPendingReportsCount] = useState(0);
   
   const navigate = useNavigate();
 
@@ -71,6 +73,14 @@ const ReportsListPage = () => {
       setFilteredReports(filtered);
     }
   }, [searchTerm, reports]);
+  
+  // Count pending reports for sidebar badge
+  useEffect(() => {
+    if (reports && reports.length > 0) {
+      const pendingCount = reports.filter(report => report.status === 'PENDING').length;
+      setPendingReportsCount(pendingCount);
+    }
+  }, [reports]);
   
   const fetchReports = async () => {
     setLoading(true);
@@ -234,8 +244,9 @@ const ReportsListPage = () => {
     }
   };
 
-  return (
-    <Box sx={{ p: 3, maxWidth: '1200px', margin: '0 auto' }}>
+  // Content for the reports list page
+  const reportsContent = (
+    <>
       <Typography variant="h4" component="h1" sx={{ mb: 3 }}>
         Reports Management
       </Typography>
@@ -309,7 +320,7 @@ const ReportsListPage = () => {
                         label={report.status} 
                       />
                     </TableCell>
-                    <TableCell>{formatDate(report.createdAt || report.createdDate)}</TableCell>
+                    <TableCell>{formatDate(report.createdAt || report.createdDate || report.date)}</TableCell>
                     <TableCell>
                       <Box sx={{ display: 'flex', justifyContent: 'center' }}>
                         <IconButton 
@@ -407,7 +418,13 @@ const ReportsListPage = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Box>
+    </>
+  );
+
+  return (
+    <AdminLayout title="Reports Management" pendingReportsCount={pendingReportsCount}>
+      {reportsContent}
+    </AdminLayout>
   );
 };
 

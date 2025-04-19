@@ -7,6 +7,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Date;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -21,5 +23,6 @@ public class UserDTO {
     private String biography;
     private boolean isActive;
     private boolean isOauthUser;
+    private Date createdAt;
 
 }

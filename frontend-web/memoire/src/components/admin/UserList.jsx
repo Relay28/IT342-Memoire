@@ -30,11 +30,14 @@ import {
   AdminPanelSettings,
   OpenInNew
 } from '@mui/icons-material';
+import AdminLayout from './AdminLayout';
+import { useAuth } from '../AuthProvider';
 
 const UserListComponent = ({ 
   preview = false, 
   previewLimit = 5, 
-  authToken 
+  authToken,
+  onUserAction
 }) => {
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
@@ -43,12 +46,20 @@ const UserListComponent = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [pendingReportsCount, setPendingReportsCount] = useState(0);
   
   const navigate = useNavigate();
+  const auth = useAuth();
+  
+  // If not in preview mode, use authToken from auth context
+  const token = authToken || (auth ? auth.authToken : null);
   
   useEffect(() => {
     fetchUsers();
-  }, [authToken]);
+    if (!preview) {
+      fetchPendingReportsCount();
+    }
+  }, [token, preview]);
   
   // Filter users when search term changes
   useEffect(() => {
@@ -80,7 +91,7 @@ const UserListComponent = ({
       const response = await fetch('http://localhost:8080/api/users/admin/dashboard', {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${authToken}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -105,6 +116,28 @@ const UserListComponent = ({
       console.error('Error fetching users:', err);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const fetchPendingReportsCount = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/reports', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        return;
+      }
+      
+      const reports = await response.json();
+      const pendingCount = reports.filter(report => report.status === 'PENDING').length;
+      setPendingReportsCount(pendingCount);
+    } catch (err) {
+      console.error('Error fetching pending reports count:', err);
     }
   };
   
@@ -138,8 +171,9 @@ const UserListComponent = ({
   const navigateToFullList = () => {
     navigate('/admin/users');
   };
-
-  return (
+  
+  // Content for the component
+  const content = (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h5" component="h2">
@@ -323,6 +357,21 @@ const UserListComponent = ({
         </TableContainer>
       )}
     </Box>
+  );
+
+  // If in preview mode, just return the content
+  if (preview) {
+    return content;
+  }
+  
+  // If not in preview mode, wrap with the admin layout
+  return (
+    <AdminLayout 
+      title="User Management" 
+      pendingReportsCount={pendingReportsCount}
+    >
+      {content}
+    </AdminLayout>
   );
 };
 

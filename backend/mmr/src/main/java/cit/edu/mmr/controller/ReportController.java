@@ -80,7 +80,6 @@
         @GetMapping("/getAll")
         @PreAuthorize("hasRole('ROLE_ADMIN')")
         public List<ReportEntity> getAllReports(Authentication auth) {
-
             return reportService.getReports(auth);
         }
 

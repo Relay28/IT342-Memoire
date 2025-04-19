@@ -121,7 +121,7 @@ public class UserController {
     @PreAuthorize("hasRole('ROLE_ADMIN')")
     public List<UserDTO> getAllUsers(Authentication auth) {
         return userService.getAllUsers(auth).stream()
-                .map(user -> new UserDTO(user.getId(), user.getUsername(), user.getEmail() ,user.getProfilePicture(),user.getRole(),user.getBiography(),user.isActive(),user.isOauthUser()/* etc */))
+                .map(user -> new UserDTO(user.getId(), user.getUsername(), user.getEmail() ,user.getProfilePicture(),user.getRole(),user.getBiography(),user.isActive(),user.isOauthUser(),user.getCreatedAt()/* etc */))
                 .collect(Collectors.toList());
     }
 

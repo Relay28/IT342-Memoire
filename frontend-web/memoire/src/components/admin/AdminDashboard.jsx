@@ -3,25 +3,23 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
   Typography,
-  Paper,
   Grid,
   Card,
   CardContent,
-  CardHeader,
-  Button,
-  Divider,
-  CircularProgress
+  CircularProgress,
+  Paper,
+  IconButton
 } from '@mui/material';
 import { 
-  AdminPanelSettings,
   Group,
   Flag,
-  OpenInNew,
-  Dashboard
+  Dashboard,
+  ChevronRight
 } from '@mui/icons-material';
 import UserListComponent from './UserList';
 import ReportListComponent from './ReportList';
 import { useAuth } from '../AuthProvider';
+import AdminLayout from './AdminLayout';
 
 const AdminDashboard = () => {
   const [dashboardStats, setDashboardStats] = useState({
@@ -54,9 +52,6 @@ const AdminDashboard = () => {
     setError(null);
     
     try {
-      // This would typically be a separate endpoint
-      // For now we'll simulate it with the data we have
-      
       // Fetch users for stats
       const usersResponse = await fetch('http://localhost:8080/api/users/admin/dashboard', {
         method: 'GET',
@@ -121,12 +116,10 @@ const AdminDashboard = () => {
   };
 
   return (
-    <Box sx={{ padding: 3 }}>
-      <Typography variant="h4" component="h1" sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-        <AdminPanelSettings sx={{ mr: 1, fontSize: 32 }} />
-        Admin Dashboard
-      </Typography>
-      
+    <AdminLayout 
+      title="Admin Dashboard" 
+      pendingReportsCount={dashboardStats.pendingReports}
+    >
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <CircularProgress />
@@ -134,6 +127,9 @@ const AdminDashboard = () => {
       ) : (
         <>
           {/* Dashboard Summary Stats */}
+          <Typography variant="h5" gutterBottom>
+            Overview
+          </Typography>
           <Grid container spacing={3} sx={{ mb: 4 }}>
             <Grid item xs={12} sm={6} md={3}>
               <Card sx={{ height: '100%' }}>
@@ -187,44 +183,78 @@ const AdminDashboard = () => {
             </Grid>
             
             <Grid item xs={12} sm={6} md={3}>
-              <Card sx={{ height: '100%', cursor: 'pointer' }} onClick={() => navigate('/admin/reports')}>
+              <Card 
+                sx={{ 
+                  height: '100%', 
+                  cursor: 'pointer',
+                  bgcolor: dashboardStats.pendingReports > 0 ? 'warning.light' : 'inherit'
+                }} 
+                onClick={() => navigate('/admin/reports')}
+              >
                 <CardContent>
-                  <Typography variant="h6" component="div" color="warning.main" gutterBottom>
+                  <Typography variant="h6" component="div" color={dashboardStats.pendingReports > 0 ? 'warning.dark' : 'text.secondary'} gutterBottom>
                     Pending Reports
                   </Typography>
-                  <Typography variant="h3" component="div" color="warning.main" sx={{ mb: 1.5 }}>
+                  <Typography variant="h3" component="div" color={dashboardStats.pendingReports > 0 ? 'warning.dark' : 'text.primary'} sx={{ mb: 1.5 }}>
                     {dashboardStats.pendingReports}
                   </Typography>
                   <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Flag sx={{ mr: 0.5, fontSize: 20, color: 'warning.main' }} />
-                    Click to review
+                    <Flag sx={{ mr: 0.5, fontSize: 20, color: dashboardStats.pendingReports > 0 ? 'warning.dark' : 'inherit' }} />
+                    {dashboardStats.pendingReports > 0 ? 'Require attention' : 'No pending reports'}
                   </Typography>
                 </CardContent>
               </Card>
             </Grid>
           </Grid>
           
-          {/* Users Section */}
-          <Paper sx={{ p: 3, mb: 4 }}>
-            <UserListComponent 
-              preview={true} 
-              previewLimit={PREVIEW_LIMIT} 
-              authToken={authToken}
-            />
-          </Paper>
-          
-          {/* Reports Section */}
-          <Paper sx={{ p: 3 }}>
-            <ReportListComponent 
-              preview={true} 
-              previewLimit={PREVIEW_LIMIT} 
-              authToken={authToken}
-              onReportAction={handleReportAction}
-            />
-          </Paper>
+          {/* Recent Activity Sections */}
+          <Grid container spacing={3}>
+            {/* Users Section */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2, height: '100%' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">Recent Users</Typography>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => navigate('/admin/users')}
+                    title="View all users"
+                  >
+                    <ChevronRight />
+                  </IconButton>
+                </Box>
+                <UserListComponent 
+                  preview={true} 
+                  previewLimit={PREVIEW_LIMIT} 
+                  authToken={authToken}
+                />
+              </Paper>
+            </Grid>
+            
+            {/* Reports Section */}
+            <Grid item xs={12} md={6}>
+              <Paper sx={{ p: 2, height: '100%' }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="h6">Recent Reports</Typography>
+                  <IconButton 
+                    size="small" 
+                    onClick={() => navigate('/admin/reports')}
+                    title="View all reports"
+                  >
+                    <ChevronRight />
+                  </IconButton>
+                </Box>
+                <ReportListComponent 
+                  preview={true} 
+                  previewLimit={PREVIEW_LIMIT} 
+                  authToken={authToken}
+                  onReportAction={handleReportAction}
+                />
+              </Paper>
+            </Grid>
+          </Grid>
         </>
       )}
-    </Box>
+    </AdminLayout>
   );
 };
 
