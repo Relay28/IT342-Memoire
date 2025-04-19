@@ -87,6 +87,45 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+
+  // Login function
+  const Adminlogin = async (credentials) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await axios.post(
+        "http://localhost:8080/api/auth/admin/login",
+        credentials,
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      if (response.status === 200) {
+        const { token, userId, ...userData } = response.data;
+        
+        setAuthToken(token);
+        setUser({
+          id: userId,
+          username: userData.username,
+          email: userData.email,
+          name: userData.name || userData.username,
+          role: userData.role,
+          biography: userData.biography || "",
+          profilePicture: userData.profilePicture || ""
+        });
+        
+        return { success: true };
+      }
+    } catch (error) {
+      const message = error.response?.data?.message || "Login failed";
+      setError(message);
+      return { success: false, error: message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   // Google login function
   const googleLogin = async (credential) => {
     setLoading(true);
@@ -247,6 +286,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     error,
     isAuthenticated,
+    Adminlogin,
     login,
     googleLogin,
     register,

@@ -14,6 +14,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import org.slf4j.Logger;
@@ -94,7 +95,8 @@ public class AuthenticationController {
                     jwtToken,
                     userEntity.getId(),
                     userEntity.getUsername(),
-                    userEntity.getEmail()
+                    userEntity.getEmail(),
+                    userEntity.getRole()
             );
 
             return ResponseEntity.ok(response);
@@ -122,6 +124,19 @@ public class AuthenticationController {
         logger.info("Processing authentication request for username: {}", request.getUsername());
         try {
             AuthenticationResponse response = authService.authenticate(request);
+            logger.info("User authenticated successfully: {}", request.getUsername());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Authentication failed for username {}: {}", request.getUsername(), e.getMessage(), e);
+            throw new AuthenticationException("Authentication failed", e);
+        }
+    }
+
+    @PostMapping("/admin/login")
+    public ResponseEntity<AuthenticationResponse> authenticateAdmin(@RequestBody AuthenticationRequest request) {
+        logger.info("Processing authentication request for username: {}", request.getUsername());
+        try {
+            AuthenticationResponse response = authService.authenticateAdmin(request);
             logger.info("User authenticated successfully: {}", request.getUsername());
             return ResponseEntity.ok(response);
         } catch (Exception e) {

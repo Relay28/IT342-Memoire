@@ -1,6 +1,7 @@
 package cit.edu.mmr.controller;
 
 import cit.edu.mmr.dto.ChangePasswordRequest;
+import cit.edu.mmr.dto.UserDTO;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.UserService;
@@ -30,11 +31,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users")
@@ -99,7 +98,7 @@ public class UserController {
 
     // Create a new user (assuming this endpoint is used for account creation for admins)
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> createUser(@RequestBody UserEntity user) {
         logger.info("Request received to create new user with username: {}", user.getUsername());
 
@@ -117,6 +116,15 @@ public class UserController {
                     .body("Failed to create user: " + e.getMessage());
         }
     }
+
+    @GetMapping("/admin/dashboard")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public List<UserDTO> getAllUsers(Authentication auth) {
+        return userService.getAllUsers(auth).stream()
+                .map(user -> new UserDTO(user.getId(), user.getUsername(), user.getEmail() ,user.getProfilePicture(),user.getRole(),user.getBiography(),user.isActive(),user.isOauthUser(),user.getCreatedAt()/* etc */))
+                .collect(Collectors.toList());
+    }
+
 
 
 

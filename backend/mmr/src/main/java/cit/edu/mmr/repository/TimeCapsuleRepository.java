@@ -28,4 +28,6 @@ public interface TimeCapsuleRepository extends JpaRepository<TimeCapsuleEntity, 
     
     // Search capsules by title
     List<TimeCapsuleEntity> findByTitleContaining(String keyword);
+
+    List<TimeCapsuleEntity> findByCreatedByAndStatus(UserEntity createdBy, String status);
 }

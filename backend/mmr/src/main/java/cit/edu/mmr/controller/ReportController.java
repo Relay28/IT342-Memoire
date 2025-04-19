@@ -1,7 +1,7 @@
 package cit.edu.mmr.controller;
 
+import cit.edu.mmr.dto.ReportDTO;
 import cit.edu.mmr.dto.ReportRequest;
-import cit.edu.mmr.entity.ReportEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.ReportService;
@@ -15,10 +15,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -37,13 +33,13 @@ public class ReportController {
     }
 
     @PostMapping
-    public ResponseEntity<ReportEntity> createReport(@RequestBody ReportRequest request, Authentication auth) {
+    public ResponseEntity<ReportDTO> createReport(@RequestBody ReportRequest request, Authentication auth) {
         // Validation: throws if not found
 
         // Validate itemType handler exists (throws if invalid)
         entityFactory.getHandler(request.getItemType());
 
-        ReportEntity report = reportService.createReport(
+        ReportDTO report = reportService.createReport(
                 request.getReportedID(),
                 request.getItemType(),
                 request.getStatus(),
@@ -54,9 +50,9 @@ public class ReportController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<Map<String, Object>> getReportWithDetails(@PathVariable long id) {
-        ReportEntity report = reportService.getReportById(id)
+        ReportDTO report = reportService.getReportById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found"));
 
         Object reportedEntity = reportService.getReportedEntity(id);
@@ -69,25 +65,31 @@ public class ReportController {
     }
 
     @GetMapping("/reporter/{reporterId}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ReportEntity>> getReportsByReporter(@PathVariable long reporterId) {
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<List<ReportDTO>> getReportsByReporter(@PathVariable long reporterId) {
         UserEntity reporter = userRepository.findById(reporterId)
                 .orElseThrow(() -> new IllegalArgumentException("Reporter not found"));
 
         return ResponseEntity.ok(reportService.getReportsByReporter(reporter));
     }
 
+    @GetMapping("/getAll")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public List<ReportDTO> getAllReports(Authentication auth) {
+        return reportService.getReports(auth);
+    }
+
     @GetMapping("/itemType/{itemType}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<ReportEntity>> getReportsByItemType(@PathVariable String itemType) {
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<List<ReportDTO>> getReportsByItemType(@PathVariable String itemType) {
         entityFactory.getHandler(itemType); // validate itemType
         return ResponseEntity.ok(reportService.getReportsByItemType(itemType));
     }
 
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ReportEntity> updateReportStatus(@PathVariable long id, @RequestParam String status, Authentication auth) {
-        ReportEntity updatedReport = reportService.updateReportStatus(id, status, auth)
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<ReportDTO> updateReportStatus(@PathVariable long id, @RequestParam String status, Authentication auth) {
+        ReportDTO updatedReport = reportService.updateReportStatus(id, status, auth)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found"));
 
         return ResponseEntity.ok(updatedReport);

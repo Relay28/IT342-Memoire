@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.Date;
+
 @Entity
 @Getter
 @Setter
@@ -30,4 +32,5 @@ public class ReportEntity {
     private UserEntity reporter;
 
     private String status;
+    private Date date;
 }
