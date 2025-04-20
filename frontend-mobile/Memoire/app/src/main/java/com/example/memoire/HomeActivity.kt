@@ -8,9 +8,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.CapsuleListActivity
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
+import com.example.memoire.api.RetrofitClient
+import com.example.memoire.models.TimeCapsuleDTO
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -68,9 +71,46 @@ class HomeActivity : AppCompatActivity() {
                     true
                 }*/
                 R.id.navigation_add -> {
-                    // Navigate to the Add activity
-                    val intent = Intent(this, CreateCapsuleActivity::class.java)
-                    startActivity(intent)
+
+
+                    val newCapsule = TimeCapsuleDTO(
+                        title = "Untitled",
+                        description = ""
+                    )
+
+                    // Show a loading indicator if you have one
+                    // progressBar.visibility = View.VISIBLE
+
+                    RetrofitClient.instance.createTimeCapsule(newCapsule).enqueue(object : retrofit2.Callback<TimeCapsuleDTO> {
+                        override fun onResponse(call: retrofit2.Call<TimeCapsuleDTO>, response: retrofit2.Response<TimeCapsuleDTO>) {
+                            // Hide loading indicator
+                            // progressBar.visibility = View.GONE
+
+                            if (response.isSuccessful && response.body() != null) {
+                                val createdCapsule = response.body()!!
+                                // Navigate to detail activity with the new capsule ID
+                                val intent = Intent(this@HomeActivity, CapsuleDetailActivity::class.java).apply {
+                                    putExtra("capsuleId", createdCapsule.id.toString())
+                                    // You might want to add a flag to indicate this is a new capsule
+                                    putExtra("isNewCapsule", true)
+                                }
+                                startActivity(intent)
+                            } else {
+                                Toast.makeText(this@HomeActivity,
+                                    "Failed to create capsule: ${response.message()}",
+                                    Toast.LENGTH_SHORT).show()
+                            }
+                        }
+
+                        override fun onFailure(call: retrofit2.Call<TimeCapsuleDTO>, t: Throwable) {
+                            // Hide loading indicator
+                            // progressBar.visibility = View.GONE
+
+                            Toast.makeText(this@HomeActivity,
+                                "Error: ${t.message}",
+                                Toast.LENGTH_SHORT).show()
+                        }
+                    })
                     true
                 }
                 R.id.navigation_tags -> {

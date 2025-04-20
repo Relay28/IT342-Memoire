@@ -1,24 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
+<com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/gray_light"
+    app:strokeWidth="0.5dp">
 
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <!-- Thumbnail Image with Aspect Ratio (16:9 recommended) -->
         <ImageView
             android:id="@+id/contentThumbnail"
             android:layout_width="match_parent"
-            android:layout_height="150dp"
+            android:layout_height="180dp"
+            android:adjustViewBounds="true"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_image" />
+            android:contentDescription="@string/content_thumbnail_desc"
+            android:background="@color/gray_light"
+            tools:src="@drawable/ic_image" />
 
+        <!-- Delete Button with better visual treatment -->
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/deleteButton"
+            style="@style/Widget.MaterialComponents.FloatingActionButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentTop="true"
+            android:layout_margin="12dp"
+            android:contentDescription="@string/delete_content"
+            app:backgroundTint="@android:color/white"
+            app:fabSize="mini"
+            app:rippleColor="@color/error_light"
+            app:srcCompat="@drawable/ic_delete"
+            app:tint="@color/error_dark" />
+
+
+        <!-- Optional: Content Type Badge -->
+        <TextView
+            android:id="@+id/contentTypeBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:layout_margin="12dp"
+            android:background="@drawable/badge_background"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="4dp"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="Photo" />
         <TextView
             android:id="@+id/contentTitle"
             android:layout_width="match_parent"
@@ -30,17 +69,6 @@
             android:textColor="@android:color/black"
             android:textSize="14sp" />
 
-        <ImageButton
-            android:id="@+id/deleteButton"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentTop="true"
-            android:layout_margin="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_delete"
-            android:tint="@android:color/white" />
-
     </RelativeLayout>
 
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>

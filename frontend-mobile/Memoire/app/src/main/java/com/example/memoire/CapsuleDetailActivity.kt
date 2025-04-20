@@ -13,6 +13,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -56,13 +57,21 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
 
     private val contentList = mutableListOf<CapsuleContentEntity>()
     private var currentUploadingFile: Uri? = null
+    private var isNewCapsule = false
 
-    private val filePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let {
-            currentUploadingFile = it
-            uploadFile()
+    private var isOwner = false
+    private lateinit var sessionManager: SessionManager
+
+    private val filePicker =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+            uri?.let {
+                currentUploadingFile = it
+                uploadFile()
+
+            }
         }
-    }
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -73,12 +82,29 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
         RetrofitClient.init(applicationContext)
         apiService = RetrofitClient.capsuleContentInstance
         webSocketService = CapsuleContentStompService(this, this)
+        isNewCapsule = intent.getBooleanExtra("isNewCapsule", false)
+        sessionManager = SessionManager(this)
+        val callback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (isNewCapsule) {
+                    checkAndDeleteIfEmpty {
+                        // After checking/deletion, finish the activity
+                        this@CapsuleDetailActivity.finish()
+                    }
+                } else {
+                    // If not a new capsule, just finish normally
+                    this@CapsuleDetailActivity.finish()
+                }
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, callback)
 
         // Get capsule ID from intent
         capsuleId = intent.getStringExtra("capsuleId") ?: run {
             Toast.makeText(this, "No capsule ID provided", Toast.LENGTH_SHORT).show()
             finish()
             return
+
         }
 
         // Setup UI
@@ -92,7 +118,46 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
 
         // Setup back button
         findViewById<ImageView>(R.id.backButton).setOnClickListener {
-            finish()
+
+            if (isNewCapsule) {
+                checkAndDeleteIfEmpty {
+                    // After checking/deletion, finish the activity
+                    this@CapsuleDetailActivity.finish()
+                }
+            } else {
+                // If not a new capsule, just finish normally
+                this@CapsuleDetailActivity.finish()
+            }
+        }
+
+        fun onBackPressed() {
+            // Check if this is a new capsule and if it should be deleted
+            if (isNewCapsule) {
+                lifecycleScope.launch {
+                    val capsule = RetrofitClient.instance.getTimeCapsule(capsuleId.toLong()).execute().body()
+
+                    // Check if the capsule is still "Untitled" with empty description and no contents
+                    if (capsule != null &&
+                        capsule.title == "Untitled" &&
+                        (capsule.description.isNullOrEmpty() || capsule.description == "") &&
+                        (capsule.contents == null || capsule.contents.isEmpty())) {
+
+                        // Delete the empty capsule
+                        try {
+                            RetrofitClient.instance.deleteTimeCapsule(capsuleId.toLong()).execute()
+                            // Optional Toast message
+                            // Toast.makeText(this@CapsuleDetailActivity, "Empty capsule deleted", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            // Handle any errors silently or log them
+                        }
+                    }
+
+                    // Navigate back
+                    super@CapsuleDetailActivity.onBackPressed()
+                }
+            } else {
+                super.onBackPressed()
+            }
         }
 
         // Setup FAB for uploading
@@ -116,6 +181,39 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
         }
     }
 
+    private fun checkAndDeleteIfEmpty(onComplete: () -> Unit) {
+        if (isNewCapsule) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val response = RetrofitClient.instance.getTimeCapsule(capsuleId.toLong()).execute()
+
+                    if (response.isSuccessful && response.body() != null) {
+                        val capsule = response.body()!!
+
+                        // Check if the capsule should be deleted
+                        if (capsule.title == "Untitled" &&
+                            (capsule.description.isNullOrEmpty() || capsule.description == "") &&
+                            (capsule.contents == null || capsule.contents.isEmpty())) {
+
+                            // Delete the empty capsule
+                            RetrofitClient.instance.deleteTimeCapsule(capsuleId.toLong()).execute()
+                        }
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        onComplete()
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        // Even if there's an error, we should still complete the navigation
+                        onComplete()
+                    }
+                }
+            }
+        } else {
+            onComplete()
+        }
+    }
     private fun loadCapsuleDetails() {
         progressBar.visibility = View.VISIBLE
         RetrofitClient.instance.getTimeCapsule(capsuleId.toLong()).enqueue(object : Callback<TimeCapsuleDTO> {
@@ -125,6 +223,19 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
                     val capsule = response.body()
                     titleTextView.text = capsule?.title ?: "Unnamed Capsule"
                     descriptionTextView.text = capsule?.description ?: "No description"
+
+                    // Check if current user is the owner
+                    val currentUserId = sessionManager.getUserSession()["userId"]
+                    isOwner = currentUserId == capsule?.createdById?.toLong()
+
+                    // Set up views based on ownership
+                    if (isOwner) {
+                        // For owners, make views editable and set up focus change listeners
+                        setupEditableViewsWithAutoSave()
+                    } else {
+                        // For non-owners, make views non-editable
+                        setupNonEditableViews()
+                    }
                 } else {
                     Toast.makeText(this@CapsuleDetailActivity,
                         "Failed to load capsule details", Toast.LENGTH_SHORT).show()
@@ -135,6 +246,101 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
                 progressBar.visibility = View.GONE
                 Toast.makeText(this@CapsuleDetailActivity,
                     "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun setupEditableViewsWithAutoSave() {
+        // Make views editable
+        titleTextView.isFocusable = true
+        titleTextView.isFocusableInTouchMode = true
+        titleTextView.isClickable = true
+        titleTextView.isLongClickable = true
+
+        descriptionTextView.isFocusable = true
+        descriptionTextView.isFocusableInTouchMode = true
+        descriptionTextView.isClickable = true
+        descriptionTextView.isLongClickable = true
+
+        // Add focus change listeners for auto-save
+        titleTextView.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                saveCapsuleDetails()
+            }
+        }
+
+        descriptionTextView.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus) {
+                saveCapsuleDetails()
+            }
+        }
+
+        // Also save when user presses done/enter on keyboard
+        titleTextView.setOnEditorActionListener { _, _, _ ->
+            titleTextView.clearFocus()
+            true
+        }
+    }
+
+    private fun setupNonEditableViews() {
+        // Make views non-editable
+        titleTextView.isFocusable = false
+        titleTextView.isFocusableInTouchMode = false
+        titleTextView.isClickable = false
+        titleTextView.isLongClickable = false
+
+        descriptionTextView.isFocusable = false
+        descriptionTextView.isFocusableInTouchMode = false
+        descriptionTextView.isClickable = false
+        descriptionTextView.isLongClickable = false
+    }
+
+
+    private var lastSaveTime = 0L
+    private val SAVE_DEBOUNCE_TIME = 1000L // 1 second
+
+    private fun saveCapsuleDetails() {
+        if (!isOwner) return
+
+        val currentTime = System.currentTimeMillis()
+        if (currentTime - lastSaveTime < SAVE_DEBOUNCE_TIME) {
+            return // Skip if we just saved recently
+        }
+        lastSaveTime = currentTime
+
+        val newTitle = titleTextView.text.toString()
+        val newDescription = descriptionTextView.text.toString()
+
+        val updatedCapsule = TimeCapsuleDTO(
+            id = capsuleId.toLong(),
+            title = newTitle,
+            description = newDescription
+        )
+
+        progressBar.visibility = View.VISIBLE
+        RetrofitClient.instance.updateTimeCapsule(capsuleId.toLong(), updatedCapsule).enqueue(object : Callback<TimeCapsuleDTO> {
+            override fun onResponse(call: Call<TimeCapsuleDTO>, response: Response<TimeCapsuleDTO>) {
+                progressBar.visibility = View.GONE
+                if (response.isSuccessful) {
+                    // Show subtle feedback that changes were saved
+                    titleTextView.clearFocus()
+                    descriptionTextView.clearFocus()
+                    Toast.makeText(this@CapsuleDetailActivity,
+                        "Changes saved", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@CapsuleDetailActivity,
+                        "Failed to save changes", Toast.LENGTH_SHORT).show()
+                    // Revert changes if update failed
+                    loadCapsuleDetails()
+                }
+            }
+
+            override fun onFailure(call: Call<TimeCapsuleDTO>, t: Throwable) {
+                progressBar.visibility = View.GONE
+                Toast.makeText(this@CapsuleDetailActivity,
+                    "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                // Revert changes if update failed
+                loadCapsuleDetails()
             }
         })
     }
@@ -262,10 +468,12 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        if (isNewCapsule) {
+            checkAndDeleteIfEmpty {}
+        }
         webSocketService.disconnect()
+        super.onDestroy()
     }
-
     inner class ContentAdapter(private val contents: List<CapsuleContentEntity>) :
         RecyclerView.Adapter<ContentAdapter.ContentViewHolder>() {
 

@@ -26,4 +26,8 @@
 
     <string name="noBio"></string>
 
+
+    <string name="add_content">Add Content</string>
+    <string name="content_thumbnail_desc">Content thumbnail</string>
+    <string name="delete_content">Delete content</string>
 </resources>
