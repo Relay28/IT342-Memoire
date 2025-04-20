@@ -6,6 +6,7 @@ import cit.edu.mmr.entity.NotificationEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.FriendShipRepository;
 import cit.edu.mmr.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -183,4 +184,43 @@ public class FriendShipService {
             return Optional.empty();
         }
     }
+
+    public boolean hasPendingRequest(long friendId, Authentication auth) {
+        logger.info("Checking pending request status with friendId: {}", friendId);
+        UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(friendId).orElse(null);
+
+        if (friend == null) {
+            logger.warn("Friend user not found with ID: {}", friendId);
+            throw new UsernameNotFoundException("User not found");
+        }
+
+        // Check if user has sent a request to friend
+        Optional<FriendShipEntity> friendshipOpt = friendShipRepository.findByUserAndFriend(user, friend);
+        if (friendshipOpt.isPresent() && "Pending".equalsIgnoreCase(friendshipOpt.get().getStatus())) {
+            return true;
+        }
+
+        // Check if friend has sent a request to user
+        friendshipOpt = friendShipRepository.findByUserAndFriend(friend, user);
+        return friendshipOpt.isPresent() && "Pending".equalsIgnoreCase(friendshipOpt.get().getStatus());
+    }
+
+    @Transactional
+    public void cancelRequest(long friendId, Authentication auth) {
+        UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(friendId)
+                .orElseThrow(() -> new UsernameNotFoundException("Friend not found"));
+
+        List<FriendShipEntity> pendingRequests = friendShipRepository
+                .findPendingRequestsBetweenUsers(user, friend);
+
+        if (pendingRequests.isEmpty()) {
+            throw new NoSuchElementException("No pending request exists between these users");
+        }
+
+        friendShipRepository.deleteAll(pendingRequests);
+    }
+
+
 }

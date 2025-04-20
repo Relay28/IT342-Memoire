@@ -94,14 +94,11 @@ const ProfilePageOther = () => {
   const handleCancelFriendRequest = async () => {
     try {
       setIsLoadingFriendship(true);
-      if (profile.userId !== 0) {
-        await apiService.delete(`/api/friendships/cancelRequest/${profile.userId}`); //dili mu work pa pero later na ni iimplement sa backend or basin nalipat lng ko
-      }
+      await apiService.friendships.cancelRequest(profile.userId);
       setFriendshipStatus('not_friends');
-      setHasPendingRequest(false);
     } catch (error) {
       console.error('Error canceling friend request:', error);
-      setError('Failed to cancel friend request');
+      setError(error.response?.data?.message || 'Failed to cancel friend request');
     } finally {
       setIsLoadingFriendship(false);
     }
