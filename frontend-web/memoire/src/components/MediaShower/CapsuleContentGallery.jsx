@@ -82,7 +82,7 @@ const CapsuleContentGallery = ({ capsuleId }) => {
     // This ensures we eventually get updates even if WebSocket fails
     checkIntervalRef.current = setInterval(() => {
       loadMedia();
-    }, 10000);
+    }, 3000);
     
     return () => {
       disconnectFromCapsule(capsuleId);
@@ -255,7 +255,7 @@ const CapsuleContentGallery = ({ capsuleId }) => {
                   )}
                 </div>
                 <div className="flex-grow">
-                  <div>{item.filePath ? item.filePath.split('/').pop() : 'Unnamed file'}</div>
+                  
                   <div className="text-sm text-gray-500">
                     {item.uploadedAt ? new Date(item.uploadedAt).toLocaleString() : 'Unknown date'}
                   </div>

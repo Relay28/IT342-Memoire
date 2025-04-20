@@ -283,7 +283,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
 
         override fun onBindViewHolder(holder: ContentViewHolder, position: Int) {
             val content = contents[position]
-            holder.titleView.text = content.fileName ?: content.filePath?.substringAfterLast('/') ?: "Unknown"
+
 
             when {
                 content.contentType?.startsWith("image/") == true -> {

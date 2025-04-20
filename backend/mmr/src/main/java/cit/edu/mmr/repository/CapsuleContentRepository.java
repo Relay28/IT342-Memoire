@@ -20,6 +20,8 @@ public interface CapsuleContentRepository extends JpaRepository<CapsuleContentEn
     
     // Find content uploaded by a specific user
     List<CapsuleContentEntity> findByContentUploadedBy(UserEntity user);
+    @Query("SELECT c FROM CapsuleContentEntity c LEFT JOIN FETCH c.capsule LEFT JOIN FETCH c.contentUploadedBy WHERE c.id = :id")
+    Optional<CapsuleContentEntity> findByIdWithRelations(@Param("id") Long id);
     
     // Find content by type in a capsule
     List<CapsuleContentEntity> findByCapsuleAndContentType(TimeCapsuleEntity capsule, String contentType);
