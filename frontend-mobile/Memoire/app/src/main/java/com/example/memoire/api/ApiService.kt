@@ -2,6 +2,7 @@ package com.example.memoire.api
 
 import com.example.memoire.models.AuthenticationRequest
 import com.example.memoire.models.AuthenticationResponse
+import com.example.memoire.models.CountdownDTO
 import com.example.memoire.models.LockRequest
 import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.RegisterRequest
@@ -73,8 +74,7 @@ interface ApiService {
     @GET("api/timecapsules/status/published")
     fun getPublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
 
-    @GET("api/timecapsules/status/closed")
-    fun getClosedTimeCapsules(): Call<List<TimeCapsuleDTO>>
+
 
     @GET("api/timecapsules/status/unpublished")
     fun getUnpublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
@@ -102,6 +102,12 @@ interface ApiService {
 
     @PATCH("api/timecapsules/{id}/unlock")
     fun unlockTimeCapsule(@Path("id") id: Long): Call<Void>
+
+
+    @GET("api/timecapsules/status/closed")
+    fun getClosedTimeCapsules(): Call<List<TimeCapsuleDTO>>
+    @GET("/api/capsules/{id}/countdown")
+    fun getCountdown(@Path("id") id: Long): Call<CountdownDTO>
 }
 data class AuthenticationRequest(val username: String, val password: String)
 data class GoogleAuthRequest(val idToken: String)

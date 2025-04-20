@@ -30,4 +30,12 @@
     <string name="add_content">Add Content</string>
     <string name="content_thumbnail_desc">Content thumbnail</string>
     <string name="delete_content">Delete content</string>
+
+    <string name="ready_to_open">Ready to open!</string>
+    <string name="time_until_unlock">Time until unlock:</string>
+    <string name="loading">Loading countdown...</string>
+    <string name="days">Days</string>
+    <string name="hours">Hours</string>
+    <string name="minutes">Minutes</string>
+    <string name="seconds">Seconds</string>
 </resources>

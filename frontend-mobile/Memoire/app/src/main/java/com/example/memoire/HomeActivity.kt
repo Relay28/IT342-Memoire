@@ -10,6 +10,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.CapsuleListActivity
+import com.example.memoire.LockedCapsulesActivity
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
 import com.example.memoire.api.RetrofitClient
@@ -118,13 +119,13 @@ class HomeActivity : AppCompatActivity() {
                     val intent = Intent(this, CapsuleListActivity::class.java)
                     startActivity(intent)
                     true
-                }/*
+                }
                 R.id.navigation_timer -> {
                     // Navigate to the Timer activity
-                    val intent = Intent(this, TimerActivity::class.java)
+                    val intent = Intent(this, LockedCapsulesActivity::class.java)
                     startActivity(intent)
                     true
-                }*/
+                }
                 else -> false
             }
         }
