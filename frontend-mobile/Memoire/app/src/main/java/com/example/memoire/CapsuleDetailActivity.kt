@@ -28,7 +28,8 @@ import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.CapsuleContentEntity
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.utils.SessionManager
-import com.example.memoire.websocket.CapsuleContentWebSocketService
+import com.example.memoire.websocket.CapsuleContentStompService
+import com.example.memoire.websocket.CapsuleContentWebSocketListener
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -43,14 +44,14 @@ import java.io.File
 import java.io.InputStream
 import java.util.UUID
 
-class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketService.CapsuleContentWebSocketListener {
+class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListener {
     private lateinit var capsuleId: String
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ContentAdapter
     private lateinit var progressBar: ProgressBar
     private lateinit var titleTextView: TextView
     private lateinit var descriptionTextView: TextView
-    private lateinit var webSocketService: CapsuleContentWebSocketService
+    private lateinit var webSocketService: CapsuleContentStompService
     private lateinit var apiService: CapsuleContentService
 
     private val contentList = mutableListOf<CapsuleContentEntity>()
@@ -71,8 +72,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
         // Initialize services
         RetrofitClient.init(applicationContext)
         apiService = RetrofitClient.capsuleContentInstance
-        webSocketService = CapsuleContentWebSocketService(SessionManager(this))
-        webSocketService.listener = this
+        webSocketService = CapsuleContentStompService(this, this)
 
         // Get capsule ID from intent
         capsuleId = intent.getStringExtra("capsuleId") ?: run {
@@ -101,7 +101,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
         }
 
         // Connect to WebSocket
-        webSocketService.connectToCapsule(capsuleId.toLong())
+        webSocketService.connect(capsuleId.toLong())
 
         // Load capsule details
         loadCapsuleDetails()
@@ -120,6 +120,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
         progressBar.visibility = View.VISIBLE
         RetrofitClient.instance.getTimeCapsule(capsuleId.toLong()).enqueue(object : Callback<TimeCapsuleDTO> {
             override fun onResponse(call: Call<TimeCapsuleDTO>, response: Response<TimeCapsuleDTO>) {
+                progressBar.visibility = View.GONE
                 if (response.isSuccessful) {
                     val capsule = response.body()
                     titleTextView.text = capsule?.title ?: "Unnamed Capsule"
@@ -131,6 +132,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
             }
 
             override fun onFailure(call: Call<TimeCapsuleDTO>, t: Throwable) {
+                progressBar.visibility = View.GONE
                 Toast.makeText(this@CapsuleDetailActivity,
                     "Error: ${t.message}", Toast.LENGTH_SHORT).show()
             }
@@ -146,10 +148,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
                     contentList.clear()
                     response.body()?.let { contentList.addAll(it) }
                     adapter.notifyDataSetChanged()
-
-                    // Show empty state if no content
-                    findViewById<TextView>(R.id.emptyStateText).isVisible = contentList.isEmpty()
-                    recyclerView.isVisible = contentList.isNotEmpty()
+                    updateEmptyState()
                 } else {
                     Toast.makeText(this@CapsuleDetailActivity,
                         "Failed to load content", Toast.LENGTH_SHORT).show()
@@ -162,6 +161,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
             }
         }
     }
+
     private fun uploadFile() {
         currentUploadingFile?.let { uri ->
             progressBar.visibility = View.VISIBLE
@@ -180,14 +180,9 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
 
                     val response = apiService.uploadContent(capsuleId.toLong(), filePart)
                     if (response.isSuccessful) {
-                        response.body()?.let {
-                            contentList.add(it)
-                            adapter.notifyItemInserted(contentList.size - 1)
-
-                            // Hide empty state if content was added
-                            findViewById<TextView>(R.id.emptyStateText).isVisible = false
-                            recyclerView.isVisible = true
-                        }
+                        // WebSocket will handle the update notification
+                        Toast.makeText(this@CapsuleDetailActivity,
+                            "Upload started", Toast.LENGTH_SHORT).show()
                     } else {
                         Toast.makeText(this@CapsuleDetailActivity,
                             "Upload failed", Toast.LENGTH_SHORT).show()
@@ -204,32 +199,49 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
     }
 
     // WebSocket Listener Methods
-    override fun onInitialContentsReceived(contents: List<CapsuleContentEntity>) {
+    override fun onConnected() {
+        runOnUiThread {
+            Toast.makeText(this, "Connected to real-time updates", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onDisconnected(reason: String) {
+        runOnUiThread {
+            Toast.makeText(this, "Disconnected: $reason", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onError(error: String) {
+        runOnUiThread {
+            Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onInitialContentReceived(contents: List<CapsuleContentEntity>) {
         runOnUiThread {
             contentList.clear()
             contentList.addAll(contents)
             adapter.notifyDataSetChanged()
-
-            // Update empty state
-            findViewById<TextView>(R.id.emptyStateText).isVisible = contentList.isEmpty()
-            recyclerView.isVisible = contentList.isNotEmpty()
+            updateEmptyState()
         }
     }
 
-    override fun onContentUpdated(content: CapsuleContentEntity) {
+    override fun onContentUpdated(content: CapsuleContentEntity, action: String) {
         runOnUiThread {
-            val index = contentList.indexOfFirst { it.id == content.id }
-            if (index >= 0) {
-                contentList[index] = content
-                adapter.notifyItemChanged(index)
-            } else {
-                contentList.add(content)
-                adapter.notifyItemInserted(contentList.size - 1)
-
-                // Hide empty state if content was added
-                findViewById<TextView>(R.id.emptyStateText).isVisible = false
-                recyclerView.isVisible = true
+            when (action) {
+                "add" -> {
+                    contentList.add(content)
+                    adapter.notifyItemInserted(contentList.size - 1)
+                }
+                "update" -> {
+                    val index = contentList.indexOfFirst { it.id == content.id }
+                    if (index >= 0) {
+                        contentList[index] = content
+                        adapter.notifyItemChanged(index)
+                    }
+                }
             }
+            updateEmptyState()
         }
     }
 
@@ -239,34 +251,14 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
             if (index >= 0) {
                 contentList.removeAt(index)
                 adapter.notifyItemRemoved(index)
-
-                // Show empty state if no content left
-                findViewById<TextView>(R.id.emptyStateText).isVisible = contentList.isEmpty()
-                recyclerView.isVisible = contentList.isNotEmpty()
+                updateEmptyState()
             }
         }
     }
 
-    override fun onConnectionEstablished() {
-        runOnUiThread {
-            Toast.makeText(this, "Connected to real-time updates", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onConnectionFailed(error: String) {
-        runOnUiThread {
-            Toast.makeText(this, "Connection failed: $error", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onConnectionClosed() {
-        runOnUiThread {
-            Toast.makeText(this, "Disconnected from updates", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    override fun onUserListUpdated(users: List<String>) {
-        // Not implemented in this activity
+    private fun updateEmptyState() {
+        findViewById<TextView>(R.id.emptyStateText).isVisible = contentList.isEmpty()
+        recyclerView.isVisible = contentList.isNotEmpty()
     }
 
     override fun onDestroy() {
@@ -274,8 +266,6 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
         webSocketService.disconnect()
     }
 
-    // RecyclerView Adapter
-    //kotlin// RecyclerView Adapter
     inner class ContentAdapter(private val contents: List<CapsuleContentEntity>) :
         RecyclerView.Adapter<ContentAdapter.ContentViewHolder>() {
 
@@ -291,22 +281,17 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
             return ContentViewHolder(view)
         }
 
-       override fun onBindViewHolder(holder: ContentViewHolder, position: Int) {
+        override fun onBindViewHolder(holder: ContentViewHolder, position: Int) {
             val content = contents[position]
-            // Set content title (filename)
-            holder.titleView.text = content.filePath?.substringAfterLast('/') ?: "Unknown"
+            holder.titleView.text = content.fileName ?: content.filePath?.substringAfterLast('/') ?: "Unknown"
 
             when {
                 content.contentType?.startsWith("image/") == true -> {
-                    // Instead of using Glide directly, load the image through our API service
                     lifecycleScope.launch(Dispatchers.IO) {
                         try {
-                            val response = apiService.downloadContent(content.id!!.toLong())
+                            val response = apiService.downloadContent(content.id!!)
                             if (response.isSuccessful) {
-                                // Convert the response to a bitmap
                                 val bitmap = BitmapFactory.decodeStream(response.body()?.byteStream())
-
-                                // Update UI on the main thread
                                 withContext(Dispatchers.Main) {
                                     holder.imageView.setImageBitmap(bitmap)
                                 }
@@ -330,12 +315,10 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
                 }
             }
 
-            // Set click listener to open content
             holder.itemView.setOnClickListener {
                 openContent(content)
             }
 
-            // Set delete button listener
             holder.deleteBtn.setOnClickListener {
                 showDeleteConfirmation(content)
             }
@@ -349,7 +332,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
             .setTitle("Delete Content")
             .setMessage("Are you sure you want to delete this item?")
             .setPositiveButton("Delete") { dialog, _ ->
-                deleteContent(content.id!!.toLong())
+                deleteContent(content.id!!)
                 dialog.dismiss()
             }
             .setNegativeButton("Cancel") { dialog, _ ->
@@ -364,18 +347,8 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
             try {
                 val response = apiService.deleteContent(contentId)
                 if (response.isSuccessful) {
-                    // If WebSocket doesn't handle it properly, manually remove from list
-                    val index = contentList.indexOfFirst { it.id == contentId }
-                    if (index >= 0) {
-                        contentList.removeAt(index)
-                        adapter.notifyItemRemoved(index)
-
-                        // Show empty state if no content left
-                        findViewById<TextView>(R.id.emptyStateText).isVisible = contentList.isEmpty()
-                        recyclerView.isVisible = contentList.isNotEmpty()
-                    }
                     Toast.makeText(this@CapsuleDetailActivity,
-                        "Content deleted successfully", Toast.LENGTH_SHORT).show()
+                        "Content deleted", Toast.LENGTH_SHORT).show()
                 } else {
                     Toast.makeText(this@CapsuleDetailActivity,
                         "Failed to delete content", Toast.LENGTH_SHORT).show()
@@ -403,6 +376,4 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketServic
         val extension = url.substringAfterLast('.', "")
         return MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension) ?: "*/*"
     }
-
-
 }

@@ -181,54 +181,53 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
 
 
 
-    @CacheEvict(value = {CAPSULE_CONTENTS_CACHE, CONTENT_METADATA_CACHE}, key = "#content.capsule.id")
+    @CacheEvict(value = {CAPSULE_CONTENTS_CACHE, CONTENT_METADATA_CACHE}, key = "#content.id")
     @Override
     public void deleteContent(Long id, Authentication authentication) {
-        try {
-            logger.debug("Starting content deletion for ID: {}", id);
-            UserEntity user = getAuthenticatedUser(authentication);
-            CapsuleContentEntity content = capsuleContentRepository.findById(id)
-                    .orElseThrow(() -> {
-                        logger.warn("Content not found with ID: {}", id);
-                        return new EntityNotFoundException("Content not found");
-                    });
+        logger.debug("Starting content deletion for ID: {}", id);
 
-            TimeCapsuleEntity capsule = content.getCapsule();
-            boolean isUploader = content.getContentUploadedBy().getId()==(user.getId());
-            boolean isOwner = capsule.getCreatedBy().getId()==(user.getId());
+        UserEntity user = getAuthenticatedUser(authentication);
+        CapsuleContentEntity content = capsuleContentRepository.findById(id)
+                .orElseThrow(() -> {
+                    logger.warn("Content not found with ID: {}", id);
+                    return new EntityNotFoundException("Content not found");
+                });
+        Long capsuleId = content.getCapsule().getId();
+        TimeCapsuleEntity capsule = content.getCapsule();
+        boolean isUploader = content.getContentUploadedBy().getId()==(user.getId());
+        boolean isOwner = capsule.getCreatedBy().getId()==  (user.getId());
 
-
-            if (!isUploader && !isOwner) {
-                Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
-                System.out.println("TEST"+accessOpt.get().getRole());
-                if (accessOpt.isEmpty() || !"EDITOR".equals(accessOpt.get().getRole())) {
-                    logger.warn("User {} attempted unauthorized deletion of content ID: {}", user.getUsername(), id);
-                    throw new AccessDeniedException("You do not have permission to delete content.");
-                }
+        if (!isUploader && !isOwner) {
+            Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
+            if (accessOpt.isEmpty() || !"EDITOR".equals(accessOpt.get().getRole())) {
+                logger.warn("User {} attempted unauthorized deletion of content ID: {}", user.getUsername(), id);
+                throw new AccessDeniedException("You do not have permission to delete content.");
             }
-
-            try {
-                Files.deleteIfExists(Path.of(content.getFilePath()));
-
-
-
-                // Send WebSocket notification
-                notifyContentDeletion(id, content.getId());
-
-                logger.debug("File deleted successfully from path: {}", content.getFilePath());
-            } catch (IOException e) {
-                logger.error("Failed to delete file at path: {}", content.getFilePath(), e);
-                throw new RuntimeException("Failed to delete file: " + content.getFilePath());
-            }
-
-            capsuleContentRepository.delete(content);
-
-            logger.info("Successfully deleted content with ID: {}", id);
-        } catch (Exception e) {
-            logger.error("Error deleting content with ID: {}", id, e);
-            throw e;
         }
+
+        // Normalize and resolve file path
+        Path filePath = Path.of(content.getFilePath()).normalize().toAbsolutePath();
+        logger.debug("Attempting to delete file at path: {}", filePath);
+
+        try {
+            boolean deleted = Files.deleteIfExists(filePath);
+            if (deleted) {
+                logger.info("File deleted successfully from path: {}", filePath);
+            } else {
+                logger.warn("File did not exist at path: {}", filePath);
+            }
+
+            // Send WebSocket notification
+            notifyContentDeletion(id, content.getId());
+        } catch (IOException e) {
+            logger.error("Failed to delete file at path: {}", filePath, e);
+            throw new RuntimeException("Failed to delete file at path: " + filePath, e);
+        }
+
+        capsuleContentRepository.delete(content);
+        logger.info("Successfully deleted content with ID: {}", id);
     }
+
 
     private void deleteContentFile(CapsuleContentEntity content) throws IOException {
         if (content.getFilePath() == null || content.getFilePath().isBlank()) {

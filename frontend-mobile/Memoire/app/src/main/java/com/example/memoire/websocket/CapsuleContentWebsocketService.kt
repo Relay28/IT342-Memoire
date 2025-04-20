@@ -1,191 +1,199 @@
 package com.example.memoire.websocket
 
-import android.util.Log
-import com.example.memoire.api.RetrofitClient
+import android.content.Context
 import com.example.memoire.models.CapsuleContentEntity
 import com.example.memoire.utils.SessionManager
 import com.google.gson.Gson
-import okhttp3.*
+import com.google.gson.reflect.TypeToken
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.schedulers.Schedulers
 import org.json.JSONObject
+import ua.naiksoftware.stomp.Stomp
+import ua.naiksoftware.stomp.StompClient
+import ua.naiksoftware.stomp.dto.LifecycleEvent
+import ua.naiksoftware.stomp.dto.StompHeader
+import ua.naiksoftware.stomp.dto.StompMessage
 import java.util.*
-import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.*
+import kotlin.collections.ArrayList
 
-class CapsuleContentWebSocketService(
-    private val sessionManager: SessionManager,
-    private val baseUrl: String = RetrofitClient.getBaseUrl()
+class CapsuleContentStompService(
+    private val context: Context,
+    private val listener: CapsuleContentWebSocketListener
 ) {
-    private var webSocket: WebSocket? = null
-    private var reconnectAttempts = 0
-    private val maxReconnectAttempts = 5
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
-    private val reconnectDelay = 5000L // 5 seconds
+    private val sessionManager = SessionManager(context)
+    private val gson = Gson()
+    private var stompClient: StompClient? = null
+    private val compositeDisposable = CompositeDisposable()
+    private var sessionId: String? = null
 
-    // Listener for WebSocket events
-    var listener: CapsuleContentWebSocketListener? = null
-
-    // Current capsule ID being monitored
-    private var currentCapsuleId: Long? = null
-
-    // Client with timeout settings
-    private val client = OkHttpClient.Builder()
-        .readTimeout(30, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .build()
-
-    interface CapsuleContentWebSocketListener {
-        fun onInitialContentsReceived(contents: List<CapsuleContentEntity>)
-        fun onContentUpdated(content: CapsuleContentEntity)
-        fun onContentDeleted(contentId: Long)
-        fun onConnectionEstablished()
-        fun onConnectionFailed(error: String)
-        fun onConnectionClosed()
-        fun onUserListUpdated(users: List<String>)
-    }
-
-    fun connectToCapsule(capsuleId: Long) {
-        currentCapsuleId = capsuleId
-
-        val token = sessionManager.getUserSession()["token"] ?: run {
-            listener?.onConnectionFailed("No authentication token available")
+    fun connect(capsuleId: Long) {
+        if (!sessionManager.isLoggedIn()) {
+            listener.onError("User not logged in")
             return
         }
 
-        val wsUrl = baseUrl
-            .replace("http://", "ws://")
-            .replace("https://", "wss://") + "ws-capsule-content"
+        val sessionData = sessionManager.getUserSession()
+        val token = sessionData["token"] as? String ?: run {
+            listener.onError("No authentication token available")
+            return
+        }
 
-        val request = Request.Builder()
-            .url(wsUrl)
-            .header("Authorization", "Bearer $token")
-            .build()
+        // Create headers with authorization
+        val headers = ArrayList<StompHeader>()
+        headers.add(StompHeader("Authorization", "Bearer $token"))
+        headers.add(StompHeader("Capsule-ID", capsuleId.toString()))
 
-        webSocket = client.newWebSocket(request, object : WebSocketListener() {
-            override fun onOpen(webSocket: WebSocket, response: Response) {
-                Log.d("WebSocket", "Connected to capsule $capsuleId")
-                reconnectAttempts = 0
-                sendConnectMessage(capsuleId)
-                listener?.onConnectionEstablished()
-            }
+        // Initialize STOMP client with SockJS
+        stompClient = Stomp.over(
+            Stomp.ConnectionProvider.OKHTTP,
+            "ws://192.168.1.8:8080/ws-capsule-content/websocket" // SockJS endpoint
+        )
 
-            override fun onMessage(webSocket: WebSocket, text: String) {
-                handleIncomingMessage(text)
-            }
+        stompClient?.let { client ->
+            // Track connection state
+            var isConnected = false
 
-            override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                Log.d("WebSocket", "Connection closed: $reason")
-                listener?.onConnectionClosed()
-            }
+            // Subscribe to lifecycle events
+            compositeDisposable.add(
+                client.lifecycle()
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe { lifecycleEvent ->
+                        when (lifecycleEvent.type) {
+                            LifecycleEvent.Type.OPENED -> {
+                                isConnected = true
+                                listener.onConnected()
+                                subscribeToChannels(capsuleId)
+                            }
+                            LifecycleEvent.Type.ERROR -> {
+                                listener.onError(lifecycleEvent.exception?.message ?: "Unknown error")
+                            }
+                            LifecycleEvent.Type.CLOSED -> {
+                                isConnected = false
+                                listener.onDisconnected("Connection closed")
+                            }
+                            LifecycleEvent.Type.FAILED_SERVER_HEARTBEAT -> {
+                                listener.onError("Server heartbeat failed")
+                            }
+                        }
+                    }
+            )
 
-            override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                Log.e("WebSocket", "Connection failed: ${t.message}")
-                handleReconnect()
-                listener?.onConnectionFailed(t.message ?: "Unknown error")
-            }
-        })
+            // Connect with headers
+            client.connect(headers)
+        }
     }
 
-    private fun sendConnectMessage(capsuleId: Long) {
-        val connectMessage = JSONObject().apply {
-            put("type", "connect")
-            put("capsuleId", capsuleId)
-        }.toString()
+    private fun subscribeToChannels(capsuleId: Long) {
+        stompClient?.let { client ->
+            // Subscribe to initial content queue (user-specific)
+            compositeDisposable.add(
+                client.topic("/user/queue/capsule-content/initial")
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe { message ->
+                        handleInitialContentMessage(message)
+                    }
+            )
 
-        webSocket?.send(connectMessage)
+            // Subscribe to content updates topic
+            compositeDisposable.add(
+                client.topic("/topic/capsule-content/updates/$capsuleId")
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe { message ->
+                        handleUpdateMessage(message)
+                    }
+            )
+
+            // Send connection request to the server
+            val connectMessage = JSONObject().apply {
+                put("capsuleId", capsuleId)
+            }
+            client.send(
+                "/app/capsule-content/connect/$capsuleId",
+                connectMessage.toString()
+            ).subscribe()
+        }
     }
 
-    private fun handleIncomingMessage(message: String) {
+    private fun handleInitialContentMessage(message: StompMessage) {
         try {
-            val json = JSONObject(message)
-            when (json.optString("type")) {
-                "initial" -> handleInitialContents(json)
-                "update" -> handleContentUpdate(json)
-                "delete" -> handleContentDeletion(json)
-                "user_list" -> handleUserListUpdate(json)
+            // Extract session ID from the STOMP message
+            sessionId = extractSessionIdFromMessage(message)
+
+            val payload = message.payload
+            val contents = gson.fromJson<List<CapsuleContentEntity>>(
+                payload,
+                object : TypeToken<List<CapsuleContentEntity>>() {}.type
+            )
+            listener.onInitialContentReceived(contents)
+        } catch (e: Exception) {
+            listener.onError("Failed to parse initial content: ${e.message}")
+        }
+    }
+
+    private fun extractSessionIdFromMessage(message: StompMessage): String? {
+        // The StompMessage doesn't directly expose headers, but we can parse them from the raw
+        // For this library version, we need to get the session ID differently
+        // Option 1: If your server includes it in the message payload
+        // Option 2: If you need to track it separately
+
+        // For now, we'll return null since the library version doesn't expose headers
+        // You might need to modify your server to include session ID in the message payload
+        return null
+    }
+
+    private fun handleUpdateMessage(message: StompMessage) {
+        try {
+            val payload = JSONObject(message.payload)
+            when (payload.getString("action")) {
+                "add", "update" -> {
+                    val content = gson.fromJson(
+                        payload.toString(),
+                        CapsuleContentEntity::class.java
+                    )
+                    listener.onContentUpdated(content, payload.getString("action"))
+                }
+                "delete" -> {
+                    listener.onContentDeleted(payload.getLong("contentId"))
+                }
             }
         } catch (e: Exception) {
-            Log.e("WebSocket", "Error parsing message: ${e.message}")
+            listener.onError("Failed to parse update message: ${e.message}")
         }
     }
 
-    private fun handleInitialContents(json: JSONObject) {
-        val contentsJson = json.getJSONArray("contents")
-        val contents = mutableListOf<CapsuleContentEntity>()
-
-        for (i in 0 until contentsJson.length()) {
-            val contentJson = contentsJson.getJSONObject(i)
-            val content = Gson().fromJson(contentJson.toString(), CapsuleContentEntity::class.java)
-            contents.add(content)
-        }
-
-        listener?.onInitialContentsReceived(contents)
-    }
-
-    private fun handleContentUpdate(json: JSONObject) {
-        val content = Gson().fromJson(json.toString(), CapsuleContentEntity::class.java)
-        listener?.onContentUpdated(content)
-    }
-
-    private fun handleContentDeletion(json: JSONObject) {
-        val contentId = json.getLong("contentId")
-        listener?.onContentDeleted(contentId)
-    }
-
-    private fun handleUserListUpdate(json: JSONObject) {
-        val usersJson = json.getJSONArray("users")
-        val users = mutableListOf<String>()
-
-        for (i in 0 until usersJson.length()) {
-            users.add(usersJson.getString(i))
-        }
-
-        listener?.onUserListUpdated(users)
-    }
-
-    private fun handleReconnect() {
-        if (reconnectAttempts < maxReconnectAttempts) {
-            reconnectAttempts++
-            Log.d("WebSocket", "Attempting to reconnect ($reconnectAttempts/$maxReconnectAttempts)...")
-
-            coroutineScope.launch {
-                delay(reconnectDelay)
-                currentCapsuleId?.let { connectToCapsule(it) }
-            }
-        }
-    }
-
-    // Make sure to cancel coroutines when disconnecting
     fun disconnect() {
-        webSocket?.close(1000, "User initiated disconnect")
-        webSocket = null
-        currentCapsuleId = null
-        coroutineScope.cancel() // Cancel any pending reconnect jobs
+        compositeDisposable.clear()
+        stompClient?.disconnect()
+        sessionId = null
     }
 
-    fun sendContentUpdate(content: CapsuleContentEntity) {
+    fun sendContentAction(capsuleId: Long, contentId: Long, action: String) {
         val message = JSONObject().apply {
-            put("type", "content_update")
-            put("capsuleId", currentCapsuleId)
-            put("content", JSONObject(Gson().toJson(content)))
-            put("eventId", UUID.randomUUID().toString())
-        }.toString()
-
-        webSocket?.send(message)
-    }
-
-    fun sendContentDeletion(contentId: Long) {
-        val message = JSONObject().apply {
-            put("type", "content_delete")
-            put("capsuleId", currentCapsuleId)
             put("contentId", contentId)
-            put("eventId", UUID.randomUUID().toString())
-        }.toString()
-
-        webSocket?.send(message)
+            put("action", action)
+        }
+        stompClient?.send(
+            "/app/capsule-content/$capsuleId/action",
+            message.toString()
+        )?.subscribe()
     }
 
-    fun isConnected(): Boolean {
-        return webSocket != null
+    fun requestContentRefresh(capsuleId: Long) {
+        stompClient?.send(
+            "/app/capsule-content/$capsuleId/refresh",
+            ""
+        )?.subscribe()
     }
+}
+interface CapsuleContentWebSocketListener {
+    fun onConnected()
+    fun onDisconnected(reason: String)
+    fun onError(error: String)
+    fun onInitialContentReceived(contents: List<CapsuleContentEntity>)
+    fun onContentUpdated(content: CapsuleContentEntity, action: String)
+    fun onContentDeleted(contentId: Long)
 }
