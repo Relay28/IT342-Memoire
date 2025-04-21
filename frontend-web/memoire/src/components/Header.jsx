@@ -9,7 +9,7 @@ import { profileService } from '../components/ProfileFunctionalities';
 import { useAuth } from './AuthProvider'; // Import the useAuth hook
 import { useNotifications } from '../context/NotificationContext'; // Import the notifications hook
 import { useThemeMode } from '../context/ThemeContext';
-
+import apiService from './Profile/apiService';
 const Header = () => {
   // Use the auth context
   const { 
@@ -157,6 +157,100 @@ const Header = () => {
   // Determine if we should show the empty state
   const showEmptyState = isAuthenticated && isConnected && memoizedNotifications.length === 0 && !isNotificationsLoading;
 
+  // const handleNotificationClick = (notification) => async () => {
+  //   if (!notification.read) {
+  //     markAsRead(notification.id);
+  //   }
+  
+  //   if (notification.type === 'FRIEND_REQUEST') {
+  //     try {
+  //       // Get senderId from notification or extract from text
+  //       const senderId = notification.senderId;
+  //       const username = notification.text.split(' ')[0]; // "Username sent you..."
+        
+  //       if (senderId) {
+  //         navigate(`/profile/${senderId}`, {
+  //           state: { 
+  //             incomingFriendRequest: true,
+  //             senderUsername: username
+  //           }
+  //         });
+  //       } else {
+  //         // Fallback to your existing profile view flow
+  //         navigate(`/profile/?username=${username}`, {
+  //           state: { fromNotification: true }
+  //         });
+  //       }
+  //     } catch (error) {
+  //       console.error('Error handling notification:', error);
+  //       navigate('/profile'); // Fallback to profiles list
+  //     }
+  //   }
+  //   setIsNotificationsOpen(false);
+  // };
+  const handleNotificationClick = (notification) => async () => {
+    if (!notification.read) {
+      markAsRead(notification.id);
+    }
+  
+    setIsNotificationsOpen(false);
+  
+    if (notification.type === 'FRIEND_REQUEST') {
+      try {
+        // Extract username from notification text
+        const username = extractUsernameFromNotification(notification.text);
+        
+        if (!username) {
+          navigate('/profile');
+          return;
+        }
+  
+        // Use search endpoint as fallback
+        const searchResponse = await apiService.get(`/api/profiles/search?query=${encodeURIComponent(username)}`);
+        
+        if (searchResponse.data?.results?.length > 0) {
+          // Take the first matching user
+          const user = searchResponse.data.results[0];
+          navigate(`/profile/${user.userId}`, {
+            state: { 
+              profile: user,
+              incomingFriendRequest: true
+            }
+          });
+        } else {
+          // Fallback to search by username
+          navigate(`/profile/?username=${encodeURIComponent(username)}`, {
+            state: { fromNotification: true }
+          });
+        }
+      } catch (error) {
+        console.error('Error handling notification:', error);
+        navigate('/profile');
+      }
+    }
+  };
+  
+  // Helper function to extract username from different notification formats
+  const extractUsernameFromNotification = (text) => {
+    if (!text) return null;
+    
+    // Try different patterns
+    const patterns = [
+      /^(\S+)\s+sent you/,      // "Username sent you"
+      /^\[(\S+)\]/,             // "[Username]"
+      /from (\S+)/i,            // "from Username"
+      /^(\S+)\s+wants to/       // "Username wants to"
+    ];
+    
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match && match[1]) return match[1];
+    }
+    
+    // Fallback: first word
+    return text.split(' ')[0];
+  };
+  
   return (
     <header className={`flex items-center justify-between p-4 ${
       mode === 'dark' 
@@ -256,17 +350,26 @@ const Header = () => {
                     <li 
                       key={notification.id} 
                       className={`p-3 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/30' : ''}`}
-                      onClick={() => {
-                        if (!notification.read) {
-                          markAsRead(notification.id);
-                        }
+                      // onClick={() => {
+                      //   if (!notification.read) {
+                      //     markAsRead(notification.id);
+                      //   }
                         
-                        // Handle notification navigation based on type
-                        if (notification.linkUrl) {
-                          navigate(notification.linkUrl);
-                          setIsNotificationsOpen(false);
-                        }
-                      }}
+                      //   // Handle notification navigation based on type
+                      //   if (notification.type === 'FRIEND_REQUEST') {
+                      //     // Navigate to the sender's profile with state to show accept buttons
+                      //     navigate(`/profile/${notification.user}`, {
+                      //       state: {
+                      //         incomingFriendRequest: true,
+                      //         // requestId: notification.requestId // if you need the request ID
+                      //       }
+                      //     });
+                      //   } else if (notification.linkUrl) {
+                      //     navigate(notification.linkUrl);
+                      //   }
+                      //   setIsNotificationsOpen(false);
+                      // }}
+                      onClick={handleNotificationClick(notification)} 
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
