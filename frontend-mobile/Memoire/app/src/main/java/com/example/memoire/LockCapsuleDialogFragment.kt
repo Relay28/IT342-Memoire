@@ -50,7 +50,6 @@ class LockCapsuleDialogFragment(
         )
         // Set minimum date to tomorrow (can't lock for past dates)
         val minCalendar = Calendar.getInstance()
-        minCalendar.add(Calendar.DAY_OF_MONTH, 1)
         datePicker.datePicker.minDate = minCalendar.timeInMillis
         datePicker.show()
     }

@@ -2,6 +2,7 @@ package com.example.memoire.adapter
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -151,8 +152,13 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
     }
 
     private fun lockTimeCapsule(capsuleId: Long, openDate: Date) {
-        // Format the date for API
+        // No need to convert - just send the date as local time
+        // The formatForApi method already handles the conversion to UTC
         val formattedDate = DateUtils.formatForApi(openDate)
+
+        // Log for debugging
+        Log.d("TimeCapsule", "Local time selected: ${DateUtils.formatDateForDisplay(openDate)} ${DateUtils.formatTimeForDisplay(openDate)}")
+        Log.d("TimeCapsule", "Formatted for API as: $formattedDate")
 
         // Create lock request with properly formatted date
         val lockRequest = LockRequest(openDate = formattedDate)
@@ -164,12 +170,19 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
                         Toast.makeText(context, "Capsule locked successfully", Toast.LENGTH_SHORT).show()
                         refreshCapsuleData()
                     } else {
-                        Toast.makeText(context, "Failed to lock capsule", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Failed to lock capsule: ${response.code()}", Toast.LENGTH_SHORT).show()
+                        try {
+                            val errorBody = response.errorBody()?.string()
+                            Log.e("TimeCapsule", "Error body: $errorBody")
+                        } catch (e: Exception) {
+                            Log.e("TimeCapsule", "Could not read error body", e)
+                        }
                     }
                 }
 
                 override fun onFailure(call: Call<Void>, t: Throwable) {
                     Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                    Log.e("TimeCapsule", "Network error", t)
                 }
             }
         )
