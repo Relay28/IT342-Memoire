@@ -22,7 +22,7 @@ import retrofit2.Response
 import java.util.Timer
 import java.util.TimerTask
 
-class LockedCapsulesActivity : AppCompatActivity() {
+class LockedCapsulesActivity : BaseActivity(){
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: LockedCapsuleAdapter
@@ -42,6 +42,8 @@ class LockedCapsulesActivity : AppCompatActivity() {
 
         setupViews()
         loadLockedCapsules()
+        setupHeaderActions()
+        setupBottomNavigation(R.id.navigation_tags)
     }
 
     private fun setupViews() {
@@ -135,17 +137,17 @@ class LockedCapsulesActivity : AppCompatActivity() {
         emptyStateView.isVisible = true
     }
 
-    private fun showLoading() {
+   override fun showLoading() {
         progressBar.isVisible = true
         recyclerView.isVisible = false
         emptyStateView.isVisible = false
     }
 
-    private fun hideLoading() {
+    override fun hideLoading() {
         progressBar.isVisible = false
     }
 
-    private fun showError(message: String) {
+    override fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
         showEmptyState(message)
     }

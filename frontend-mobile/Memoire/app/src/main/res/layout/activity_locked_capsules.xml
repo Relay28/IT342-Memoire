@@ -40,4 +40,22 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"/>
 
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNavigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/topborder"
+        app:itemIconSize="20dp"
+        app:itemIconTint="@color/MemoireRed"
+        android:paddingBottom="0dp"
+        app:labelVisibilityMode="unlabeled"
+        android:layout_marginBottom="-50dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:menu="@menu/bottom_navigation_menu"
+        android:backgroundTint="#FFFFFF"
+        app:itemRippleColor="@android:color/transparent"
+        android:foreground="@null" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
