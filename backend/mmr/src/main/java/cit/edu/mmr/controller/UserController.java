@@ -29,10 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -269,5 +266,11 @@ public class UserController {
             default:
                 return "application/octet-stream";
         }
+    }
+
+    // Endpoint to search for users by name
+    @GetMapping("/searchByName")
+    public List<UserEntity> searchByName(@RequestParam String name) {
+        return userService.searchByName(name);
     }
 }

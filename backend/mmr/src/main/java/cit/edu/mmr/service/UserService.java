@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -167,5 +168,8 @@ public class UserService {
 
     }
 
-
+    // Service method to search users by name
+    public List<UserEntity> searchByName(String name) {
+        return urepo.findByNameContainingIgnoreCase(name);
+    }
 }

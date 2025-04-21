@@ -21,4 +21,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     
     // Get users by their role (e.g., ADMIN, USER)
     List<UserEntity> findByRole(String role);
+
+    // Method to search users by name (case-insensitive)
+    List<UserEntity> findByNameContainingIgnoreCase(String name);
 }

@@ -24,6 +24,8 @@ interface ApiService {
         @Path("id") id: Long
     ): Response<User>
 
+    @GET("api/users/searchByName")
+    suspend fun searchUsersByName(@Query("name") name: String): Response<List<User>>
 
     @GET("api/profiles/view/{userId}")
     fun getPublicProfile(@Path("userId") userId: Long): Call<ProfileDTO>
