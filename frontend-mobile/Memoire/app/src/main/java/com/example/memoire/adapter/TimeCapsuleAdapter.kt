@@ -9,27 +9,26 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.CapsuleDetailActivity
+import com.example.memoire.LockCapsuleDialogFragment
 import com.example.memoire.R
 import com.example.memoire.api.RetrofitClient
-//import com.example.memoire.com.example.memoire.CapsuleDetailActivity
-//import com.example.memoire.com.example.memoire.EditCapsuleActivity
+import com.example.memoire.models.LockRequest
 import com.example.memoire.models.TimeCapsuleDTO
+import com.example.memoire.utils.DateUtils
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.text.SimpleDateFormat
-import java.util.Locale
+import java.util.*
 
 class TimeCapsuleAdapter(private val context: Context, private var capsules: MutableList<TimeCapsuleDTO>) :
     RecyclerView.Adapter<TimeCapsuleAdapter.CapsuleViewHolder>() {
 
-    private val dateFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
-
-    class CapsuleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    inner class CapsuleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val cardView: MaterialCardView = view.findViewById(R.id.cardView)
         val title: TextView = view.findViewById(R.id.tvTitle)
         val description: TextView = view.findViewById(R.id.tvDescription)
@@ -37,8 +36,10 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         val openDate: TextView = view.findViewById(R.id.tvOpenDate)
         val status: TextView = view.findViewById(R.id.tvStatus)
         val editButton: MaterialButton = view.findViewById(R.id.btnEdit)
+        val publishButton: MaterialButton = view.findViewById(R.id.btnPublish)
         val deleteButton: ImageView = view.findViewById(R.id.ivDelete)
         val statusIcon: ImageView = view.findViewById(R.id.ivStatus)
+        val viewDetailsButton: MaterialButton = view.findViewById(R.id.btnViewDetails)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CapsuleViewHolder {
@@ -53,52 +54,67 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         holder.title.text = capsule.title
         holder.description.text = capsule.description
 
-        // Format dates
-        holder.createdDate.text = "Created: ${capsule.createdAt?.let { dateFormat.format(it) } ?: "N/A"}"
+        // Format dates using DateUtils
+        holder.createdDate.text = "Created: ${capsule.createdAt?.let { DateUtils.formatDateForDisplay(it) } ?: "N/A"}"
 
         if (capsule.openDate != null) {
             holder.openDate.visibility = View.VISIBLE
-            holder.openDate.text = "Scheduled to open: ${dateFormat.format(capsule.openDate)}"
+            holder.openDate.text = "Scheduled to open: ${DateUtils.formatDateForDisplay(capsule.openDate)} at ${DateUtils.formatTimeForDisplay(capsule.openDate)}"
         } else {
             holder.openDate.visibility = View.GONE
         }
 
         // Set status and icon
         holder.status.text = capsule.status
-        when (capsule.status) {
+        when (capsule.status?.uppercase(Locale.getDefault())) {
             "UNPUBLISHED" -> {
                 holder.statusIcon.setImageResource(R.drawable.ic_unpublished)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
+                holder.publishButton.text = "Publish"
+                holder.publishButton.isEnabled = true
             }
             "CLOSED" -> {
                 holder.statusIcon.setImageResource(R.drawable.ic_locked)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
+                holder.publishButton.text = "Locked"
+                holder.publishButton.isEnabled = false
             }
             "PUBLISHED" -> {
                 holder.statusIcon.setImageResource(R.drawable.ic_published)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
+                holder.publishButton.text = "Published"
+                holder.publishButton.isEnabled = false
             }
             "ARCHIVED" -> {
                 holder.statusIcon.setImageResource(R.drawable.ic_archived)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
+                holder.publishButton.text = "Archived"
+                holder.publishButton.isEnabled = false
             }
         }
 
         // Set click listeners
         holder.cardView.setOnClickListener {
-            val intent = Intent(context, CapsuleDetailActivity::class.java)
-            intent.putExtra("capsuleId", capsule.id.toString())  // Make sure the key matches and convert to string
-            context.startActivity(intent)
+            openCapsuleDetail(capsule.id)
         }
 
         holder.editButton.setOnClickListener {
             if (capsule.locked) {
                 Toast.makeText(context, "Cannot edit locked capsules", Toast.LENGTH_SHORT).show()
             } else {
-                val intent = Intent(context, CapsuleDetailActivity::class.java)
-                intent.putExtra("CAPSULE_ID", capsule.id)
-                context.startActivity(intent)
+                openCapsuleDetail(capsule.id)
             }
+        }
+
+        holder.publishButton.setOnClickListener {
+            when (capsule.status?.uppercase(Locale.getDefault())) {
+                "UNPUBLISHED" -> showLockDialog(capsule.id!!.toLong())
+                else -> Toast.makeText(context, "This capsule is already ${capsule.status?.lowercase()}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        holder.viewDetailsButton.setOnClickListener {
+            openCapsuleDetail(capsule.id)
         }
 
         holder.deleteButton.setOnClickListener {
@@ -110,6 +126,58 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
 
     fun updateData(newCapsules: MutableList<TimeCapsuleDTO>) {
         capsules = newCapsules
+        notifyDataSetChanged()
+    }
+
+    private fun openCapsuleDetail(capsuleId: Long?) {
+        capsuleId?.let {
+            val intent = Intent(context, CapsuleDetailActivity::class.java)
+            intent.putExtra("capsuleId", it.toString())
+            context.startActivity(intent)
+        }
+    }
+
+    private fun showLockDialog(capsuleId: Long) {
+        val dialog = LockCapsuleDialogFragment { selectedDate ->
+            lockTimeCapsule(capsuleId, selectedDate)
+        }
+
+        // Ensure we're using the FragmentManager from an AppCompatActivity
+        if (context is AppCompatActivity) {
+            dialog.show(context.supportFragmentManager, "LockCapsuleDialog")
+        } else {
+            Toast.makeText(context, "Error: Could not show lock dialog", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun lockTimeCapsule(capsuleId: Long, openDate: Date) {
+        // Format the date for API
+        val formattedDate = DateUtils.formatForApi(openDate)
+
+        // Create lock request with properly formatted date
+        val lockRequest = LockRequest(openDate = formattedDate)
+
+        RetrofitClient.instance.lockTimeCapsule(capsuleId, lockRequest).enqueue(
+            object : Callback<Void> {
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Capsule locked successfully", Toast.LENGTH_SHORT).show()
+                        refreshCapsuleData()
+                    } else {
+                        Toast.makeText(context, "Failed to lock capsule", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<Void>, t: Throwable) {
+                    Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        )
+    }
+
+    private fun refreshCapsuleData() {
+        // You might want to implement a callback to notify the activity to refresh data
+        // For now, we'll just notify the adapter that data might have changed
         notifyDataSetChanged()
     }
 

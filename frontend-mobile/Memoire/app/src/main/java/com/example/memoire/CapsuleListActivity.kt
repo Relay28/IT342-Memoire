@@ -28,6 +28,7 @@ import com.google.android.material.chip.ChipGroup
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.util.Locale
 
 class CapsuleListActivity : BaseActivity() {
 
@@ -72,19 +73,14 @@ class CapsuleListActivity : BaseActivity() {
     }
 
 
-
     private fun setupFilterChips() {
         val chipAll = findViewById<Chip>(R.id.chipAll)
         val chipPublished = findViewById<Chip>(R.id.chipPublished)
-        val chipClosed = findViewById<Chip>(R.id.chipClosed)
         val chipUnpublished = findViewById<Chip>(R.id.chipUnpublished)
-        val chipArchived = findViewById<Chip>(R.id.chipArchived)
 
         chipAll.setOnClickListener { loadUserTimeCapsules() }
         chipPublished.setOnClickListener { loadCapsulesByStatus("PUBLISHED") }
-        chipClosed.setOnClickListener { loadCapsulesByStatus("CLOSED") }
         chipUnpublished.setOnClickListener { loadCapsulesByStatus("UNPUBLISHED") }
-        chipArchived.setOnClickListener { loadCapsulesByStatus("ARCHIVED") }
     }
 
     private fun loadUserTimeCapsules() {
@@ -93,8 +89,13 @@ class CapsuleListActivity : BaseActivity() {
             override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
                 hideLoading()
                 if (response.isSuccessful) {
-                    val capsules = response.body() ?: emptyList()
-                    updateUI(capsules)
+                    val allCapsules = response.body() ?: emptyList()
+                    // Filter out closed capsules
+                    val filteredCapsules = allCapsules.filter {
+                        it.status?.uppercase(Locale.getDefault()) != "CLOSED" &&
+                                it.status?.uppercase(Locale.getDefault()) != "ARCHIVED"
+                    }
+                    updateUI(filteredCapsules)
                 } else {
                     showError("Failed to load time capsules: ${response.message()}")
                 }
@@ -106,14 +107,11 @@ class CapsuleListActivity : BaseActivity() {
             }
         })
     }
-
     private fun loadCapsulesByStatus(status: String) {
         showLoading()
         val apiCall = when (status) {
             "PUBLISHED" -> RetrofitClient.instance.getPublishedTimeCapsules()
-            "CLOSED" -> RetrofitClient.instance.getClosedTimeCapsules()
             "UNPUBLISHED" -> RetrofitClient.instance.getUnpublishedTimeCapsules()
-            "ARCHIVED" -> RetrofitClient.instance.getArchivedTimeCapsules()
             else -> RetrofitClient.instance.getUserTimeCapsules()
         }
 

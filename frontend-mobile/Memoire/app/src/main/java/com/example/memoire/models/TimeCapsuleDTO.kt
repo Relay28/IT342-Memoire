@@ -14,6 +14,3 @@ data class TimeCapsuleDTO(
     val status: String? = null
 )
 
-data class LockRequest(
-    val openDate: Date
-)

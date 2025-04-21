@@ -49,7 +49,7 @@ public class TimeCapsuleController {
         } catch (EntityNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (AccessDeniedException e) {
-            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+            return new RelcksponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
 

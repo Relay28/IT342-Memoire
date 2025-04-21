@@ -112,6 +112,7 @@
             android:paddingBottom="16dp">
 
             <!-- Filter Chips -->
+            <!-- Filter Chips -->
             <HorizontalScrollView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -140,25 +141,11 @@
                         android:text="Drafts" />
 
                     <com.google.android.material.chip.Chip
-                        android:id="@+id/chipClosed"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Locked" />
-
-                    <com.google.android.material.chip.Chip
                         android:id="@+id/chipPublished"
                         style="@style/Widget.MaterialComponents.Chip.Choice"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Published" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/chipArchived"
-                        style="@style/Widget.MaterialComponents.Chip.Choice"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Archived" />
                 </com.google.android.material.chip.ChipGroup>
             </HorizontalScrollView>
 
