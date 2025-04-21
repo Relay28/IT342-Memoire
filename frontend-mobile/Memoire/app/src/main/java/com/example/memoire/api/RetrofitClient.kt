@@ -9,12 +9,15 @@ import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 
 object RetrofitClient {
-    private const val BASE_URL = "http://192.168.1.12:8080/"
+    public const val BASE_URL = "http://192.168.1.8:8080/"
 
     private lateinit var sessionManager: SessionManager
 
     fun init(context: Context) {
         sessionManager = SessionManager(context)
+    }
+    fun getBaseUrl(): String {
+        return BASE_URL
     }
 
     private val client: OkHttpClient by lazy {
@@ -45,5 +48,13 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
+    }
+    val capsuleContentInstance: CapsuleContentService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(CapsuleContentService::class.java)
     }
 }

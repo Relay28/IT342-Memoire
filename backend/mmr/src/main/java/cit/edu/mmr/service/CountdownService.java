@@ -11,10 +11,12 @@ import org.springframework.stereotype.Service;
 public class CountdownService {
 
     private final TimeCapsuleRepository tcRepo;
+    private final TimeCapsuleService tcServ;
 
     @Autowired
-    public CountdownService(TimeCapsuleRepository tcRepo) {
+    public CountdownService(TimeCapsuleRepository tcRepo, TimeCapsuleService tcServ) {
         this.tcRepo = tcRepo;
+        this.tcServ = tcServ;
     }
 
     public CountdownDTO getTimeUntilOpening(Long capsuleId) {
@@ -32,6 +34,7 @@ public class CountdownService {
         long remainingMillis = capsule.getOpenDate().getTime() - System.currentTimeMillis();
 
         if (remainingMillis <= 0) {
+            tcServ.scheduleUnlockNotification(capsule);
             return new CountdownDTO(0, 0, 0, 0, true);
         }
 

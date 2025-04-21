@@ -127,6 +127,10 @@ public class CapsuleAccessService {
             throw new DatabaseOperationException("Error checking existing access", e);
         }
 
+        if(!currentUser.equals(capsule.getCreatedBy())){
+            throw new AccessDeniedException("Access Denied, User "+currentUser.getId()+" Has No Access Rights To Capsule "+capsule.getId());
+        }
+
         // Create new access
         try {
             CapsuleAccessEntity access = new CapsuleAccessEntity();

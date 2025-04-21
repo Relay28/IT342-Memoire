@@ -8,13 +8,19 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.example.memoire.BaseActivity
+import com.example.memoire.CapsuleDetailActivity
+import com.example.memoire.CapsuleListActivity
+import com.example.memoire.LockedCapsulesActivity
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
+import com.example.memoire.api.RetrofitClient
+import com.example.memoire.models.TimeCapsuleDTO
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class HomeActivity : AppCompatActivity() {
+class HomeActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,43 +55,9 @@ class HomeActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+        setupHeaderActions()
+        setupBottomNavigation(R.id.navigation_tags)
 
-        val bottomNavigationView: BottomNavigationView = findViewById(R.id.bottomNavigation)
 
-        bottomNavigationView.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.navigation_home -> {
-                    // Navigate to the Home activity
-                    val intent = Intent(this, HomeActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-                /*R.id.navigation_stats -> {
-                    // Navigate to the Stats activity
-                    val intent = Intent(this, StatsActivity::class.java)
-                    startActivity(intent)
-                    true
-                }*/
-                R.id.navigation_add -> {
-                    // Navigate to the Add activity
-                    val intent = Intent(this, CreateCapsuleActivity::class.java)
-                    startActivity(intent)
-                    true
-                }/*
-                R.id.navigation_tags -> {
-                    // Navigate to the Tags activity
-                    val intent = Intent(this, TagsActivity::class.java)
-                    startActivity(intent)
-                    true
-                }
-                R.id.navigation_timer -> {
-                    // Navigate to the Timer activity
-                    val intent = Intent(this, TimerActivity::class.java)
-                    startActivity(intent)
-                    true
-                }*/
-                else -> false
-            }
-        }
     }
 }

@@ -51,7 +51,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
-                android:text="@string/email"
+                android:text="@string/username"
                 android:textColor="#757575"
                 android:textSize="12sp" />
 
@@ -61,7 +61,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
                 android:background="@drawable/edit_text_background"
-                android:hint="@string/entEmail"
+                android:hint="@string/entUser"
                 android:inputType="textEmailAddress"
                 android:padding="12dp"
                 android:textSize="16sp" />

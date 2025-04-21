@@ -218,7 +218,7 @@ public class TimeCapsuleService {
         scheduleUnlockNotification(capsule);
     }
 
-    private void scheduleUnlockNotification(TimeCapsuleEntity capsule) {
+    public void scheduleUnlockNotification(TimeCapsuleEntity capsule) {
         long delay = capsule.getOpenDate().getTime() - System.currentTimeMillis();
 
         if (delay > 0) {

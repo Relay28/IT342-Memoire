@@ -103,6 +103,11 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated()
 
+                ).httpBasic(AbstractHttpConfigurer::disable) // Disable basic auth
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        })
                 )
 
                 .sessionManagement(session -> session

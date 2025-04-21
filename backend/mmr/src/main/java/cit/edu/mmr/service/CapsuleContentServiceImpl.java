@@ -181,52 +181,62 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
 
 
 
-    @CacheEvict(value = {CAPSULE_CONTENTS_CACHE, CONTENT_METADATA_CACHE}, key = "#content.capsule.id")
+    @Transactional
+    @CacheEvict(value = {CAPSULE_CONTENTS_CACHE, CONTENT_METADATA_CACHE}, allEntries = true)
     @Override
     public void deleteContent(Long id, Authentication authentication) {
+        logger.debug("Starting content deletion for ID: {}", id);
+
+        // First get the content with its relationships
+        CapsuleContentEntity content = capsuleContentRepository.findByIdWithRelations(id)
+                .orElseThrow(() -> {
+                    logger.warn("Content not found with ID: {}", id);
+                    return new EntityNotFoundException("Content not found with id " + id);
+                });
+
+        // Store critical IDs before any deletion attempts
+        Long contentId = content.getId();
+        Long capsuleId = content.getCapsule().getId();
+        String filePath = content.getFilePath();
+
         try {
-            logger.debug("Starting content deletion for ID: {}", id);
             UserEntity user = getAuthenticatedUser(authentication);
-            CapsuleContentEntity content = capsuleContentRepository.findById(id)
-                    .orElseThrow(() -> {
-                        logger.warn("Content not found with ID: {}", id);
-                        return new EntityNotFoundException("Content not found");
-                    });
 
-            TimeCapsuleEntity capsule = content.getCapsule();
-            boolean isUploader = content.getContentUploadedBy().getId()==(user.getId());
-            boolean isOwner = capsule.getCreatedBy().getId()==(user.getId());
+            // Check permissions
+            if (!canDeleteContent(user, content)) {
+                logger.warn("User {} attempted unauthorized deletion of content ID: {}", user.getUsername(), id);
+                throw new AccessDeniedException("You do not have permission to delete content.");
+            }
 
+            // 1. First remove from database to prevent any race conditions
+            capsuleContentRepository.delete(content);
+            capsuleContentRepository.flush();
+            logger.debug("Database record deleted for content ID: {}", contentId);
 
-            if (!isUploader && !isOwner) {
-                Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
-                System.out.println("TEST"+accessOpt.get().getRole());
-                if (accessOpt.isEmpty() || !"EDITOR".equals(accessOpt.get().getRole())) {
-                    logger.warn("User {} attempted unauthorized deletion of content ID: {}", user.getUsername(), id);
-                    throw new AccessDeniedException("You do not have permission to delete content.");
+            // 2. Then attempt file deletion if path exists
+            if (filePath != null && !filePath.isBlank()) {
+                try {
+                    Path path = Path.of(filePath).normalize().toAbsolutePath();
+                    if (Files.exists(path)) {
+                        Files.delete(path);
+                        logger.debug("File deleted successfully at path: {}", path);
+                    } else {
+                        logger.warn("File not found at path: {} - may have been already deleted", path);
+                    }
+                } catch (IOException e) {
+                    logger.error("Failed to delete file at path: {}. Error: {}", filePath, e.getMessage());
+                    // This is non-critical since DB record is already deleted
                 }
             }
 
-            try {
-                Files.deleteIfExists(Path.of(content.getFilePath()));
+            logger.info("Successfully deleted content with ID: {}", contentId);
 
+            // 3. Send notification
+            notifyContentDeletion(capsuleId, contentId);
 
-
-                // Send WebSocket notification
-                notifyContentDeletion(id, content.getId());
-
-                logger.debug("File deleted successfully from path: {}", content.getFilePath());
-            } catch (IOException e) {
-                logger.error("Failed to delete file at path: {}", content.getFilePath(), e);
-                throw new RuntimeException("Failed to delete file: " + content.getFilePath());
-            }
-
-            capsuleContentRepository.delete(content);
-
-            logger.info("Successfully deleted content with ID: {}", id);
         } catch (Exception e) {
-            logger.error("Error deleting content with ID: {}", id, e);
-            throw e;
+            logger.error("Error deleting content with ID: {}. Error: {}", contentId, e.getMessage());
+            throw new RuntimeException("Failed to delete content with ID: " + contentId, e);
         }
     }
 
@@ -405,31 +415,42 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
     }
 
     private void notifyContentDeletion(Long capsuleId, Long contentId) {
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("action", "delete");
-        payload.put("contentId", contentId);
-        payload.put("timestamp", System.currentTimeMillis());
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("action", "delete");
+            payload.put("contentId", contentId);
+            payload.put("timestamp", System.currentTimeMillis());
 
-        messagingTemplate.convertAndSend(
-                "/topic/capsule-content/updates/" + capsuleId,
-                payload
-        );
+            messagingTemplate.convertAndSend(
+                    "/topic/capsule-content/updates/" + capsuleId,
+                    payload
+            );
+        } catch (Exception e) {
+            logger.error("Failed to send deletion notification for content {} in capsule {}", contentId, capsuleId, e);
+        }
     }
 
 
     private String saveFile(MultipartFile file) throws IOException {
-        Path uploadPath = Path.of(UPLOAD_DIR);
+        // Use the configured upload directory from properties
+        String uploadDir = System.getProperty("file.upload-dir", UPLOAD_DIR);
+        Path uploadPath = Path.of(uploadDir);
+
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
 
-        String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
-        Path filePath = uploadPath.resolve(fileName);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
+        Path filePath = uploadPath.resolve(fileName).normalize();
 
+        // Security check to prevent path traversal
+        if (!filePath.startsWith(uploadPath.normalize())) {
+            throw new IOException("Invalid file path");
+        }
+
+        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
         return filePath.toString();
     }
-
     @Override
     public void handleConnectionRequest(Long capsuleId, Authentication authentication, String sessionId) {
         try {
