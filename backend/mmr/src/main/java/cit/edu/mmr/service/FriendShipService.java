@@ -6,6 +6,7 @@ import cit.edu.mmr.entity.NotificationEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.FriendShipRepository;
 import cit.edu.mmr.repository.UserRepository;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -128,7 +129,7 @@ public class FriendShipService {
     @Caching(evict = {
             @CacheEvict(value = "userAuthentication", key = "'friends_' + #auth.name"),
             @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().friend.id"),
-            @CacheEvict(value = "contentMetadata", key = "'friendship_' + #id"),
+            @CacheEvict(value = "contentMetadata", key = "'friendship_' + #friendshipId"),
             @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().friend.id"),
             @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().friend.username + '_' + #auth.name")
     })
@@ -148,16 +149,20 @@ public class FriendShipService {
             throw new AccessDeniedException("You do not have access to delete this friendship");
         }
 
+        // Get friend details before deletion
+        UserEntity friend = friendship.getUser().equals(user) ? friendship.getFriend() : friendship.getUser();
+
         friendShipRepository.deleteById(id);
         logger.info("Deleted friendship with ID: {}", id);
+        
     }
 
     @Caching(evict = {
             @CacheEvict(value = "userAuthentication", key = "'friends_' + #auth.name"),
-            @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().user.id"),
+            @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().friend.id"),
             @CacheEvict(value = "contentMetadata", key = "'friendship_' + #friendshipId"),
-            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().user.id"),
-            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().user.username + '_' + #auth.name")
+            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().friend.id"),
+            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().friend.username + '_' + #auth.name")
     })
     public Optional<FriendShipEntity> acceptFriendship(Long friendshipId, Authentication auth) {
         logger.info("Accepting friendship request with ID: {}", friendshipId);
@@ -166,11 +171,18 @@ public class FriendShipService {
 
         if (optionalFriendship.isPresent()) {
             FriendShipEntity friendship = optionalFriendship.get();
+
+            // Check if the current user is the receiver of the request
+            if (!friendship.getFriend().equals(user)) {
+                throw new AccessDeniedException("You can only accept friend requests sent to you");
+            }
+
             friendship.setStatus("Friends");
             friendShipRepository.save(friendship);
+
             NotificationEntity notification = new NotificationEntity();
             notification.setType("FRIEND_REQUEST_ACCEPTED");
-            notification.setText(friendship.getFriend().getUsername() + " accepted your friend request");
+            notification.setText(user.getUsername() + " accepted your friend request");
             notification.setRelatedItemId(friendship.getId());
             notification.setItemType("FRIENDSHIP");
 
@@ -182,5 +194,60 @@ public class FriendShipService {
             logger.warn("Friendship with ID {} not found for acceptance", friendshipId);
             return Optional.empty();
         }
+    }
+
+    public boolean hasPendingRequest(long friendId, Authentication auth) {
+        logger.info("Checking pending request status with friendId: {}", friendId);
+        UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(friendId).orElse(null);
+
+        if (friend == null) {
+            logger.warn("Friend user not found with ID: {}", friendId);
+            throw new UsernameNotFoundException("User not found");
+        }
+
+        // Check if user has sent a request to friend
+        Optional<FriendShipEntity> friendshipOpt = friendShipRepository.findByUserAndFriend(user, friend);
+        if (friendshipOpt.isPresent() && "Pending".equalsIgnoreCase(friendshipOpt.get().getStatus())) {
+            return true;
+        }
+
+        // Check if friend has sent a request to user
+        friendshipOpt = friendShipRepository.findByUserAndFriend(friend, user);
+        return friendshipOpt.isPresent() && "Pending".equalsIgnoreCase(friendshipOpt.get().getStatus());
+    }
+
+    @Transactional
+    public void cancelRequest(long friendId, Authentication auth) {
+        UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(friendId)
+                .orElseThrow(() -> new UsernameNotFoundException("Friend not found"));
+
+        List<FriendShipEntity> pendingRequests = friendShipRepository
+                .findPendingRequestsBetweenUsers(user, friend);
+
+        if (pendingRequests.isEmpty()) {
+            throw new NoSuchElementException("No pending request exists between these users");
+        }
+
+        friendShipRepository.deleteAll(pendingRequests);
+    }
+
+    public boolean isReceiver(Long friendId, Authentication auth) {
+        logger.info("Checking if user is receiver of friend request from: {}", friendId);
+        UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(friendId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return friendShipRepository.isReceiverOfPendingRequest(user.getId(), friend.getId());
+    }
+
+    public Optional<FriendShipEntity> findByUsers(Long friendId, Authentication auth) {
+        logger.info("Finding friendship between users: {}", friendId);
+        UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(friendId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return friendShipRepository.findBetweenUsers(user.getId(), friend.getId());
     }
 }

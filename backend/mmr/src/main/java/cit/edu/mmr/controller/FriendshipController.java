@@ -93,4 +93,52 @@ public class FriendshipController {
             return new ResponseEntity<>(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Internal error occurred"), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/hasPendingRequest/{friendId}")
+    public ResponseEntity<?> hasPendingRequest(@PathVariable long friendId, Authentication auth) {
+        try {
+            boolean hasPending = friendShipService.hasPendingRequest(friendId, auth);
+            return new ResponseEntity<>(hasPending, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error checking pending request status: {}", e.getMessage(), e);
+            return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @DeleteMapping("/cancel/{friendId}")
+    public ResponseEntity<?> cancelRequest(@PathVariable long friendId, Authentication auth) {
+        try {
+            friendShipService.cancelRequest(friendId, auth);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (NoSuchElementException e) {
+            logger.warn("Cancel request failed: {}", e.getMessage());
+            return new ResponseEntity<>(new ErrorResponse(NOT_FOUND.value(), e.getMessage()), NOT_FOUND);
+        } catch (Exception e) {
+            logger.error("Error canceling friend request: {}", e.getMessage(), e);
+            return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/isReceiver/{friendId}")
+    public ResponseEntity<?> isReceiver(@PathVariable long friendId, Authentication auth) {
+        try {
+            boolean isReceiver = friendShipService.isReceiver(friendId, auth);
+            return new ResponseEntity<>(isReceiver, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error checking receiver status: {}", e.getMessage(), e);
+            return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/findByUsers/{friendId}")
+    public ResponseEntity<?> findByUsers(@PathVariable long friendId, Authentication auth) {
+        try {
+            return friendShipService.findByUsers(friendId, auth)
+                    .<ResponseEntity<?>>map(friendship -> new ResponseEntity<>(friendship, HttpStatus.OK))
+                    .orElseGet(() -> new ResponseEntity<>(new ErrorResponse(HttpStatus.NOT_FOUND.value(), "Friendship not found"), HttpStatus.NOT_FOUND));
+        } catch (Exception e) {
+            logger.error("Error finding friendship between users: {}", e.getMessage(), e);
+            return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
 }
