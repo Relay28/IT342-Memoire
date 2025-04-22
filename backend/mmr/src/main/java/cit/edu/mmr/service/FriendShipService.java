@@ -129,7 +129,7 @@ public class FriendShipService {
     @Caching(evict = {
             @CacheEvict(value = "userAuthentication", key = "'friends_' + #auth.name"),
             @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().friend.id"),
-            @CacheEvict(value = "contentMetadata", key = "'friendship_' + #id"),
+            @CacheEvict(value = "contentMetadata", key = "'friendship_' + #friendshipId"),
             @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().friend.id"),
             @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().friend.username + '_' + #auth.name")
     })
@@ -149,16 +149,20 @@ public class FriendShipService {
             throw new AccessDeniedException("You do not have access to delete this friendship");
         }
 
+        // Get friend details before deletion
+        UserEntity friend = friendship.getUser().equals(user) ? friendship.getFriend() : friendship.getUser();
+
         friendShipRepository.deleteById(id);
         logger.info("Deleted friendship with ID: {}", id);
+        
     }
 
     @Caching(evict = {
             @CacheEvict(value = "userAuthentication", key = "'friends_' + #auth.name"),
-            @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().user.id"),
+            @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().friend.id"),
             @CacheEvict(value = "contentMetadata", key = "'friendship_' + #friendshipId"),
-            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().user.id"),
-            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().user.username + '_' + #auth.name")
+            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().friend.id"),
+            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().friend.username + '_' + #auth.name")
     })
     public Optional<FriendShipEntity> acceptFriendship(Long friendshipId, Authentication auth) {
         logger.info("Accepting friendship request with ID: {}", friendshipId);
@@ -167,11 +171,18 @@ public class FriendShipService {
 
         if (optionalFriendship.isPresent()) {
             FriendShipEntity friendship = optionalFriendship.get();
+
+            // Check if the current user is the receiver of the request
+            if (!friendship.getFriend().equals(user)) {
+                throw new AccessDeniedException("You can only accept friend requests sent to you");
+            }
+
             friendship.setStatus("Friends");
             friendShipRepository.save(friendship);
+
             NotificationEntity notification = new NotificationEntity();
             notification.setType("FRIEND_REQUEST_ACCEPTED");
-            notification.setText(friendship.getFriend().getUsername() + " accepted your friend request");
+            notification.setText(user.getUsername() + " accepted your friend request");
             notification.setRelatedItemId(friendship.getId());
             notification.setItemType("FRIENDSHIP");
 

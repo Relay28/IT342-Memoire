@@ -113,21 +113,21 @@ const ProfilePageOther = () => {
 
   const handleAcceptFriendRequest = async () => {
     try {
-      setIsLoadingFriendship(true);
-      // First find the friendship ID
-      const response = await apiService.get(`/api/friendships/findByUsers/${profile.userId}`);
-      if (response.data) {
-        await apiService.put(`/api/friendships/${response.data.id}/accept`);
-        setFriendshipStatus('friends');
-        setHasPendingRequest(false);
-      }
+        setIsLoadingFriendship(true);
+        // First find the friendship ID
+        const response = await apiService.get(`/api/friendships/findByUsers/${profile.userId}`);
+        if (response.data) {
+            await apiService.put(`/api/friendships/${response.data.id}/accept`);
+            setFriendshipStatus('friends');
+            setHasPendingRequest(false);
+        }
     } catch (error) {
-      console.error('Error accepting friend request:', error);
-      setError('Failed to accept friend request');
+        console.error('Error accepting friend request:', error);
+        setError(error.response?.data?.message || 'Failed to accept friend request');
     } finally {
-      setIsLoadingFriendship(false);
+        setIsLoadingFriendship(false);
     }
-  };
+};
 
   const handleDeclineFriendRequest = async () => {
     try {
