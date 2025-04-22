@@ -18,6 +18,7 @@ const ProfilePageOther = () => {
   const [friendshipStatus, setFriendshipStatus] = useState(null);
   const [isLoadingFriendship, setIsLoadingFriendship] = useState(true);
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
+  const [isReceiver, setIsReceiver] = useState(false);
 
   // Check friendship status when profile or user changes
   useEffect(() => {
@@ -33,14 +34,18 @@ const ProfilePageOther = () => {
           return;
         }
 
-        // Check for pending request (dili pa mu work kay wala sa backend later na iimplement)
+        // Check for pending request
         const pendingResponse = await apiService.get(`/api/friendships/hasPendingRequest/${profile.userId}`);
         if (pendingResponse.data) {
-          setFriendshipStatus('request_sent');
+          // Check if current user is the receiver of the request
+          const isReceiverResponse = await apiService.get(`/api/friendships/isReceiver/${profile.userId}`);
+          setIsReceiver(isReceiverResponse.data);
+          setFriendshipStatus('request_pending');
           setHasPendingRequest(true);
         } else {
           setFriendshipStatus('not_friends');
           setHasPendingRequest(false);
+          setIsReceiver(false);
         }
       } catch (error) {
         console.error('Error checking friendship status:', error);
@@ -83,6 +88,7 @@ const ProfilePageOther = () => {
       }
       setFriendshipStatus('request_sent');
       setHasPendingRequest(true);
+      setIsReceiver(false);
     } catch (error) {
       console.error('Error sending friend request:', error);
       setError('Failed to send friend request');
@@ -94,11 +100,48 @@ const ProfilePageOther = () => {
   const handleCancelFriendRequest = async () => {
     try {
       setIsLoadingFriendship(true);
-      await apiService.friendships.cancelRequest(profile.userId);
+      await apiService.delete(`/api/friendships/cancel/${profile.userId}`);
       setFriendshipStatus('not_friends');
+      setHasPendingRequest(false);
     } catch (error) {
       console.error('Error canceling friend request:', error);
       setError(error.response?.data?.message || 'Failed to cancel friend request');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
+  const handleAcceptFriendRequest = async () => {
+    try {
+      setIsLoadingFriendship(true);
+      // First find the friendship ID
+      const response = await apiService.get(`/api/friendships/findByUsers/${profile.userId}`);
+      if (response.data) {
+        await apiService.put(`/api/friendships/${response.data.id}/accept`);
+        setFriendshipStatus('friends');
+        setHasPendingRequest(false);
+      }
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+      setError('Failed to accept friend request');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
+  const handleDeclineFriendRequest = async () => {
+    try {
+      setIsLoadingFriendship(true);
+      // First find the friendship ID
+      const response = await apiService.get(`/api/friendships/findByUsers/${profile.userId}`);
+      if (response.data) {
+        await apiService.delete(`/api/friendships/${response.data.id}`);
+        setFriendshipStatus('not_friends');
+        setHasPendingRequest(false);
+      }
+    } catch (error) {
+      console.error('Error declining friend request:', error);
+      setError('Failed to decline friend request');
     } finally {
       setIsLoadingFriendship(false);
     }
@@ -139,6 +182,31 @@ const ProfilePageOther = () => {
               className={`px-4 py-2 ${isDark ? 'bg-gray-600 text-gray-200 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} rounded-md`}
             >
               Cancel
+            </button>
+          </div>
+        );
+      case 'request_pending':
+        return isReceiver ? (
+          <div className="flex space-x-2">
+            <button
+              onClick={handleAcceptFriendRequest}
+              className={`px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700`}
+            >
+              Accept
+            </button>
+            <button
+              onClick={handleDeclineFriendRequest}
+              className={`px-4 py-2 ${isDark ? 'bg-gray-600 text-gray-200 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} rounded-md`}
+            >
+              Decline
+            </button>
+          </div>
+        ) : (
+          <div className="flex space-x-2">
+            <button 
+              className={`px-4 py-2 ${isDark ? 'bg-yellow-800 text-yellow-200' : 'bg-yellow-100 text-yellow-700'} rounded-md`}
+            >
+              Request Pending
             </button>
           </div>
         );

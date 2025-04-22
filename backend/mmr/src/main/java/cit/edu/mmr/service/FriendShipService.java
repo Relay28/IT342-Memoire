@@ -222,5 +222,21 @@ public class FriendShipService {
         friendShipRepository.deleteAll(pendingRequests);
     }
 
+    public boolean isReceiver(Long friendId, Authentication auth) {
+        logger.info("Checking if user is receiver of friend request from: {}", friendId);
+        UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(friendId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
+        return friendShipRepository.isReceiverOfPendingRequest(user.getId(), friend.getId());
+    }
+
+    public Optional<FriendShipEntity> findByUsers(Long friendId, Authentication auth) {
+        logger.info("Finding friendship between users: {}", friendId);
+        UserEntity user = getAuthenticatedUser(auth);
+        UserEntity friend = userRepository.findById(friendId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        return friendShipRepository.findBetweenUsers(user.getId(), friend.getId());
+    }
 }
