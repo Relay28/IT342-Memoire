@@ -39,4 +39,37 @@
     <string name="minutes">Minutes</string>
     <string name="seconds">Seconds</string>
     <string name="set_unlock_date_time"><![CDATA[Set Unlock Date & Time]]></string>
+
+
+
+
+    <!-- Notification Titles -->
+    <string name="notification_title_friend_request">New Friend Request</string>
+    <string name="notification_title_friend_request_accepted">Friend Request Accepted</string>
+    <string name="notification_title_time_capsule_open">Time Capsule Opened</string>
+    <string name="notification_title_comment">New Comment</string>
+    <string name="notification_title_reaction">New Reaction</string>
+    <string name="notification_title_mention">You Were Mentioned</string>
+    <string name="notification_title_default">New Notification</string>
+
+    <!-- Time Ago Strings -->
+    <string name="just_now">just now</string>
+    <string name="channel_name">Notif\n</string>
+    <string name="channel_description">desc</string>
+    <plurals name="minutes_ago">
+        <item quantity="one">1 minute ago</item>
+        <item quantity="other">%d minutes ago</item>
+    </plurals>
+    <plurals name="hours_ago">
+        <item quantity="one">1 hour ago</item>
+        <item quantity="other">%d hours ago</item>
+    </plurals>
+    <plurals name="days_ago">
+        <item quantity="one">1 day ago</item>
+        <item quantity="other">%d days ago</item>
+    </plurals>
+    <plurals name="weeks_ago">
+        <item quantity="one">1 week ago</item>
+        <item quantity="other">%d weeks ago</item>
+    </plurals>
 </resources>

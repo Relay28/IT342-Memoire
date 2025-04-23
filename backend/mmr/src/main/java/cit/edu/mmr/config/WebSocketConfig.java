@@ -29,6 +29,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+    @Autowired
+    private AuthTokenHandshakeInterceptor authTokenHandshakeInterceptor;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
@@ -42,11 +44,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // General notifications endpoint
         registry.addEndpoint("/ws-notifications")
                 .setAllowedOriginPatterns("http://localhost:5173")
+                .addInterceptors(authTokenHandshakeInterceptor)
                 .withSockJS();
 
         // Specific endpoint for capsule content real-time updates
         registry.addEndpoint("/ws-capsule-content")
                 .setAllowedOriginPatterns("http://localhost:5173")
+                .addInterceptors(authTokenHandshakeInterceptor)
                 .withSockJS()
                 .setSessionCookieNeeded(false)// K
                  .setHeartbeatTime(25000); //
@@ -64,22 +68,35 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
                 StompHeaderAccessor accessor = StompHeaderAccessor.wrap(message);
 
-                // For CONNECT commands, authenticate the user
                 if (StompCommand.CONNECT.equals(accessor.getCommand())) {
-                    // Your existing authentication code...
+                    String token = accessor.getFirstNativeHeader("Authorization");
+                    if (token != null && token.startsWith("Bearer ")) {
+                        token = token.substring(7).trim();
+                        try {
+                            Authentication auth = jwtTokenProvider.getAuthentication(token);
+                            SecurityContextHolder.getContext().setAuthentication(auth);
+                            accessor.setUser(auth);
+                            accessor.getSessionAttributes().put("user", auth);
+                            accessor.getSessionAttributes().put("sessionId", accessor.getSessionId());
+                            System.out.println("User authenticated at CONNECT: " + auth.getName());
+                        } catch (Exception e) {
+                            System.out.println("Authentication failed at CONNECT: " + e.getMessage());
+                            throw new AccessDeniedException("Invalid token");
+                        }
+                    } else {
+                        System.out.println("No token provided at CONNECT");
+                        throw new AccessDeniedException("No Authorization header provided");
+                    }
                 }
-                // For other commands, try to retrieve the user from the session attributes
-                else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand()) ||
-                        StompCommand.SEND.equals(accessor.getCommand())) {
 
-                    // Check if accessor already has a user
+                else if (StompCommand.SEND.equals(accessor.getCommand()) || StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
                     if (accessor.getUser() == null) {
-                        // Try to get session attributes
-                        Object sessionId = accessor.getSessionAttributes().get("sessionId");
-                        Object user = accessor.getSessionAttributes().get("user");
-
-                        // If no session user found, try JWT token again
-                        if (user == null) {
+                        Object userAttr = accessor.getSessionAttributes().get("user");
+                        if (userAttr instanceof Authentication) {
+                            accessor.setUser((Authentication) userAttr);
+                            SecurityContextHolder.getContext().setAuthentication((Authentication) userAttr);
+                            System.out.println("Reattached user from session for " + accessor.getCommand());
+                        } else {
                             String token = accessor.getFirstNativeHeader("Authorization");
                             if (token != null && token.startsWith("Bearer ")) {
                                 try {
@@ -89,13 +106,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                                     accessor.setUser(auth);
                                     System.out.println("Re-authenticated user for " + accessor.getCommand() + ": " + auth.getName());
                                 } catch (Exception e) {
-                                    System.out.println("Failed to re-authenticate: " + e.getMessage());
+                                    System.out.println("Failed to re-authenticate for " + accessor.getCommand() + ": " + e.getMessage());
                                 }
                             }
                         }
                     }
 
-                    // Log the result
                     Authentication auth = SecurityContextHolder.getContext().getAuthentication();
                     if (auth == null) {
                         System.out.println("No authentication found for " + accessor.getCommand() + " command");
@@ -103,8 +119,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         System.out.println("Authentication found for " + accessor.getCommand() + " command: " + auth.getName());
                     }
                 }
+
                 return message;
             }
+
         });
 
     }

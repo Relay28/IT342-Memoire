@@ -1,7 +1,9 @@
 package com.example.memoire.websocket
 
 import android.content.Context
+import android.util.Log
 import com.example.memoire.models.NotificationDTO
+import com.example.memoire.models.NotificationEntity
 import com.example.memoire.utils.SessionManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -50,7 +52,7 @@ class NotificationWebsocketService(
         stompClient = Stomp.over(
             Stomp.ConnectionProvider.OKHTTP,
             "ws://192.168.1.8:8080/ws-notifications/websocket" // SockJS endpoint for notifications
-        )
+        ).withClientHeartbeat(10000).withServerHeartbeat(10000)
 
         stompClient?.let { client ->
             // Track connection state
@@ -69,14 +71,18 @@ class NotificationWebsocketService(
                                 subscribeToChannels()
                             }
                             LifecycleEvent.Type.ERROR -> {
-                                listener.onError(lifecycleEvent.exception?.message ?: "Unknown error")
+                                val errorMessage = lifecycleEvent.exception?.message ?: "Unknown error"
+                                listener.onError(errorMessage)
+                                // Handle token refresh or reconnection here if needed
                             }
                             LifecycleEvent.Type.CLOSED -> {
                                 isConnected = false
                                 listener.onDisconnected("Connection closed")
+                                // Handle token refresh or reconnection here if needed
                             }
                             LifecycleEvent.Type.FAILED_SERVER_HEARTBEAT -> {
                                 listener.onError("Server heartbeat failed")
+                                // Handle token refresh or reconnection here if needed
                             }
                         }
                     }
@@ -86,6 +92,7 @@ class NotificationWebsocketService(
             client.connect(headers)
         }
     }
+
 
     private fun subscribeToChannels() {
         stompClient?.let { client ->
@@ -110,16 +117,45 @@ class NotificationWebsocketService(
                         }
                 )
 
-                // Send connection request to the server
+                // Subscribe to the connection response
+                compositeDisposable.add(
+                    client.topic("/user/topic/notifications/connect")
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe { message ->
+                            handleConnectionResponse(message)
+                        }
+                )
+
+                // Send empty connection request to the server
+                // The authentication is handled via STOMP headers on the connection
                 client.send("/app/notifications/connect", "")
                     .subscribe()
             }
         }
     }
 
+    private fun handleConnectionResponse(message: StompMessage) {
+        try {
+            val jsonObject = JSONObject(message.payload)
+            val notificationsArray = jsonObject.getJSONArray("notifications")
+            val count = jsonObject.getLong("count")
+
+            val notifications = gson.fromJson<List<NotificationEntity>>(
+                notificationsArray.toString(),
+                object : TypeToken<List<NotificationEntity>>() {}.type
+            )
+
+            listener.onNotificationCountUpdated(count)
+            listener.onInitialNotificationsReceived(notifications)
+        } catch (e: Exception) {
+            listener.onError("Failed to parse connection response: ${e.message}")
+        }
+    }
+
     private fun handleNotificationMessage(message: StompMessage) {
         try {
-            val notification = gson.fromJson(message.payload, NotificationDTO::class.java)
+            val notification = gson.fromJson(message.payload, NotificationEntity::class.java)
             listener.onNotificationReceived(notification)
         } catch (e: Exception) {
             listener.onError("Failed to parse notification: ${e.message}")
@@ -158,7 +194,7 @@ interface NotificationWebSocketListener {
     fun onConnected()
     fun onDisconnected(reason: String)
     fun onError(error: String)
-    fun onNotificationReceived(notification: NotificationDTO)
+    fun onNotificationReceived(notification: NotificationEntity)
     fun onNotificationCountUpdated(count: Long)
-    fun onInitialNotificationsReceived(notifications: List<NotificationDTO>)
+    fun onInitialNotificationsReceived(notifications: List<NotificationEntity>)
 }

@@ -4,6 +4,8 @@ import com.example.memoire.models.AuthenticationRequest
 import com.example.memoire.models.AuthenticationResponse
 import com.example.memoire.models.CountdownDTO
 import com.example.memoire.models.LockRequest
+import com.example.memoire.models.NotificationDTO
+import com.example.memoire.models.NotificationEntity
 import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.RegisterRequest
 import com.example.memoire.models.TimeCapsuleDTO
@@ -108,6 +110,31 @@ interface ApiService {
     fun getClosedTimeCapsules(): Call<List<TimeCapsuleDTO>>
     @GET("/api/capsules/{id}/countdown")
     fun getCountdown(@Path("id") id: Long): Call<CountdownDTO>
+
+    //Notif Endpoints
+    // Add these to your existing ApiService interface
+    @GET("api/notifications")
+    fun getNotifications(
+        @Query("unreadOnly") unreadOnly: Boolean = false
+    ): Call<List<NotificationEntity>>
+
+    @PATCH("api/notifications/{id}/read")
+    fun markNotificationAsRead(
+        @Path("id") id: Long
+    ): Call<Void>
+
+    @PATCH("api/notifications/read-all")
+    fun markAllNotificationsAsRead(
+    ): Call<Void>
+
+    @GET("api/notifications/unread-count")
+    fun getUnreadNotificationCount(): Call<Map<String, Long>>
+
+    @POST("api/fcm/update-token")
+    suspend fun updateFcmToken(
+        @Query("userId") userId: Long,
+        @Query("fcmToken") fcmToken: String
+    ): Response<Void>
 }
 data class AuthenticationRequest(val username: String, val password: String)
 data class GoogleAuthRequest(val idToken: String)

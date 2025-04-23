@@ -17,6 +17,10 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowCredentials(true); // Enable credentials support
     }
+    @Bean
+    public AuthTokenHandshakeInterceptor authTokenHandshakeInterceptor() {
+        return new AuthTokenHandshakeInterceptor();
+    }
 
 }
 
