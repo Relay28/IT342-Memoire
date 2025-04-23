@@ -254,6 +254,9 @@ public class TimeCapsuleService {
 
         capsule.setOpenDate(null);
         capsule.setLocked(false);
+        if ("CLOSED".equals(capsule.getStatus())) {
+            capsule.setStatus("UNPUBLISHED");
+        }
         tcRepo.save(capsule);
     }
 
