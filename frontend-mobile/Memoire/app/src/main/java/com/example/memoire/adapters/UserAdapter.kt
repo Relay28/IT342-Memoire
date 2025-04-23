@@ -1,5 +1,6 @@
 package com.example.memoire.adapters
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -7,6 +8,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.memoire.ProfileActivity
 import com.example.memoire.R
 import com.example.memoire.models.User
 
@@ -37,6 +39,13 @@ class UserAdapter(private var userList: List<User>) :
                 .into(holder.imgUser)
         } else {
             holder.imgUser.setImageResource(R.drawable.ic_placeholder)
+        }
+
+        holder.itemView.setOnClickListener {
+            val context = holder.itemView.context
+            val intent = Intent(context, ProfileActivity::class.java)
+            intent.putExtra("userId", user.id)
+            context.startActivity(intent)
         }
     }
 

@@ -19,7 +19,9 @@ import com.example.memoire.utils.SessionManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+
 class ProfileActivity : AppCompatActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -29,7 +31,6 @@ class ProfileActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
 
         val sessionManager = SessionManager(this)
         val userSession = sessionManager.getUserSession()
@@ -43,7 +44,7 @@ class ProfileActivity : AppCompatActivity() {
         // Back button functionality
         findViewById<ImageView>(R.id.btn_back).setOnClickListener {
             startActivity(Intent(this, HomeActivity::class.java))
-            finish();
+            finish()
         }
 
         // Edit profile button functionality
@@ -51,8 +52,15 @@ class ProfileActivity : AppCompatActivity() {
             startActivity(Intent(this, EditProfileActivity::class.java))
         }
 
-        // Fetch and display profile data
-        fetchUserProfile(tvUsername, tvFullName, tvEmail, ivProfile, sessionManager)
+        // Get userId passed via Intent (for other users) or get logged-in user's ID
+        val userId = intent.getLongExtra("userId", -1L) // Get userId as Long from Intent or default to -1L
+        val loggedInUserId = userSession["userId"] as Long // Get logged-in userId as Long from session manager
+
+        // If userId is -1, that means it's the logged-in user; otherwise, it's another user
+        val finalUserId = if (userId == -1L) loggedInUserId else userId
+
+        // Fetch and display profile data (for logged-in user or other users)
+        fetchUserProfile(tvUsername, tvFullName, tvEmail, ivProfile, finalUserId, sessionManager)
     }
 
     private fun fetchUserProfile(
@@ -60,23 +68,30 @@ class ProfileActivity : AppCompatActivity() {
         tvFullName: TextView,
         tvEmail: TextView,
         ivProfile: de.hdodenhof.circleimageview.CircleImageView,
+        userId: Long, // userId is now a Long
         sessionManager: SessionManager
     ) {
-        val token = sessionManager.getUserSession()["token"]
+        val token = sessionManager.getUserSession()["token"] as String?
         if (token == null) {
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
             return
         }
 
-        // Call the getOwnProfile endpoint
-        RetrofitClient.instance.getOwnProfile("Bearer $token").enqueue(object : Callback<ProfileDTO> {
+        // If a userId is provided, fetch profile for that user
+        val call = if (userId == -1L) {
+            RetrofitClient.instance.getOwnProfile("Bearer $token") // Logged-in user
+        } else {
+            RetrofitClient.instance.getPublicProfile(userId) // Other user
+        }
+
+        call.enqueue(object : Callback<ProfileDTO> {
             override fun onResponse(call: Call<ProfileDTO>, response: Response<ProfileDTO>) {
                 if (response.isSuccessful) {
                     val profile = response.body()
                     if (profile != null) {
                         tvUsername.text = profile.username
                         tvFullName.text = profile.username // Adjust if full name exists
-                        tvEmail.text = profile.biography?: ""
+                        tvEmail.text = profile.biography ?: ""
 
                         if (!profile.profilePicture.isNullOrEmpty()) {
                             Glide.with(this@ProfileActivity)
@@ -98,3 +113,4 @@ class ProfileActivity : AppCompatActivity() {
         })
     }
 }
+

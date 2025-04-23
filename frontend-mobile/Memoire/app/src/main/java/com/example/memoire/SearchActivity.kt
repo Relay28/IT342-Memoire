@@ -62,7 +62,7 @@ class SearchActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
-        fetchUsersFromApi("")  // Fetch all users on initial load (optional)
+        // fetchUsersFromApi("")  // Fetch all users on initial load (optional)
     }
 
     private fun fetchUsersFromApi(query: String) {
