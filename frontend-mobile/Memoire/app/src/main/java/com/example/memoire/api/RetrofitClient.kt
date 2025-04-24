@@ -8,10 +8,11 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
+import org.w3c.dom.Comment
 import java.time.LocalDateTime
 
 object RetrofitClient {
-    public const val BASE_URL = "http://192.168.1.8:8080/"
+    const val BASE_URL = "http://192.168.1.8:8080/"
 
     private lateinit var sessionManager: SessionManager
 
@@ -59,5 +60,13 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(CapsuleContentService::class.java)
+    }
+    val commentInstance: ApiCommentService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiCommentService::class.java)
     }
 }

@@ -9,19 +9,29 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.BaseActivity
 import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.CapsuleListActivity
 import com.example.memoire.LockedCapsulesActivity
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
+import com.example.memoire.adapter.PublishedCapsulesAdapter
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.TimeCapsuleDTO
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class HomeActivity : BaseActivity() {
+
+    private lateinit var recyclerView: RecyclerView
+    private lateinit var adapter: PublishedCapsulesAdapter
+    private var publishedCapsules: List<TimeCapsuleDTO> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +52,15 @@ class HomeActivity : BaseActivity() {
             startActivity(intent)
             finish()
         }
+        // Initialize RecyclerView
+        recyclerView = findViewById(R.id.rvPublishedCapsules)
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        adapter = PublishedCapsulesAdapter(emptyList()) { /* No click action needed */ }
+        recyclerView.adapter = adapter
+
+        // Fetch published capsules
+        fetchPublishedCapsules()
+
 
 
 
@@ -74,6 +93,26 @@ class HomeActivity : BaseActivity() {
                 1001  // Random request code
             )
         }
+    }
+
+    private fun fetchPublishedCapsules() {
+        val call = RetrofitClient.instance.getPublishedTimeCapsules()
+        call.enqueue(object : Callback<List<TimeCapsuleDTO>> {
+            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+                if (response.isSuccessful) {
+                    response.body()?.let { capsules ->
+                        publishedCapsules = capsules
+                        adapter.updateData(capsules)
+                    }
+                } else {
+                    Toast.makeText(this@HomeActivity, "Failed to load capsules", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<List<TimeCapsuleDTO>>, t: Throwable) {
+                Toast.makeText(this@HomeActivity, "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
     private fun handleNotificationIntent(intent: Intent?) {
         intent?.extras?.let { extras ->
