@@ -4,6 +4,9 @@ import cit.edu.mmr.entity.UserEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
@@ -29,4 +32,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             String username,
             String name,
             Pageable pageable);
+
+    @Query("SELECT u.fcmToken FROM UserEntity u WHERE u.id = :userId")
+    String findFcmTokenByUserId(@Param("userId") Long userId);
 }

@@ -7,15 +7,13 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.lifecycle.lifecycleScope
 import com.example.memoire.api.RetrofitClient
-import android.content.Context
-import android.content.SharedPreferences
 import com.example.memoire.com.example.memoire.HomeActivity
-
 import com.example.memoire.models.AuthenticationRequest
 import com.example.memoire.utils.SessionManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -24,40 +22,45 @@ import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.tasks.Task
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
 class MainActivity : AppCompatActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        val sessionManager = SessionManager(this)
-//        if (sessionManager.isLoggedIn()) {
-//            val intent = Intent(this, HomeActivity::class.java)
-//            startActivity(intent)
-//            finish()
-//        }
+
+        sessionManager = SessionManager(this)
+
+        // Check if user is already logged in
+        if (sessionManager.isLoggedIn() && sessionManager.isTokenValid()) {
+            navigateToHomeAndRegisterFcmToken()
+            return
+        } else if (sessionManager.isLoggedIn()) {
+            // Token expired, force logout
+            sessionManager.logoutUser()
+            showLoginError("Session expired. Please login again.")
+        }
+
+        initializeViews()
+        setupGoogleSignIn()
+    }
+
+    private fun initializeViews() {
         val emailInput = findViewById<EditText>(R.id.emailInput)
         val passwordInput = findViewById<EditText>(R.id.passwordInput)
         val loginButton = findViewById<Button>(R.id.loginButton)
         val registerButton = findViewById<TextView>(R.id.registerBtn)
         val googleLogin = findViewById<CardView>(R.id.googleLoginButton)
 
-        // 🔹 Google Sign-In Configuration
-        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("500063994752-5graisegq8sp2t5mfkai2lm9a48k0kb8.apps.googleusercontent.com")  // Replace with your actual Google Client ID
-            .requestEmail()
-            .build()
-
-        googleSignInClient = GoogleSignIn.getClient(this, gso)
-
         registerButton.setOnClickListener {
-            val intent = Intent(this@MainActivity, RegisterActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, RegisterActivity::class.java))
         }
-
 
         loginButton.setOnClickListener {
             val username = emailInput.text.toString().trim()
@@ -70,10 +73,17 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // 🔹 Google Login Button Click Listener
         googleLogin.setOnClickListener {
             signInWithGoogle()
         }
+    }
+
+    private fun setupGoogleSignIn() {
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken("500063994752-5graisegq8sp2t5mfkai2lm9a48k0kb8.apps.googleusercontent.com")
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
     }
 
     private fun loginUser(username: String, password: String) {
@@ -83,25 +93,73 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful && response.body() != null) {
                         val authResponse = response.body()!!
-                       // Toast.makeText(this@MainActivity, "Login Successful!", Toast.LENGTH_SHORT).show()
-                        Toast.makeText(this@MainActivity,""+response+" ",Toast.LENGTH_LONG).show()
-
-                        // Save login data
-                        saveLoginData(authResponse.token, authResponse.userId, authResponse.username, authResponse.email)
-
-                        val intent = Intent(this@MainActivity, HomeActivity::class.java)
-                        startActivity(intent)
-                        finish()
+                        sessionManager.saveLoginData(
+                            authResponse.token,
+                            authResponse.userId,
+                            authResponse.username,
+                            authResponse.email
+                        )
+                        navigateToHomeAndRegisterFcmToken()
                     } else {
-                        Toast.makeText(this@MainActivity, "Login Failed!", Toast.LENGTH_SHORT).show()
+                        showLoginError(response.message())
                     }
                 }
             } catch (e: Exception) {
-                Log.e("API_ERROR", "Error calling API: ${e.message}", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    showLoginError(e.localizedMessage ?: "Unknown error")
                 }
             }
+        }
+    }
+
+
+    private fun navigateToHomeAndRegisterFcmToken() {
+        // Get FCM token and register with server
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                // Save token locally first
+                sessionManager.saveFcmToken(token)
+                // Then register with server if we have a valid session
+                if (sessionManager.isLoggedIn()) {
+                    registerFcmTokenWithServer(token)
+                }
+            }
+        }
+
+        // Navigate to home
+        startActivity(Intent(this, HomeActivity::class.java))
+        finish()
+    }
+
+
+    private fun registerFcmTokenWithServer(fcmToken: String) {
+        val userId = sessionManager.getUserSession()["userId"] as? Long ?: return
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = RetrofitClient.instance.updateFcmToken(userId, fcmToken)
+                if (!response.isSuccessful) {
+                    Log.e("FCM", "Failed to register FCM token: ${response.message()}")
+                }
+            } catch (e: Exception) {
+                Log.e("FCM", "Error registering FCM token", e)
+                // Retry logic could be added here considering JWT expiration
+            }
+        }
+    }
+    private fun showLoginError(message: String) {
+        Toast.makeText(this, "Login failed: $message", Toast.LENGTH_SHORT).show()
+        Log.e("LoginError", message)
+    }
+
+    // Google Sign-In related methods
+    private val signInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            handleSignInResult(task)
         }
     }
 
@@ -110,28 +168,13 @@ class MainActivity : AppCompatActivity() {
         signInLauncher.launch(signInIntent)
     }
 
-    private val signInLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
-                handleSignInResult(task)
-            }
-        }
-
     private fun handleSignInResult(task: Task<GoogleSignInAccount>) {
         try {
             val account = task.getResult(ApiException::class.java)
-            val idToken = account.idToken
-            Log.d("GoogleSignIn", "ID Token: $idToken")
-
-            if (idToken != null) {
-                sendIdTokenToBackend(idToken)
-            } else {
-                Toast.makeText(this, "Google Sign-In failed!", Toast.LENGTH_SHORT).show()
-            }
+            account.idToken?.let { sendIdTokenToBackend(it) } ?:
+            showLoginError("Google Sign-In failed: No ID token")
         } catch (e: ApiException) {
-            Log.e("GoogleSignIn", "Sign-in failed", e)
-            Toast.makeText(this, "Google Sign-In failed!", Toast.LENGTH_SHORT).show()
+            showLoginError("Google Sign-In failed: ${e.message}")
         }
     }
 
@@ -142,70 +185,22 @@ class MainActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful && response.body() != null) {
                         val userData = response.body()!!
-//                        Toast.makeText(this@MainActivity, "Google Login Successful!"+userData, Toast.LENGTH_SHORT).show()
-
-                          val userId = userData["userId"]?:""
-
-                       val token = userData["token"] ?: "" // Unique Google user ID
-                       val email = userData["email"] ?: "Unknown Email"
-                       val username = userData["username"] ?: "Unknown Name"
-//                        val profilePicture = userData["picture"] ?: ""
-                        Toast.makeText(this@MainActivity, "Google Login Successful!"+userId, Toast.LENGTH_SHORT).show()
-                        saveLoginData(token,userId.toLong(),username, email)
-                        // Save data locally
-                       // saveGoogleUserSession(googleId, email, name, profilePicture)
-                        Log.d("GoogleSignIn", "User Email: $userData")
-
-                        val intent = Intent(this@MainActivity, HomeActivity::class.java)
-                        startActivity(intent)
-                        finish()
+                        sessionManager.saveLoginData(
+                            userData["token"] ?: "",
+                            (userData["userId"] ?: "-1").toLong(),
+                            userData["username"] ?: "",
+                            userData["email"] ?: ""
+                        )
+                        navigateToHomeAndRegisterFcmToken()
                     } else {
-                        Toast.makeText(this@MainActivity, "Google Auth Failed!", Toast.LENGTH_SHORT).show()
+                        showLoginError("Google Auth Failed!")
                     }
                 }
             } catch (e: Exception) {
-                Log.e("API_ERROR", "Error calling API: ${e.message}", e)
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(this@MainActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    showLoginError(e.message ?: "Unknown error")
                 }
             }
         }
     }
-
-    private fun saveLoginData(token: String, userId: Long, username: String, email: String) {
-        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putString("token", token)
-        editor.putLong("userId", userId)
-        editor.putString("username", username)
-        editor.putString("email", email)
-        editor.apply() // Saves data asynchronously
-    }
-
-    private fun saveGoogleUserSession(googleId: String, email: String, name: String, profilePicture: String) {
-        val sharedPreferences = getSharedPreferences("UserSession", MODE_PRIVATE)
-        val editor = sharedPreferences.edit()
-        editor.putString("googleId", googleId)  // Store Google unique ID
-        editor.putString("email", email)
-        editor.putString("username", name)
-        editor.putString("profilePicture", profilePicture)
-        editor.putBoolean("isGoogleUser", true) // Flag to check Google login
-        editor.apply()
-    }
-
-
-    private fun checkUserLoggedIn() {
-        val sharedPreferences = getSharedPreferences("UserSession", Context.MODE_PRIVATE)
-        val token = sharedPreferences.getString("token", null)
-        val isGoogleUser = sharedPreferences.getBoolean("isGoogleUser", false)
-
-        if (token != null) {
-            // User is already logged in, redirect to HomeActivity
-            val intent = Intent(this, HomeActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
-    }
-
-
 }

@@ -11,6 +11,7 @@ data class TimeCapsuleDTO(
     val contents: List<Any>? = null,
     val locked: Boolean = false,
     val createdById: Long? = null,
-    val status: String? = null
+    val status: String? = null,
+
 )
 

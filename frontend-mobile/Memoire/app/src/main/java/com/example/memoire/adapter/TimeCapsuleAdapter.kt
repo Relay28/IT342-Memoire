@@ -6,11 +6,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatImageButton
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.LockCapsuleDialogFragment
@@ -34,13 +36,13 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         val title: TextView = view.findViewById(R.id.tvTitle)
         val description: TextView = view.findViewById(R.id.tvDescription)
         val createdDate: TextView = view.findViewById(R.id.tvCreatedDate)
-        val openDate: TextView = view.findViewById(R.id.tvOpenDate)
+        val unlockDate: TextView = view.findViewById(R.id.tvUnlockDate) // 🔁 Renamed
         val status: TextView = view.findViewById(R.id.tvStatus)
-        val editButton: MaterialButton = view.findViewById(R.id.btnEdit)
-        val publishButton: MaterialButton = view.findViewById(R.id.btnPublish)
+        val editButton: ImageButton = view.findViewById(R.id.btnEdit)
+        val publishButton: ImageButton = view.findViewById(R.id.btnPublish)
         val deleteButton: ImageView = view.findViewById(R.id.ivDelete)
-        val statusIcon: ImageView = view.findViewById(R.id.ivStatus)
-        val viewDetailsButton: MaterialButton = view.findViewById(R.id.btnViewDetails)
+        val statusIcon: TextView = view.findViewById(R.id.tvStatus)
+        val viewDetailsButton: ImageButton = view.findViewById(R.id.btnViewDetails)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CapsuleViewHolder {
@@ -59,40 +61,38 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         holder.createdDate.text = "Created: ${capsule.createdAt?.let { DateUtils.formatDateForDisplay(it) } ?: "N/A"}"
 
         if (capsule.openDate != null) {
-            holder.openDate.visibility = View.VISIBLE
-            holder.openDate.text = "Scheduled to open: ${DateUtils.formatDateForDisplay(capsule.openDate)} at ${DateUtils.formatTimeForDisplay(capsule.openDate)}"
+            holder.unlockDate.visibility = View.VISIBLE
+            holder.unlockDate.text = "Scheduled to open: ${DateUtils.formatDateForDisplay(capsule.openDate)} at ${DateUtils.formatTimeForDisplay(capsule.openDate)}"
         } else {
-            holder.openDate.visibility = View.GONE
+            holder.unlockDate.visibility = View.GONE
         }
+
 
         // Set status and icon
         holder.status.text = capsule.status
         when (capsule.status?.uppercase(Locale.getDefault())) {
             "UNPUBLISHED" -> {
-                holder.statusIcon.setImageResource(R.drawable.ic_unpublished)
+                holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_unpublishedv2, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.text = "Publish"
                 holder.publishButton.isEnabled = true
             }
             "CLOSED" -> {
-                holder.statusIcon.setImageResource(R.drawable.ic_locked)
+                holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_locked, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.text = "Locked"
                 holder.publishButton.isEnabled = false
             }
             "PUBLISHED" -> {
-                holder.statusIcon.setImageResource(R.drawable.ic_published)
+                holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_published, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.text = "Published"
                 holder.publishButton.isEnabled = false
             }
             "ARCHIVED" -> {
-                holder.statusIcon.setImageResource(R.drawable.ic_archived)
+                holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_archived, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.text = "Archived"
                 holder.publishButton.isEnabled = false
             }
         }
+
 
         // Set click listeners
         holder.cardView.setOnClickListener {

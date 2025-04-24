@@ -5,64 +5,61 @@
     android:id="@+id/cardView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="16dp"
+    android:layout_margin="12dp"
     app:cardCornerRadius="16dp"
-    app:cardElevation="2dp">
+    app:cardElevation="4dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="#E0E0E0">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
+        android:background="@android:color/white"
         android:padding="16dp">
 
-        <!-- Header with Title and Actions -->
+        <!-- Header Row: Status + Actions -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <ImageView
-                    android:id="@+id/ivStatus"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:layout_marginEnd="8dp"
-                    tools:src="@drawable/ic_unpublished" />
-
-                <TextView
-                    android:id="@+id/tvStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    tools:text="UNPUBLISHED"
-                    tools:textColor="#FF9800" />
-            </LinearLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnEdit"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
+            <!-- Status -->
+            <TextView
+                android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:minWidth="0dp"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:text="Edit"
+                android:drawableStart="@drawable/ic_unpublishedv2"
+                android:drawablePadding="6dp"
+                android:textSize="14sp"
                 android:textColor="@color/MemoireRed"
-                android:textSize="12sp" />
+                android:fontFamily="sans-serif-medium"
+                tools:text="UNPUBLISHED" />
 
-            <ImageView
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Share + Delete -->
+            <ImageButton
+                android:id="@+id/ivShare"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Share"
+                android:src="@drawable/ic_share"
+                app:tint="?attr/colorOnSurface" />
+
+            <ImageButton
                 android:id="@+id/ivDelete"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Delete"
-                android:src="@drawable/ic_delete" />
+                android:src="@drawable/ic_delete"
+                app:tint="?attr/colorOnSurface" />
         </LinearLayout>
 
         <!-- Title -->
@@ -70,44 +67,36 @@
             android:id="@+id/tvTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="#000000"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            tools:text="Memories" />
+            android:layout_marginTop="12dp"
+            android:textSize="20sp"
+            android:textColor="#212121"
+            android:fontFamily="sans-serif-medium"
+            tools:text="Summer Vacation 2025" />
 
         <!-- Description -->
         <TextView
             android:id="@+id/tvDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="6dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:textColor="#757575"
             android:textSize="14sp"
-            tools:text="This is a sample description of the time capsule. It might contain memories, thoughts, and other content that will be revealed later." />
+            android:textColor="#616161"
+            android:fontFamily="sans-serif"
+            tools:text="Memories from our beach trip to Hawaii. Photos, videos, and thoughts to remember this special time." />
 
-        <!-- Preview Image (if available) -->
-        <ImageView
-            android:id="@+id/ivPreview"
-            android:layout_width="match_parent"
-            android:layout_height="180dp"
-            android:layout_marginTop="8dp"
-            android:contentDescription="Capsule Preview Image"
-            android:scaleType="centerCrop"
-            android:visibility="gone"
-            tools:src="@drawable/ic_placeholder"
-            tools:visibility="visible" />
-
-        <!-- Time Info -->
+        <!-- Date Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="16dp"
             android:orientation="horizontal">
 
-            <!-- Created Date -->
+            <!-- ✅ Use layout_weight for spacing -->
+
+
+            <!-- Created -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -118,19 +107,21 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Created"
+                    android:textSize="12sp"
                     android:textColor="#9E9E9E"
-                    android:textSize="12sp" />
+                    android:fontFamily="sans-serif-medium" />
 
                 <TextView
                     android:id="@+id/tvCreatedDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#000000"
                     android:textSize="14sp"
+                    android:textColor="#424242"
+                    android:fontFamily="sans-serif"
                     tools:text="Apr 15, 2025" />
             </LinearLayout>
 
-            <!-- Unlock Date -->
+            <!-- Unlocks -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -138,118 +129,68 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tvOpenDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Unlocks"
+                    android:textSize="12sp"
                     android:textColor="#9E9E9E"
-                    android:textSize="12sp" />
+                    android:fontFamily="sans-serif-medium" />
 
                 <TextView
                     android:id="@+id/tvUnlockDate"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="#000000"
                     android:textSize="14sp"
+                    android:textColor="#424242"
+                    android:fontFamily="sans-serif"
                     tools:text="Jul 20, 2026" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Tags section -->
-        <HorizontalScrollView
+        <!-- Divider -->
+        <View
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:scrollbars="none">
+            android:layout_height="0dp"
+            android:layout_marginVertical="12dp"
+            android:background="#EEEEEE" />
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupTags"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:chipSpacingHorizontal="8dp">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipSample"
-                    style="@style/Widget.MaterialComponents.Chip.Action"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="memories"
-                    android:textSize="12sp"
-                    android:visibility="gone"
-                    tools:visibility="visible" />
-            </com.google.android.material.chip.ChipGroup>
-        </HorizontalScrollView>
-
-        <!-- Action Buttons -->
+        <!-- Button Bar -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="horizontal">
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:weightSum="3">
 
-            <!-- Visibility / Publish Button -->
-            <com.google.android.material.button.MaterialButton
+            <ImageButton
+                android:id="@+id/btnEdit"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_edit"
+                android:contentDescription="Edit"
+                app:tint="@color/MemoireRed" />
+
+            <ImageButton
                 android:id="@+id/btnPublish"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="Publish"
-                android:textSize="14sp"
-                app:cornerRadius="8dp"
-                app:strokeColor="@color/MemoireRed" />
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_publish"
+                android:contentDescription="Publish"
+                app:tint="@color/MemoireRed" />
 
-            <!-- View Details Button -->
-            <com.google.android.material.button.MaterialButton
+            <ImageButton
                 android:id="@+id/btnViewDetails"
-                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:text="View Details"
-                android:textSize="14sp"
-                app:backgroundTint="@color/MemoireRed"
-                app:cornerRadius="8dp" />
-        </LinearLayout>
-
-        <!-- Contributors Section (Optional, can be hidden if no contributors) -->
-        <LinearLayout
-            android:id="@+id/contributorsSection"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:orientation="vertical"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Contributors"
-                android:textColor="#9E9E9E"
-                android:textSize="12sp" />
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupContributors"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                app:chipSpacingHorizontal="4dp">
-
-                <!-- Sample contributor chip, will be added dynamically -->
-                <com.google.android.material.chip.Chip
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="test"
-                    app:chipIconEnabled="true"
-                    app:chipIconSize="24dp"
-                    tools:chipIcon="@drawable/ic_placeholder" />
-            </com.google.android.material.chip.ChipGroup>
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/ic_view_details"
+                android:contentDescription="View Details"
+                app:tint="@color/MemoireRed" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -18,7 +18,7 @@ import com.example.memoire.ProfileActivity
 import com.example.memoire.R
 import com.example.memoire.adapter.TimeCapsuleAdapter
 import com.example.memoire.api.RetrofitClient
-import com.example.memoire.com.example.memoire.HomeActivity
+
 import com.example.memoire.com.example.memoire.NotificationActivity
 import com.example.memoire.com.example.memoire.SearchActivity
 import com.example.memoire.models.TimeCapsuleDTO

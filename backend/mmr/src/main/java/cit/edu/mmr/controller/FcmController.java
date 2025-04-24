@@ -26,17 +26,4 @@ public class FcmController {
         notificationService.updateFcmToken(auth, fcmToken);
         return ResponseEntity.ok().build();
     }
-
-
-//    @PostMapping("/test-notification")
-//    public ResponseEntity<?> sendTestNotification(Authentication auth) {
-//        notificationService.createNotification(
-//                auth,
-//                "Test Notification",
-//                "This is a test notification from the server",
-//                2L,  // relatedItemId can be null for tests
-//                "test" // itemType
-//        );
-//        return ResponseEntity.ok().build();
-//    }
 }

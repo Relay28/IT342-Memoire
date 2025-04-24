@@ -1,15 +1,18 @@
 package com.example.memoire.api
 
 import android.content.Context
+import com.example.memoire.models.LocalDateTimeDeserializer
 import com.example.memoire.utils.SessionManager
 import com.google.gson.Gson
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
+import org.w3c.dom.Comment
+import java.time.LocalDateTime
 
 object RetrofitClient {
-    public const val BASE_URL = "http://192.168.1.8:8080/"
+    const val BASE_URL = "http://192.168.1.8:8080/"
 
     private lateinit var sessionManager: SessionManager
 
@@ -37,6 +40,7 @@ object RetrofitClient {
     }
     private val gson: Gson by lazy {
         GsonBuilder()
+            .registerTypeAdapter(LocalDateTime::class.java, LocalDateTimeDeserializer())
             .setLenient() // Enable lenient JSON parsing
             .create()
     }
@@ -56,5 +60,13 @@ object RetrofitClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(CapsuleContentService::class.java)
+    }
+    val commentInstance: ApiCommentService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiCommentService::class.java)
     }
 }
