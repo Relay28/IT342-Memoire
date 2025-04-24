@@ -17,7 +17,7 @@ const Homepage = () => {
   const dropdownRef = useRef(null);
   const modalRef = useRef(null);
   
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, authToken } = useAuth();
   const reportCapsule = ServiceReportCapsule();
   
   // State for published capsules
@@ -26,10 +26,12 @@ const Homepage = () => {
   const [error, setError] = useState(null);
 
   // State for report form
-  const [reportReason, setReportReason] = useState('');
-  const [reportType, setReportType] = useState('POST');
+  const [reportType, setReportType] = useState('TimeCapsule'); // Default to POST for time capsules
   const [reportSuccess, setReportSuccess] = useState(false);
   const [currentReportCapsuleId, setCurrentReportCapsuleId] = useState(null);
+
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiError, setApiError] = useState(null);
 
   // Check for authentication status
   useEffect(() => {
@@ -41,24 +43,24 @@ const Homepage = () => {
   // Fetch published capsules
   useEffect(() => {
     const fetchPublishedCapsules = async () => {
-      if (!isAuthenticated) return;
+      if (!isAuthenticated || !authToken) return;
       
       try {
         setLoadingCapsules(true);
-        const token = localStorage.getItem('token');
-        const capsules = await TimeCapsuleService.getPublishedTimeCapsules(token);
-        setPublishedCapsules(capsules);
-        setError(null);
+        setApiError(null);
+        const capsules = await TimeCapsuleService.getPublishedTimeCapsules(authToken);
+        console.log('Capsules data:', capsules);
+        setPublishedCapsules(capsules || []);
       } catch (err) {
-        console.error('Error fetching published capsules:', err);
-        setError('Failed to load time capsules. Please try again later.');
+        console.error('Error:', err);
+        setApiError(err.message || 'Failed to load time capsules');
       } finally {
         setLoadingCapsules(false);
       }
     };
-
+  
     fetchPublishedCapsules();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authToken]);
 
   const userData = user || {
     username: "Guest",
@@ -100,25 +102,25 @@ const Homepage = () => {
     if (!currentReportCapsuleId) return;
     
     try {
-      await reportCapsule.createReport({
-        reportedID: currentReportCapsuleId,
-        itemType: reportType,
-        status: 'PENDING',
-        reason: reportReason
-      });
-      setReportSuccess(true);
-      setIsReportModalOpen(false);
-      setReportReason('');
-      setCurrentReportCapsuleId(null);
-      setTimeout(() => setReportSuccess(false), 3000);
+        await reportCapsule.createReport(
+            currentReportCapsuleId,
+            reportType, // Now will be either 'TIME_CAPSULE' or 'Comment'
+            authToken
+        );
+        setReportSuccess(true);
+        setIsReportModalOpen(false);
+        setReportType('TimeCapsule'); // Reset to default
+        setCurrentReportCapsuleId(null);
+        setTimeout(() => setReportSuccess(false), 3000);
     } catch (error) {
-      console.error('Error submitting report:', error);
+        console.error('Error submitting report:', error);
     }
   };
 
   const openReportModal = (capsuleId) => {
     setCurrentReportCapsuleId(capsuleId);
     setIsReportModalOpen(true);
+    setIsReportDropdownOpen(false); // Close the dropdown when opening modal
   };
 
   if (!isAuthenticated) {
@@ -248,14 +250,27 @@ const Homepage = () => {
 
                       {capsule.mediaItems && capsule.mediaItems.length > 0 && (
                         <div className="grid grid-cols-3 gap-2 mt-4">
-                          {capsule.mediaItems.slice(0, 3).map((media, index) => (
-                            <img 
-                              key={index} 
-                              src={media.url || bgmemoire} 
-                              alt={`memory ${index + 1}`} 
-                              className="h-32 w-full object-cover rounded" 
-                            />
-                          ))}
+                          {capsule.mediaItems.slice(0, 3).map((media, index) => {
+                            const mediaUrl = media.url || media.fileUrl || media.imageUrl || bgmemoire;
+                            const isImage = media.type?.includes('image') || 
+                                          mediaUrl.match(/\.(jpeg|jpg|gif|png)$/) !== null;
+                            
+                            return isImage ? (
+                              <img 
+                                key={index} 
+                                src={mediaUrl} 
+                                alt={`memory ${index + 1}`} 
+                                className="h-32 w-full object-cover rounded"
+                                onError={(e) => {
+                                  e.target.src = bgmemoire;
+                                }}
+                              />
+                            ) : (
+                              <div key={index} className="h-32 w-full bg-gray-200 rounded flex items-center justify-center">
+                                <span className="text-gray-500">Media Preview</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -289,39 +304,23 @@ const Homepage = () => {
                 </div>
                 
                 <form onSubmit={handleReportSubmit}>
-                  <div className="mb-4">
-                    <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                      What's the issue?
-                    </label>
-                    <select
-                      className={`w-full p-2 rounded border ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                      value={reportType}
-                      onChange={(e) => setReportType(e.target.value)}
-                    >
-                      <option value="POST">Inappropriate content</option>
-                      <option value="USER">User violation</option>
-                      <option value="COMMENT">Harassment or bullying</option>
-                      <option value="OTHER">Other issue</option>
-                    </select>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-                      Additional details
-                    </label>
-                    <textarea
-                      className={`w-full p-3 rounded border ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
-                      placeholder="Please describe the issue in detail..."
-                      rows="4"
-                      value={reportReason}
-                      onChange={(e) => setReportReason(e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <p className={`text-xs mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    Your report will be reviewed by our moderation team. False reports may result in account restrictions.
-                  </p>
+            <div className="mb-4">
+              <label className={`block mb-2 text-sm font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                What's the issue?
+              </label>
+              <select
+                className={`w-full p-2 rounded border ${isDark ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'}`}
+                value={reportType}
+                onChange={(e) => setReportType(e.target.value)}
+              >
+                <option value="TimeCapsule">Time Capsule Issue</option>
+                <option value="Comment">Comment Issue</option>
+              </select>
+            </div>
+        
+            <p className={`text-xs mb-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              Your report will be reviewed by our moderation team. False reports may result in account restrictions.
+            </p>
                   
                   <div className="flex justify-end gap-3">
                     <button
@@ -334,7 +333,7 @@ const Homepage = () => {
                     <button
                       type="submit"
                       className={`px-4 py-2 rounded bg-[#AF3535] hover:bg-[#AF3535]/90 text-white ${reportCapsule.loading ? 'opacity-70 cursor-not-allowed' : ''}`}
-                      disabled={reportCapsule.loading || !reportReason.trim()}
+                      disabled={reportCapsule.loading}
                     >
                       {reportCapsule.loading ? (
                         <span className="flex items-center justify-center">
