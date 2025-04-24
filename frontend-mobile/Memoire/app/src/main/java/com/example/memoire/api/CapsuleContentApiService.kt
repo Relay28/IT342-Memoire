@@ -17,14 +17,14 @@ interface CapsuleContentService {
         @Part file: MultipartBody.Part
     ): Response<CapsuleContentEntity>
 
-    // Download content by ID
+    // Download content by ID ; Used for rendering Images
     @GET("api/capsule-content/{id}/download")
     @Streaming
     suspend fun downloadContent(
         @Path("id") id: Long
     ): Response<ResponseBody>
 
-    // Delete content by ID
+    // Delete content by ID ,
     @DELETE("api/capsule-content/{id}")
     suspend fun deleteContent(
         @Path("id") id: Long
