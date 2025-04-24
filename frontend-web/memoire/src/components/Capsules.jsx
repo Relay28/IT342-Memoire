@@ -167,8 +167,8 @@ const Capsules = () => {
   };
 
   const handleCapsuleClick = (capsule) => {
-    if (capsule.status === 'CLOSED') {
-      alert('This capsule is locked and cannot be edited');
+    if (capsule.status === 'CLOSED' || capsule.status === 'PUBLISHED' || capsule.status === 'ARCHIVED') {
+      navigate(`/view/${capsule.id}`);
       return;
     }
     navigate(`/edit/${capsule.id}`);
@@ -350,7 +350,8 @@ const Capsules = () => {
                                 View Details
                               </button>
                               
-                              {capsule.status !== 'CLOSED' && (
+                              {/* Only show Edit option if capsule is not CLOSED, PUBLISHED or ARCHIVED */}
+                              {capsule.status !== 'CLOSED' && capsule.status !== 'PUBLISHED' && capsule.status !== 'ARCHIVED' && (
                                 <button
                                   className={`w-full flex items-center px-4 py-2 text-sm ${
                                     isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
@@ -367,7 +368,8 @@ const Capsules = () => {
                                 </button>
                               )}
                               
-                              {capsule.status === 'CLOSED' ? (
+                              {/* Show Unlock option only for CLOSED capsules */}
+                              {capsule.status === 'CLOSED' && (
                                 <button
                                   className={`w-full flex items-center px-4 py-2 text-sm ${
                                     isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
@@ -382,7 +384,10 @@ const Capsules = () => {
                                   </svg>
                                   Unlock
                                 </button>
-                              ) : (
+                              )}
+                              
+                              {/* Only show Lock option if capsule is not CLOSED, PUBLISHED or ARCHIVED */}
+                              {capsule.status !== 'CLOSED' && capsule.status !== 'PUBLISHED' && capsule.status !== 'ARCHIVED' && (
                                 <button
                                   className={`w-full flex items-center px-4 py-2 text-sm ${
                                     isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
