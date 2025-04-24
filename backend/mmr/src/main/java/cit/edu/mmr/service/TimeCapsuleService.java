@@ -349,4 +349,22 @@ public class TimeCapsuleService {
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
+
+    public void archiveTimeCapsule(Long id, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        TimeCapsuleEntity capsule = tcRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
+
+        if (!(capsule.getCreatedBy().getId() == (user.getId()))) {
+            throw new AccessDeniedException("You do not have permission to archive this capsule");
+        }
+
+        // Only allow archiving of published capsules
+        if (!"PUBLISHED".equals(capsule.getStatus())) {
+            throw new IllegalStateException("Only published capsules can be archived");
+        }
+
+        capsule.setStatus("ARCHIVED");
+        tcRepo.save(capsule);
+    }
 }

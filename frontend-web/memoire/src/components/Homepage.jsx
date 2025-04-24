@@ -33,6 +33,10 @@ const Homepage = () => {
   const [apiLoading, setApiLoading] = useState(false);
   const [apiError, setApiError] = useState(null);
 
+  const [isArchiving, setIsArchiving] = useState(false);
+  const [archiveError, setArchiveError] = useState(null);
+  const [archiveSuccess, setArchiveSuccess] = useState(false);
+
   // Check for authentication status
   useEffect(() => {
     if (!isAuthenticated) {
@@ -121,6 +125,27 @@ const Homepage = () => {
     setCurrentReportCapsuleId(capsuleId);
     setIsReportModalOpen(true);
     setIsReportDropdownOpen(false); // Close the dropdown when opening modal
+  };
+
+  const handleArchiveCapsule = async (capsuleId) => {
+    if (!authToken) return;
+    
+    try {
+      setIsArchiving(true);
+      setArchiveError(null);
+      
+      await TimeCapsuleService.archiveTimeCapsule(capsuleId, authToken);
+      
+      // Update the capsules list by removing the archived capsule
+      setPublishedCapsules(publishedCapsules.filter(capsule => capsule.id !== capsuleId));
+      setArchiveSuccess(true);
+      setTimeout(() => setArchiveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error archiving capsule:', error);
+      setArchiveError(error.message || 'Failed to archive time capsule');
+    } finally {
+      setIsArchiving(false);
+    }
   };
 
   if (!isAuthenticated) {
@@ -216,6 +241,27 @@ const Homepage = () => {
                             >
                               Report This Capsule
                             </button>
+                            <button
+          onClick={() => handleArchiveCapsule(capsule.id)}
+          disabled={isArchiving}
+          className={`block w-full text-left px-4 py-2 text-sm ${isDark ? 
+            isArchiving ? 'text-gray-500' : 'text-yellow-400 hover:bg-gray-600' : 
+            isArchiving ? 'text-gray-400' : 'text-yellow-600 hover:bg-gray-100'}`}
+        >
+          {isArchiving ? 'Archiving...' : 'Archive Capsule'}
+        </button>
+        // Add success message display
+{archiveSuccess && (
+  <div className={`mb-4 p-4 rounded-lg ${isDark ? 'bg-green-800 text-green-200' : 'bg-green-100 text-green-800'}`}>
+    Capsule archived successfully!
+  </div>
+)}
+
+{archiveError && (
+  <div className={`mb-4 p-4 rounded-lg ${isDark ? 'bg-red-800 text-red-200' : 'bg-red-100 text-red-800'}`}>
+    {archiveError}
+  </div>
+)}
                           </div>
                         </div>
                       )}
@@ -351,6 +397,7 @@ const Homepage = () => {
             </div>
           </div>
         )}
+        
       </div>
     </div>
   );

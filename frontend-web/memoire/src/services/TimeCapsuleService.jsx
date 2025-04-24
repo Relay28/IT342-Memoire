@@ -232,6 +232,19 @@ class TimeCapsuleService {
     }
   }
 
+  // In TimeCapsuleService.js
+async archiveTimeCapsule(id, authToken) {
+  try {
+    return await axios.patch(`${API_URL}/${id}/archive`, {}, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+  } catch (error) {
+    this.handleError(`Error archiving time capsule with ID ${id}`, error);
+    throw error;
+  }
+}
   /**
    * Unlocks a time capsule
    * @param {number} id - The ID of the time capsule to unlock
