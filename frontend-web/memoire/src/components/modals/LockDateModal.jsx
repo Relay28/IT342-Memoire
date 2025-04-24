@@ -1,10 +1,11 @@
 // components/LockDateModal.jsx
 import React, { useState } from 'react';
-import { FaLock, FaCalendarAlt } from 'react-icons/fa';
+import { FaLock, FaCalendarAlt, FaClock } from 'react-icons/fa';
 import { useTimeCapsule } from '../../hooks/useTimeCapsule';
 
 const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
   const [openDate, setOpenDate] = useState('');
+  const [openTime, setOpenTime] = useState('12:00');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const { lockTimeCapsule } = useTimeCapsule();
@@ -26,9 +27,13 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
     setError(null);
     
     try {
-      // Convert the date to ISO format for the API
-      const formattedDate = new Date(openDate).toISOString();
-      await lockTimeCapsule(timeCapsuleId, formattedDate);
+      // Combine date and time into a single ISO string
+      const [hours, minutes] = openTime.split(':');
+      const dateObj = new Date(openDate);
+      dateObj.setHours(parseInt(hours, 10));
+      dateObj.setMinutes(parseInt(minutes, 10));
+      
+      await lockTimeCapsule(timeCapsuleId, dateObj.toISOString());
       
       if (onSuccess) {
         onSuccess();
@@ -55,7 +60,7 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
         {/* Body */}
         <div className="p-6">
           <p className="text-gray-600 mb-4">
-            Once locked, this time capsule will be sealed until the specified date. 
+            Once locked, this time capsule will be sealed until the specified date and time. 
             You won't be able to modify its contents until it's automatically unlocked.
           </p>
           
@@ -78,8 +83,27 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
                   required
                 />
               </div>
+            </div>
+
+            <div className="mb-4">
+              <label htmlFor="openTime" className="block text-sm font-medium text-gray-700 mb-1">
+                Unlock Time
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaClock className="text-gray-400" />
+                </div>
+                <input
+                  type="time"
+                  id="openTime"
+                  className="pl-10 block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                  value={openTime}
+                  onChange={(e) => setOpenTime(e.target.value)}
+                  required
+                />
+              </div>
               <p className="mt-1 text-sm text-gray-500">
-                Select a future date when the time capsule should be unlocked.
+                Select a future date and time when the time capsule should be unlocked.
               </p>
             </div>
             

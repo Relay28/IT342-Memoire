@@ -259,7 +259,7 @@ const Capsules = () => {
               </div>
 
               {/* Capsules List */}
-              <div className={`rounded-xl overflow-hidden ${isDark ? 'bg-gray-700' : 'bg-white'} shadow-sm border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
+              <div className={`rounded-xl  ${isDark ? 'bg-gray-700' : 'bg-white'} shadow-sm border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
                 {/* Header Row */}
                 <div className={`grid grid-cols-12 items-center gap-4 p-4 border-b ${isDark ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'} font-medium text-xs uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="col-span-5">Name</div>
