@@ -81,6 +81,32 @@ public class NotificationService {
         }
     }
 
+
+    public void sendPushNotification(Long userId, NotificationEntity notification) {
+        // Get FCM token from your database
+        String fcmToken = userRepository.findFcmTokenByUserId(userId);
+
+        if (fcmToken != null && !fcmToken.isEmpty()) {
+            try {
+                Message message = Message.builder()
+                        .setToken(fcmToken)
+                        .setNotification(Notification.builder()
+                                .setTitle(getNotificationTitle(notification.getType()))
+                                .setBody(notification.getText())
+                                .build())
+                        .putData("notificationId", String.valueOf(notification.getId()))
+                        .putData("type", notification.getType())
+                        .putData("itemType", notification.getItemType())
+                        .putData("itemId", String.valueOf(notification.getRelatedItemId()))
+                        .build();
+
+                String response = FirebaseMessaging.getInstance().send(message);
+                logger.info("Successfully sent FCM notification: " + response);
+            } catch (FirebaseMessagingException e) {
+                logger.error("Failed to send FCM notification", e);
+            }
+        }
+    }
     // New method to send notification via WebSocket
     private void sendNotificationViaWebSocket(String username, NotificationEntity notification) {
         try {

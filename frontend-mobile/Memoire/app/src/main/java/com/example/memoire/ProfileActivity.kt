@@ -29,7 +29,6 @@ import retrofit2.Response
 
 class ProfileActivity : AppCompatActivity() {
     private val TAG = "ProfileActivity"
-    private val API_BASE_URL = "http://your-api-base-url.com/" // Define your API base URL here
 
     private lateinit var tvName: TextView
     private lateinit var Username: TextView

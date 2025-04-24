@@ -227,7 +227,6 @@ public class TimeCapsuleService {
                 TimeCapsuleEntity updatedCapsule = tcRepo.findById(capsule.getId())
                         .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
 
-                updatedCapsule.setLocked(false);
                 updatedCapsule.setStatus("PUBLISHED");
                 tcRepo.save(updatedCapsule);
 

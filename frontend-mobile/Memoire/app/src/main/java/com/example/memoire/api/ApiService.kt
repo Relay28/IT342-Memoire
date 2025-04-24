@@ -135,6 +135,11 @@ interface ApiService {
         @Query("userId") userId: Long,
         @Query("fcmToken") fcmToken: String
     ): Response<Void>
+
+    @POST("api/notifications/register-token")
+    suspend fun registerFcmToken(
+        @Body request: Map<String, String>
+    ): Response<Void>
 }
 data class AuthenticationRequest(val username: String, val password: String)
 data class GoogleAuthRequest(val idToken: String)

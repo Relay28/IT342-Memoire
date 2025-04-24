@@ -11,6 +11,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.memoire.BaseActivity
 import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
@@ -26,7 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class NotificationActivity : AppCompatActivity(), NotificationWebSocketListener {
+class NotificationActivity : BaseActivity(), NotificationWebSocketListener {
 
     private lateinit var notificationAdapter: NotificationAdapter
     private lateinit var websocketService: NotificationWebsocketService
@@ -59,6 +60,8 @@ class NotificationActivity : AppCompatActivity(), NotificationWebSocketListener 
 
         // Load initial notifications
         loadInitialNotifications()
+        setupHeaderActions()
+        setupBottomNavigation(R.id.navigation_tags)
 
         val profile = findViewById<ImageView>(R.id.prof)
         profile.setOnClickListener {
@@ -141,6 +144,8 @@ class NotificationActivity : AppCompatActivity(), NotificationWebSocketListener 
             // Add other cases as needed
         }
     }
+
+
 
     override fun onDestroy() {
         super.onDestroy()
