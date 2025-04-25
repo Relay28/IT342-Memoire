@@ -9,6 +9,8 @@ import { useThemeMode } from '../context/ThemeContext';
 import ServiceReportCapsule from '../services/ServiceReportCapsule';
 import TimeCapsuleService from '../services/TimeCapsuleService';
 import { useCapsuleContent } from '../context/CapsuleWebContextProvider';
+import CommentServices from "../services/CommentServices";
+import CommentReactionService from "../services/CommentReactionService";
 
 const Homepage = () => {
   // Context and hooks
@@ -43,6 +45,7 @@ const Homepage = () => {
   const [comments, setComments] = useState({});
   const [newComment, setNewComment] = useState({});
   const [commentLoading, setCommentLoading] = useState(false);
+  const [reactionLoading, setReactionLoading] = useState({});
   
   // Services
   const reportCapsule = ServiceReportCapsule();
@@ -67,9 +70,17 @@ const Homepage = () => {
       
       // Initialize comments storage for each capsule
       const initialComments = {};
-      capsules.forEach(capsule => {
-        initialComments[capsule.id] = capsule.comments || [];
+      const commentPromises = capsules.map(async (capsule) => {
+        try {
+          const capsuleComments = await CommentServices.getCommentsByCapsule(capsule.id);
+          initialComments[capsule.id] = capsuleComments || [];
+        } catch (err) {
+          console.error(`Error fetching comments for capsule ${capsule.id}:`, err);
+          initialComments[capsule.id] = [];
+        }
       });
+      
+      await Promise.all(commentPromises);
       setComments(initialComments);
       
       // Initialize new comment state for each capsule
@@ -198,25 +209,25 @@ const Homepage = () => {
     setCommentLoading(true);
     
     try {
-      // Here you would normally call an API to save the comment
-      // Mock implementation for now
-      const commentPayload = {
-        id: Date.now().toString(),
-        text: newComment[capsuleId],
-        user: {
-          id: user.id,
-          username: user.username,
-          fullName: user.fullName,
-          profilePicture: user.profilePicture
-        },
-        createdAt: new Date().toISOString(),
-        reactions: { like: [], love: [] }
-      };
+      const comment = await CommentServices.createComment(
+        capsuleId, 
+        newComment[capsuleId], 
+        authToken
+      );
       
-      // Update local state
+      // Update local state with the new comment
       setComments(prev => ({
         ...prev,
-        [capsuleId]: [...(prev[capsuleId] || []), commentPayload]
+        [capsuleId]: [...(prev[capsuleId] || []), {
+          ...comment,
+          user: {
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            profilePicture: user.profilePicture
+          },
+          reactions: { like: [], love: [] }
+        }]
       }));
       
       // Clear input
@@ -233,35 +244,58 @@ const Homepage = () => {
   };
 
   // Handle reactions to comments
-  const handleReaction = (capsuleId, commentId, reactionType) => {
-    setComments(prev => {
-      const capsuleComments = [...(prev[capsuleId] || [])];
-      const commentIndex = capsuleComments.findIndex(c => c.id === commentId);
-      
-      if (commentIndex === -1) return prev;
-      
-      const comment = {...capsuleComments[commentIndex]};
-      const reactions = {...comment.reactions};
-      
-      // Check if user already reacted
-      const userReacted = reactions[reactionType]?.includes(user.id);
+  const handleReaction = async (capsuleId, commentId, reactionType) => {
+    if (!authToken) return;
+    
+    const loadingKey = `${commentId}-${reactionType}`;
+    setReactionLoading(prev => ({ ...prev, [loadingKey]: true }));
+    
+    try {
+      // Check if user already reacted to this comment
+      const capsuleComments = comments[capsuleId] || [];
+      const comment = capsuleComments.find(c => c.id === commentId);
+      const userReacted = comment?.reactions?.[reactionType]?.includes(user.id);
       
       if (userReacted) {
         // Remove reaction
-        reactions[reactionType] = reactions[reactionType].filter(id => id !== user.id);
+        await CommentReactionService.deleteReaction(commentId, authToken);
       } else {
         // Add reaction
-        reactions[reactionType] = [...(reactions[reactionType] || []), user.id];
+        await CommentReactionService.addReaction(commentId, reactionType, authToken);
       }
       
-      comment.reactions = reactions;
-      capsuleComments[commentIndex] = comment;
-      
-      return {
-        ...prev,
-        [capsuleId]: capsuleComments
-      };
-    });
+      // Update local state
+      setComments(prev => {
+        const updatedCapsuleComments = [...(prev[capsuleId] || [])];
+        const commentIndex = updatedCapsuleComments.findIndex(c => c.id === commentId);
+        
+        if (commentIndex === -1) return prev;
+        
+        const updatedComment = {...updatedCapsuleComments[commentIndex]};
+        const reactions = {...updatedComment.reactions};
+        
+        if (userReacted) {
+          // Remove reaction
+          reactions[reactionType] = reactions[reactionType].filter(id => id !== user.id);
+        } else {
+          // Add reaction
+          reactions[reactionType] = [...(reactions[reactionType] || []), user.id];
+        }
+        
+        updatedComment.reactions = reactions;
+        updatedCapsuleComments[commentIndex] = updatedComment;
+        
+        return {
+          ...prev,
+          [capsuleId]: updatedCapsuleComments
+        };
+      });
+    } catch (error) {
+      console.error('Error updating reaction:', error);
+      setError(error.message || 'Failed to update reaction');
+    } finally {
+      setReactionLoading(prev => ({ ...prev, [loadingKey]: false }));
+    }
   };
 
   // Open report modal
@@ -487,7 +521,7 @@ const Homepage = () => {
                                   (!newComment[capsule.id]?.trim() || commentLoading) ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                               >
-                                Post
+                                {commentLoading ? 'Posting...' : 'Post'}
                               </button>
                             </div>
                           </div>
@@ -517,23 +551,27 @@ const Homepage = () => {
                                     <div className="flex space-x-2 text-xs">
                                       <button 
                                         onClick={() => handleReaction(capsule.id, comment.id, 'like')}
+                                        disabled={reactionLoading[`${comment.id}-like`]}
                                         className={`${
                                           comment.reactions?.like?.includes(user.id) ? 
                                             (isDark ? 'text-blue-400' : 'text-blue-600') : 
                                             (isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600')
                                         }`}
                                       >
-                                        Like {comment.reactions?.like?.length > 0 && `(${comment.reactions.like.length})`}
+                                        {reactionLoading[`${comment.id}-like`] ? '...' : 
+                                          `Like ${comment.reactions?.like?.length > 0 ? `(${comment.reactions.like.length})` : ''}`}
                                       </button>
                                       <button 
                                         onClick={() => handleReaction(capsule.id, comment.id, 'love')}
+                                        disabled={reactionLoading[`${comment.id}-love`]}
                                         className={`${
                                           comment.reactions?.love?.includes(user.id) ? 
                                             (isDark ? 'text-red-400' : 'text-red-600') : 
                                             (isDark ? 'text-gray-400 hover:text-red-400' : 'text-gray-500 hover:text-red-600')
                                         }`}
                                       >
-                                        Love {comment.reactions?.love?.length > 0 && `(${comment.reactions.love.length})`}
+                                        {reactionLoading[`${comment.id}-love`] ? '...' : 
+                                          `Love ${comment.reactions?.love?.length > 0 ? `(${comment.reactions.love.length})` : ''}`}
                                       </button>
                                     </div>
                                     <span className={`text-xs ml-auto ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
