@@ -46,6 +46,8 @@ const Homepage = () => {
   const [newComment, setNewComment] = useState({});
   const [commentLoading, setCommentLoading] = useState(false);
   const [reactionLoading, setReactionLoading] = useState({});
+
+  const [expandedComments, setExpandedComments] = useState({});
   
   // Services
   const reportCapsule = ServiceReportCapsule();
@@ -56,6 +58,13 @@ const Homepage = () => {
       navigate('/login');
     }
   }, [isAuthenticated, navigate]);
+
+  const toggleComments = (capsuleId) => {
+    setExpandedComments(prev => ({
+      ...prev,
+      [capsuleId]: !prev[capsuleId]
+    }));
+  };
 
   // Fetch published capsules with media
   const fetchCapsules = useCallback(async () => {
@@ -314,6 +323,19 @@ const Homepage = () => {
     fullName: "Guest User"
   };
 
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return `${diffInSeconds}s`;
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d`;
+    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 604800)}w`;
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   if (!isAuthenticated) {
     return (
       <div className={`min-h-screen flex justify-center items-center ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
@@ -481,114 +503,145 @@ const Homepage = () => {
 
                         {/* Comments section */}
                         <div className="mt-6">
-                          <hr className={`my-4 ${isDark ? 'border-gray-600' : 'border-gray-200'}`} />
-                          <h4 className={`font-medium mb-4 ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
-                            Comments ({capsuleComments.length})
-                          </h4>
-                          
-                          {/* Comment input */}
-                          <div className="flex mb-4">
-                            <img 
-                              src={userData.profilePicture || ProfilePictureSample} 
-                              alt="Your profile" 
-                              className="h-8 w-8 rounded-full mr-2"
-                              onError={(e) => {
-                                e.target.src = ProfilePictureSample;
-                              }}
-                            />
-                            <div className="flex-1 relative">
-                              <input
-                                type="text"
-                                placeholder="Add a comment..."
-                                value={newComment[capsule.id] || ''}
-                                onChange={(e) => handleCommentChange(capsule.id, e.target.value)}
-                                className={`w-full py-2 px-3 rounded-full ${
-                                  isDark ? 'bg-gray-600 text-white placeholder-gray-400 border-gray-600' 
-                                  : 'bg-gray-100 text-gray-800 placeholder-gray-500 border-gray-200'
-                                } border focus:outline-none focus:ring-2 ${
-                                  isDark ? 'focus:ring-blue-600' : 'focus:ring-blue-400'
-                                }`}
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter') {
-                                    handleCommentSubmit(capsule.id);
-                                  }
-                                }}
-                              />
-                              <button
-                                disabled={commentLoading || !newComment[capsule.id]?.trim()}
-                                onClick={() => handleCommentSubmit(capsule.id)}
-                                className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-700 ${
-                                  (!newComment[capsule.id]?.trim() || commentLoading) ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              >
-                                {commentLoading ? 'Posting...' : 'Post'}
-                              </button>
-                            </div>
-                          </div>
-                          
-                          {/* Comments list */}
-                          <div className="space-y-4">
-                            {capsuleComments.map(comment => (
-                              <div key={comment.id} className="flex">
-                                <img
-                                  src={comment.user?.profilePicture || ProfilePictureSample}
-                                  alt={comment.user?.username || "User"}
-                                  className="h-8 w-8 rounded-full mr-2"
-                                  onError={(e) => {
-                                    e.target.src = ProfilePictureSample;
-                                  }}
-                                />
-                                <div className="flex-1">
-                                  <div className={`${isDark ? 'bg-gray-600' : 'bg-gray-100'} rounded-2xl px-4 py-2`}>
-                                    <p className="font-medium text-sm">
-                                      {comment.user?.fullName || comment.user?.username || "Unknown User"}
-                                    </p>
-                                    <p className="text-sm">{comment.text}</p>
-                                  </div>
-                                  
-                                  {/* Reactions and timestamp */}
-                                  <div className="flex items-center mt-1 ml-2">
-                                    <div className="flex space-x-2 text-xs">
-                                      <button 
-                                        onClick={() => handleReaction(capsule.id, comment.id, 'like')}
-                                        disabled={reactionLoading[`${comment.id}-like`]}
-                                        className={`${
-                                          comment.reactions?.like?.includes(user.id) ? 
-                                            (isDark ? 'text-blue-400' : 'text-blue-600') : 
-                                            (isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600')
-                                        }`}
-                                      >
-                                        {reactionLoading[`${comment.id}-like`] ? '...' : 
-                                          `Like ${comment.reactions?.like?.length > 0 ? `(${comment.reactions.like.length})` : ''}`}
-                                      </button>
-                                      <button 
-                                        onClick={() => handleReaction(capsule.id, comment.id, 'love')}
-                                        disabled={reactionLoading[`${comment.id}-love`]}
-                                        className={`${
-                                          comment.reactions?.love?.includes(user.id) ? 
-                                            (isDark ? 'text-red-400' : 'text-red-600') : 
-                                            (isDark ? 'text-gray-400 hover:text-red-400' : 'text-gray-500 hover:text-red-600')
-                                        }`}
-                                      >
-                                        {reactionLoading[`${comment.id}-love`] ? '...' : 
-                                          `Love ${comment.reactions?.love?.length > 0 ? `(${comment.reactions.love.length})` : ''}`}
-                                      </button>
-                                    </div>
-                                    <span className={`text-xs ml-auto ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                      {new Date(comment.createdAt).toLocaleDateString()} {new Date(comment.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                            
-                            {capsuleComments.length === 0 && (
-                              <p className={`text-center py-2 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                No comments yet. Be the first to comment!
-                              </p>
-                            )}
-                          </div>
-                        </div>
+        <hr className={`my-4 ${isDark ? 'border-gray-600' : 'border-gray-200'}`} />
+        <div 
+          className={`flex items-center justify-between cursor-pointer ${isDark ? 'hover:bg-gray-600' : 'hover:bg-gray-50'} p-2 rounded`}
+          onClick={() => toggleComments(capsule.id)}
+        >
+          <h4 className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
+            Comments ({capsuleComments.length})
+          </h4>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className={`h-5 w-5 transition-transform ${expandedComments[capsule.id] ? 'transform rotate-180' : ''}`}
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </div>
+
+        {/* Comment input (always visible) */}
+        <div className="flex mb-4 mt-2">
+          <img 
+            src={userData.profilePicture || ProfilePictureSample} 
+            alt="Your profile" 
+            className="h-8 w-8 rounded-full mr-2"
+            onError={(e) => {
+              e.target.src = ProfilePictureSample;
+            }}
+          />
+          <div className="flex-1 relative">
+            <input
+              type="text"
+              placeholder="Add a comment..."
+              value={newComment[capsule.id] || ''}
+              onChange={(e) => handleCommentChange(capsule.id, e.target.value)}
+              className={`w-full py-2 px-3 rounded-full ${
+                isDark ? 'bg-gray-600 text-white placeholder-gray-400 border-gray-600' 
+                : 'bg-gray-100 text-gray-800 placeholder-gray-500 border-gray-200'
+              } border focus:outline-none focus:ring-2 ${
+                isDark ? 'focus:ring-blue-600' : 'focus:ring-blue-400'
+              }`}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleCommentSubmit(capsule.id);
+                }
+              }}
+            />
+            <button
+              disabled={commentLoading || !newComment[capsule.id]?.trim()}
+              onClick={() => handleCommentSubmit(capsule.id)}
+              className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500 hover:text-blue-700 ${
+                (!newComment[capsule.id]?.trim() || commentLoading) ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {commentLoading ? 'Posting...' : 'Post'}
+            </button>
+          </div>
+        </div>
+        
+        {/* Comments list (conditionally rendered) */}
+        {/* Comments list (conditionally rendered) */}
+{/* Comments list */}
+{expandedComments[capsule.id] && (
+  <div className="space-y-3">
+    {capsuleComments.map(comment => (
+      <div key={comment.id} className="flex items-start group">
+        {/* User avatar */}
+        <img
+          src={comment.user?.profilePicture || ProfilePictureSample}
+          alt={comment.user?.username || "User"}
+          className="h-8 w-8 rounded-full mr-3 flex-shrink-0"
+          onError={(e) => {
+            e.target.src = ProfilePictureSample;
+          }}
+        />
+        
+        {/* Comment content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline">
+            <span className={`font-semibold text-sm mr-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+              {comment.user?.username || "Unknown User"}
+            </span>
+            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {formatTimeAgo(comment.createdAt)}
+            </span>
+          </div>
+          
+          <p className={`text-sm mt-0.5 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+            {comment.text}
+          </p>
+          
+          {/* Like count and action */}
+          <div className="flex items-center mt-1">
+            {comment.reactions?.love?.length > 0 && (
+              <span className={`text-xs mr-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                {comment.reactions.love.length} like{comment.reactions.love.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+        </div>
+        
+        {/* Heart reaction - right aligned */}
+        <button 
+          onClick={() => handleReaction(capsule.id, comment.id, 'love')}
+          disabled={reactionLoading[`${comment.id}-love`]}
+          className="ml-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="Like comment"
+        >
+          <svg 
+            xmlns="http://www.w3.org/2000/svg" 
+            className={`h-4 w-4 ${comment.reactions?.love?.includes(user.id) ? 
+              'fill-red-500 text-red-500' : 
+              (isDark ? 'text-gray-400 hover:text-red-500' : 'text-gray-500 hover:text-red-500')
+            }`} 
+            viewBox="0 0 24 24" 
+            stroke={comment.reactions?.love?.includes(user.id) ? 'none' : 'currentColor'}
+            strokeWidth="2"
+          >
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+            />
+          </svg>
+        </button>
+      </div>
+    ))}
+    
+    {capsuleComments.length === 0 && (
+      <p className={`text-center py-2 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+        No comments yet. Be the first to comment!
+      </p>
+    )}
+  </div>
+)}
+</div>
                       </div>
                     </article>
                   );
