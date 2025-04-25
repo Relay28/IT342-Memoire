@@ -1,12 +1,12 @@
+
 package com.example.memoire
 
 import android.os.Bundle
-import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
@@ -16,19 +16,21 @@ import com.example.memoire.adapter.LockedCapsuleAdapter
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.CountdownDTO
 import com.example.memoire.models.TimeCapsuleDTO
+import com.example.memoire.utils.SessionManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.util.Timer
 import java.util.TimerTask
 
-class LockedCapsulesActivity : BaseActivity(){
+class LockedCapsulesActivity : BaseActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: LockedCapsuleAdapter
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyStateView: TextView
     private var timer: Timer? = null
+    private lateinit var sessionManager : SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -40,6 +42,7 @@ class LockedCapsulesActivity : BaseActivity(){
             insets
         }
 
+        sessionManager = SessionManager(this)
         setupViews()
         loadLockedCapsules()
         setupHeaderActions()
@@ -52,11 +55,64 @@ class LockedCapsulesActivity : BaseActivity(){
         emptyStateView = findViewById(R.id.emptyStateText)
 
         recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = LockedCapsuleAdapter(mutableListOf()) { capsuleId ->
-            // Handle capsule click if needed
-        }
+        adapter = LockedCapsuleAdapter(
+            mutableListOf(),
+            { capsuleId -> /* Handle capsule click if needed */ },
+            { capsuleId -> showUnlockConfirmation(capsuleId) } ,
+            {sessionManager}// Add unlock handler
+        )
         recyclerView.adapter = adapter
     }
+
+    private fun showUnlockConfirmation(capsuleId: Long) {
+        AlertDialog.Builder(this)
+            .setTitle("Confirm Unlock")
+            .setMessage("Are you sure you want to unlock this time capsule? This will cancel the locking and allow immediate access.")
+            .setPositiveButton("Yes, Unlock") { _, _ ->
+                unlockCapsule(capsuleId)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun unlockCapsule(capsuleId: Long) {
+        showLoading()
+        RetrofitClient.instance.unlockTimeCapsule(capsuleId).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                hideLoading()
+                if (response.isSuccessful) {
+                    // Remove the unlocked capsule from the list
+                    adapter.removeCapsule(capsuleId)
+
+                    // Show success message
+                    Toast.makeText(
+                        this@LockedCapsulesActivity,
+                        "Capsule unlocked successfully",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    // If list is now empty, show empty state
+                    if (adapter.itemCount == 0) {
+                        showEmptyState("You have no locked capsules")
+                    }
+                } else {
+                    // Show error message
+                    Toast.makeText(
+                        this@LockedCapsulesActivity,
+                        "Failed to unlock capsule",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                hideLoading()
+                showError("Network error. Please try again")
+            }
+        })
+    }
+
+    // Rest of the existing methods remain the same
 
     private fun loadLockedCapsules() {
         showLoading()
@@ -137,7 +193,7 @@ class LockedCapsulesActivity : BaseActivity(){
         emptyStateView.isVisible = true
     }
 
-   override fun showLoading() {
+    override fun showLoading() {
         progressBar.isVisible = true
         recyclerView.isVisible = false
         emptyStateView.isVisible = false

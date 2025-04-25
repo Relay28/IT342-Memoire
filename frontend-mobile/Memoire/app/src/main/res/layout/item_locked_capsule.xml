@@ -4,36 +4,74 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp"
+    app:strokeColor="#E0E0E0"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:background="@android:color/white">
 
-        <TextView
-            android:id="@+id/tvTitle"
+        <!-- Header with title and unlock button -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@color/black"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/black"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUnlock"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="UNLOCK"
+                android:textAllCaps="false"
+                android:textSize="12sp"
+                android:visibility="gone"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                app:strokeColor="@color/MemoireRed"
+                app:strokeWidth="1dp"
+                app:cornerRadius="18dp"/>
+        </LinearLayout>
+
+        <!-- Description -->
         <TextView
-            android:id="@+id/tvStatus"
+            android:id="@+id/tvDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:textSize="14sp"
-            android:textColor="@color/gray"/>
+            android:textColor="#757575"
+            android:maxLines="2"
+            android:ellipsize="end"/>
 
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:layout_marginVertical="12dp"
+            android:background="#EEEEEE"/>
+
+        <!-- Countdown -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
             android:orientation="horizontal"
             android:gravity="center">
 
@@ -49,22 +87,27 @@
                     android:id="@+id/tvDays"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="24sp"
-                    android:textStyle="bold"/>
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/days"
-                    android:textSize="12sp"/>
+                    android:text="DAYS"
+                    android:textSize="10sp"
+                    android:textColor="#757575"
+                    android:textAllCaps="true"/>
             </LinearLayout>
 
+            <!-- Separator -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=":"
-                android:textSize="24sp"
-                android:layout_marginHorizontal="4dp"/>
+                android:textSize="20sp"
+                android:textColor="#757575"
+                android:layout_marginHorizontal="2dp"/>
 
             <!-- Hours -->
             <LinearLayout
@@ -78,22 +121,27 @@
                     android:id="@+id/tvHours"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="24sp"
-                    android:textStyle="bold"/>
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/hours"
-                    android:textSize="12sp"/>
+                    android:text="HOURS"
+                    android:textSize="10sp"
+                    android:textColor="#757575"
+                    android:textAllCaps="true"/>
             </LinearLayout>
 
+            <!-- Separator -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=":"
-                android:textSize="24sp"
-                android:layout_marginHorizontal="4dp"/>
+                android:textSize="20sp"
+                android:textColor="#757575"
+                android:layout_marginHorizontal="2dp"/>
 
             <!-- Minutes -->
             <LinearLayout
@@ -107,22 +155,27 @@
                     android:id="@+id/tvMinutes"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="24sp"
-                    android:textStyle="bold"/>
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/minutes"
-                    android:textSize="12sp"/>
+                    android:text="MINUTES"
+                    android:textSize="10sp"
+                    android:textColor="#757575"
+                    android:textAllCaps="true"/>
             </LinearLayout>
 
+            <!-- Separator -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text=":"
-                android:textSize="24sp"
-                android:layout_marginHorizontal="4dp"/>
+                android:textSize="20sp"
+                android:textColor="#757575"
+                android:layout_marginHorizontal="2dp"/>
 
             <!-- Seconds -->
             <LinearLayout
@@ -136,15 +189,28 @@
                     android:id="@+id/tvSeconds"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textSize="24sp"
-                    android:textStyle="bold"/>
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/black"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/seconds"
-                    android:textSize="12sp"/>
+                    android:text="SECONDS"
+                    android:textSize="10sp"
+                    android:textColor="#757575"
+                    android:textAllCaps="true"/>
             </LinearLayout>
         </LinearLayout>
+
+        <!-- Open date -->
+        <TextView
+            android:id="@+id/tvOpenDate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textSize="12sp"
+            android:textColor="#757575"
+            android:gravity="center"/>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
