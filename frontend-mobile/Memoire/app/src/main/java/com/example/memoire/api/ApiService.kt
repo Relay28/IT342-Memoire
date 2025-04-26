@@ -185,7 +185,7 @@ interface ApiService {
     ): Call<Boolean>
 
     @GET("api/profiles/search")
-    fun searchProfiles(
+    fun searchProfiles2(
         @Query("query") query: String,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 10
