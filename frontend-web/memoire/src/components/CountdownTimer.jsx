@@ -100,7 +100,7 @@ const CountdownTimerPage = () => {
   // ... (keep the existing loading and error states the same)
 
   return (
-    <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`min-h-screen ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
       <div className="flex flex-col h-screen">
         <Header />
         

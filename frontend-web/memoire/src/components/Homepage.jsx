@@ -511,7 +511,7 @@ const handleDeleteComment = async (capsuleId, commentId) => {
   }
 };
 return (
-  <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+  <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
     <div className="flex flex-col h-screen">
       <Header 
         userData={userData} 
@@ -525,7 +525,7 @@ return (
           isAuthenticated={isAuthenticated}
         />
 
-        <main className={`flex-1 p-4 md:p-8 overflow-y-auto ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <main className={`flex-1 p-4 md:p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
           {/* Status messages */}
           {reportSuccess && (
             <div className={`mb-4 p-4 rounded-lg ${isDark ? 'bg-emerald-900 text-emerald-100' : 'bg-emerald-100 text-emerald-800'}`}>
@@ -569,7 +569,7 @@ return (
                 return (
                   <article 
                     key={capsule.id} 
-                    className={`rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md ${isDark ? 'bg-gray-800 text-gray-100' : 'bg-white text-gray-800'}`}
+                    className={`rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md ${isDark ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}
                   >
                     {/* Capsule header with options */}
                     <div className="p-5 pb-0 flex justify-between items-start">
