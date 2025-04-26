@@ -50,6 +50,40 @@ public class CapsuleAccessController {
         this.userRepository = userRepository;
     }
 
+
+    @PostMapping("/grant-to-friends/{capsuleId}")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<List<CapsuleAccessDTO>> grantAccessToAllFriends(
+            @PathVariable Long capsuleId,
+            @RequestParam String role,
+            Authentication authentication) {
+
+        logger.info("Received request to grant {} access to capsule {} for all friends", role, capsuleId);
+
+        try {
+            List<CapsuleAccessEntity> accesses = capsuleAccessService.grantAccessToAllFriends(
+                    capsuleId,
+                    role,
+                    authentication
+            );
+
+            List<CapsuleAccessDTO> accessDTOs = accesses.stream()
+                    .map(access -> modelMapper.map(access, CapsuleAccessDTO.class))
+                    .collect(Collectors.toList());
+
+            logger.info("Successfully granted access to {} friends", accesses.size());
+            return ResponseEntity.status(HttpStatus.CREATED).body(accessDTOs);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Invalid grant access to friends request: {}", e.getMessage());
+            throw e;
+        } catch (EntityNotFoundException e) {
+            logger.warn("Entity not found for grant access to friends: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error granting access to friends: {}", e.getMessage(), e);
+            throw new DatabaseOperationException("Error processing access grant to friends request", e);
+        }
+    }
     private UserEntity getAuthenticatedUser(Authentication authentication) {
         String username = authentication.getName();
         logger.debug("Getting authenticated user: {}", username);

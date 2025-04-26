@@ -194,6 +194,20 @@ interface ApiService {
     @POST("api/auth/logout")
     fun logout(@Header("Authorization") authToken: String): Call<ResponseBody>
 
+    // Add this to your ApiService interface
+    // Add to ApiService interface
+    @GET("api/friendships/friends")
+    fun getFriendsList(): Call<List<UserEntity>>
+
+    @POST("api/capsule-access/grant-to-friends/{capsuleId}")
+    fun grantAccessToAllFriends(
+        @Path("capsuleId") capsuleId: Long,
+        @Query("role") role: String
+    ): Call<List<CapsuleAccessDTO>>
+
+    @POST("api/capsule-access")
+    fun grantAccessToSpecificFriends(@Body request: GrantAccessRequest): Call<CapsuleAccessDTO>
+
 }
 data class AuthenticationRequest(val username: String, val password: String)
 data class GoogleAuthRequest(val idToken: String)

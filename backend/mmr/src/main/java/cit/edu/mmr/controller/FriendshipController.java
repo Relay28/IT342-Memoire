@@ -14,6 +14,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
@@ -51,6 +52,17 @@ public class FriendshipController {
             return new ResponseEntity<>(isFriend, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error checking friendship status: {}", e.getMessage(), e);
+            return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/friends")
+    public ResponseEntity<?> getFriendsList(Authentication auth) {
+        try {
+            List<UserEntity> friends = friendShipService.getFriendsList(auth);
+            return new ResponseEntity<>(friends, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving friends list: {}", e.getMessage(), e);
             return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
         }
     }

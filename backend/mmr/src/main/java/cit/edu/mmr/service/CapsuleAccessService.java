@@ -1,10 +1,12 @@
 package cit.edu.mmr.service;
 
 import cit.edu.mmr.entity.CapsuleAccessEntity;
+import cit.edu.mmr.entity.FriendShipEntity;
 import cit.edu.mmr.entity.TimeCapsuleEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.exception.exceptions.DatabaseOperationException;
 import cit.edu.mmr.repository.CapsuleAccessRepository;
+import cit.edu.mmr.repository.FriendShipRepository;
 import cit.edu.mmr.repository.TimeCapsuleRepository;
 import cit.edu.mmr.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -21,9 +23,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.sql.Time;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+
+
 @Service
 @Transactional
 public class CapsuleAccessService {
@@ -34,15 +36,18 @@ public class CapsuleAccessService {
     private final UserRepository userRepository;
     private final CacheManager cacheManager;
 
+    private final FriendShipRepository friendShipRepository;
+
     @Autowired
     public CapsuleAccessService(CapsuleAccessRepository capsuleAccessRepository,
                                 TimeCapsuleRepository timeCapsuleRepository,
                                 UserRepository userRepository,
-                                CacheManager cacheManager) {
+                                CacheManager cacheManager, FriendShipRepository friendShipRepository) {
         this.capsuleAccessRepository = capsuleAccessRepository;
         this.timeCapsuleRepository = timeCapsuleRepository;
         this.userRepository = userRepository;
         this.cacheManager = cacheManager;
+        this.friendShipRepository = friendShipRepository;
     }
 
     private UserEntity getAuthenticatedUser(Authentication authentication) {
@@ -150,6 +155,92 @@ public class CapsuleAccessService {
             logger.error("Error saving capsule access: {}", e.getMessage(), e);
             throw new DatabaseOperationException("Error saving capsule access", e);
         }
+    }
+
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'capsuleAccesses_' + #capsuleId"),
+            @CacheEvict(value = "contentMetadata", key = "'userAccesses_*'", allEntries = true),
+            @CacheEvict(value = "contentMetadata", key = "'hasAccess_' + #capsuleId + '_*'", allEntries = true)
+    })
+    @Transactional
+    public List<CapsuleAccessEntity> grantAccessToAllFriends(Long capsuleId, String role, Authentication authentication) {
+        logger.info("Granting {} access to capsule {} for all friends", role, capsuleId);
+
+        // Validate parameters
+        if (capsuleId == null || role == null) {
+            logger.warn("Invalid parameters for grantAccessToAllFriends: capsuleId={}, role={}", capsuleId, role);
+            throw new IllegalArgumentException("Capsule ID and role must be non-null");
+        }
+
+        // Validate role
+        if (!"EDITOR".equals(role) && !"VIEWER".equals(role)) {
+            logger.warn("Invalid role provided: {}", role);
+            throw new IllegalArgumentException("Role must be either EDITOR or VIEWER");
+        }
+
+        UserEntity currentUser = getAuthenticatedUser(authentication);
+
+        // Get capsule
+        TimeCapsuleEntity capsule = timeCapsuleRepository.findById(capsuleId)
+                .orElseThrow(() -> {
+                    logger.error("Time capsule not found with ID: {}", capsuleId);
+                    return new EntityNotFoundException("Time capsule not found with ID: " + capsuleId);
+                });
+
+        // Verify current user is the owner of the capsule
+        if (!capsule.getCreatedBy().equals(currentUser)) {
+            logger.warn("User {} attempted to grant access to capsule {} they don't own",
+                    currentUser.getUsername(), capsuleId);
+            throw new AccessDeniedException("Only the capsule owner can grant access");
+        }
+
+        // Get all friends with status "Friends"
+        List<FriendShipEntity> friendships = friendShipRepository.findByUserOrFriendAndStatus(
+                currentUser, currentUser, "Friends");
+
+        Set<UserEntity> friends = new HashSet<>();
+        for (FriendShipEntity friendship : friendships) {
+            if (friendship.getUser().equals(currentUser)) {
+                friends.add(friendship.getFriend());
+            } else {
+                friends.add(friendship.getUser());
+            }
+        }
+
+        logger.debug("Found {} friends to grant access to", friends.size());
+
+        // Filter out friends who already have access
+        List<Long> existingUserIds = capsuleAccessRepository.findUserIdsWithAccessToCapsule(capsuleId);
+        friends.removeIf(friend -> existingUserIds.contains(friend.getId()));
+
+        // Grant access to each friend
+        List<CapsuleAccessEntity> createdAccesses = new ArrayList<>();
+        for (UserEntity friend : friends) {
+            try {
+                CapsuleAccessEntity access = new CapsuleAccessEntity();
+                access.setCapsule(capsule);
+                access.setUser(friend);
+                access.setUploadedBy(currentUser);
+                access.setRole(role);
+
+                CapsuleAccessEntity savedAccess = capsuleAccessRepository.save(access);
+                createdAccesses.add(savedAccess);
+
+                // Add to capsule's access list
+                capsule.getCapsuleAccesses().add(savedAccess);
+
+                logger.debug("Granted {} access to friend {}", role, friend.getUsername());
+            } catch (Exception e) {
+                logger.error("Error granting access to friend {}: {}", friend.getUsername(), e.getMessage());
+                // Continue with other friends even if one fails
+            }
+        }
+
+        // Save the capsule with updated accesses
+        timeCapsuleRepository.save(capsule);
+
+        logger.info("Successfully granted access to {} friends for capsule {}", createdAccesses.size(), capsuleId);
+        return createdAccesses;
     }
 
     /**
