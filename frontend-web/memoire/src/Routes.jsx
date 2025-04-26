@@ -23,6 +23,7 @@ const ReportDetailsPage = lazy(()  =>  import("./components/admin/ReportDetailsP
 const ReportListPage = lazy(()  =>  import("./components/admin/ReportListPage"));
 const UserListPage = lazy(()  =>  import("./components/admin/UserList"));
 const ConfiscatedListPage = lazy(()  =>  import("./components/admin/ConfiscatedContentPage"));
+const CountdownTimerPage = lazy(()  =>  import("./components/CountdownTimer"));
 const RouteLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
     <CircularProgress size={60} />
@@ -47,6 +48,7 @@ const AppRoutes = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/search" element={<SearchResult />} />
         <Route path="/profile/:userId" element={<ProfilePageOther />} />
+        <Route path="/countdown" element={<CountdownTimerPage />} />
         
         <Route path="/create" element={<CreateCapsule />} />
         <Route 

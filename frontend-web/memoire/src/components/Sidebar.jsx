@@ -1,7 +1,7 @@
 // src/components/Sidebar.js
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaHome, FaStar, FaShareAlt } from 'react-icons/fa';
+import { FaPlus, FaHome, FaStar, FaShareAlt, FaHourglassHalf } from 'react-icons/fa';
 import { useTimeCapsule } from '../hooks/useTimeCapsule';
 import { useThemeMode } from '../context/ThemeContext';
 
@@ -70,6 +70,14 @@ const Sidebar = () => {
         >
           <FaShareAlt className="text-[#AF3535] mr-3" size={20} />
           <span>Archived Capsules</span>
+        </Link>
+
+        <Link 
+          to="/countdown" 
+          className={`flex items-center p-3 rounded-lg ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'} cursor-pointer`}
+        >
+          <FaHourglassHalf className="text-[#AF3535] mr-3" size={20} />
+          <span>Capsule Countdown</span>
         </Link>
         
         <hr className={`my-2 ${isDark ? 'border-gray-700' : 'border-gray-200'}`} />

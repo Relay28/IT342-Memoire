@@ -6,8 +6,9 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { format } from 'date-fns';
-import LockDateModal from '../components/modals/LockDateModal';
 import { useThemeMode } from '../context/ThemeContext';
+import LockDateModal from '../components/modals/LockDateModal';
+
 
 const Capsules = () => {
   const { isDark } = useThemeMode();
@@ -17,20 +18,29 @@ const Capsules = () => {
     error, 
     getUserTimeCapsules,
     getUnpublishedTimeCapsules,
-    getClosedTimeCapsules,
     getPublishedTimeCapsules,
     getArchivedTimeCapsules,
-    deleteTimeCapsule,
-    unlockTimeCapsule
+    deleteTimeCapsule
   } = useTimeCapsule();
   
   const [capsules, setCapsules] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all');
   const [openMenuId, setOpenMenuId] = useState(null);
-  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
-  const [selectedCapsuleId, setSelectedCapsuleId] = useState(null);
   const menuRef = useRef(null);
   const navigate = useNavigate();
+
+  const [isLockModalOpen, setIsLockModalOpen] = useState(false);
+  const [selectedCapsuleId, setSelectedCapsuleId] = useState(null);
+
+  const handleOpenLockModal = (e, id) => {
+    e.stopPropagation();
+    setSelectedCapsuleId(id);
+    setIsLockModalOpen(true);
+    setOpenMenuId(null);
+  };
+  const handleLockSuccess = () => {
+    fetchCapsulesByFilter(activeFilter);
+  };
 
   useEffect(() => {
     fetchCapsulesByFilter(activeFilter);
@@ -58,9 +68,6 @@ const Capsules = () => {
         case 'unpublished':
           data = await getUnpublishedTimeCapsules();
           break;
-        case 'closed':
-          data = await getClosedTimeCapsules();
-          break;
         case 'published':
           data = await getPublishedTimeCapsules();
           break;
@@ -70,6 +77,8 @@ const Capsules = () => {
         case 'all':
         default:
           data = await getUserTimeCapsules();
+          // Filter out CLOSED status capsules
+          data = data.filter(capsule => capsule.status !== 'CLOSED' && capsule.status !== 'ARCHIVED');
           break;
       }
       setCapsules(data);
@@ -90,30 +99,9 @@ const Capsules = () => {
     }
   };
 
-  const handleUnlockCapsule = async (id) => {
-    try {
-      await unlockTimeCapsule(id);
-      fetchCapsulesByFilter(activeFilter);
-      setOpenMenuId(null);
-    } catch (err) {
-      console.error('Failed to unlock time capsule:', err);
-    }
-  };
-
   const handleToggleMenu = (e, id) => {
     e.stopPropagation();
     setOpenMenuId(openMenuId === id ? null : id);
-  };
-
-  const handleOpenLockModal = (e, id) => {
-    e.stopPropagation();
-    setSelectedCapsuleId(id);
-    setIsLockModalOpen(true);
-    setOpenMenuId(null);
-  };
-
-  const handleLockSuccess = () => {
-    fetchCapsulesByFilter(activeFilter);
   };
 
   const formatDate = (dateString) => {
@@ -125,8 +113,6 @@ const Capsules = () => {
     switch (status) {
       case 'UNPUBLISHED':
         return 'Draft';
-      case 'CLOSED':
-        return 'Locked';
       case 'PUBLISHED':
         return 'Published';
       case 'ARCHIVED':
@@ -141,8 +127,6 @@ const Capsules = () => {
       switch (status) {
         case 'UNPUBLISHED':
           return 'bg-blue-900/50 text-blue-300 border-blue-700';
-        case 'CLOSED':
-          return 'bg-amber-900/50 text-amber-300 border-amber-700';
         case 'PUBLISHED':
           return 'bg-emerald-900/50 text-emerald-300 border-emerald-700';
         case 'ARCHIVED':
@@ -154,8 +138,6 @@ const Capsules = () => {
       switch (status) {
         case 'UNPUBLISHED':
           return 'bg-blue-50 text-blue-800 border-blue-200';
-        case 'CLOSED':
-          return 'bg-amber-50 text-amber-800 border-amber-200';
         case 'PUBLISHED':
           return 'bg-emerald-50 text-emerald-800 border-emerald-200';
         case 'ARCHIVED':
@@ -167,7 +149,7 @@ const Capsules = () => {
   };
 
   const handleCapsuleClick = (capsule) => {
-    if (capsule.status === 'CLOSED' || capsule.status === 'PUBLISHED' || capsule.status === 'ARCHIVED') {
+    if (capsule.status === 'PUBLISHED' || capsule.status === 'ARCHIVED') {
       navigate(`/view/${capsule.id}`);
       return;
     }
@@ -177,10 +159,9 @@ const Capsules = () => {
   const tabs = [
     { id: 'all', label: 'All Capsules' },
     { id: 'unpublished', label: 'Drafts' },
-    { id: 'closed', label: 'Locked' },
-    { id: 'published', label: 'Published' },
-    { id: 'archived', label: 'Archived' }
+    { id: 'published', label: 'Published' }
   ];
+  
 
   if (loading) {
     return (
@@ -259,7 +240,7 @@ const Capsules = () => {
               </div>
 
               {/* Capsules List */}
-              <div className={`rounded-xl  ${isDark ? 'bg-gray-700' : 'bg-white'} shadow-sm border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
+              <div className={`rounded-xl ${isDark ? 'bg-gray-700' : 'bg-white'} shadow-sm border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
                 {/* Header Row */}
                 <div className={`grid grid-cols-12 items-center gap-4 p-4 border-b ${isDark ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'} font-medium text-xs uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="col-span-5">Name</div>
@@ -350,8 +331,8 @@ const Capsules = () => {
                                 View Details
                               </button>
                               
-                              {/* Only show Edit option if capsule is not CLOSED, PUBLISHED or ARCHIVED */}
-                              {capsule.status !== 'CLOSED' && capsule.status !== 'PUBLISHED' && capsule.status !== 'ARCHIVED' && (
+                              {/* Only show Edit option if capsule is not PUBLISHED or ARCHIVED */}
+                              {capsule.status !== 'PUBLISHED' && capsule.status !== 'ARCHIVED' && (
                                 <button
                                   className={`w-full flex items-center px-4 py-2 text-sm ${
                                     isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
@@ -367,39 +348,18 @@ const Capsules = () => {
                                   Edit
                                 </button>
                               )}
-                              
-                              {/* Show Unlock option only for CLOSED capsules */}
-                              {capsule.status === 'CLOSED' && (
-                                <button
-                                  className={`w-full flex items-center px-4 py-2 text-sm ${
-                                    isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                                  }`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleUnlockCapsule(capsule.id);
-                                  }}
-                                >
-                                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                                  </svg>
-                                  Unlock
-                                </button>
-                              )}
-                              
-                              {/* Only show Lock option if capsule is not CLOSED, PUBLISHED or ARCHIVED */}
-                              {capsule.status !== 'CLOSED' && capsule.status !== 'PUBLISHED' && capsule.status !== 'ARCHIVED' && (
-                                <button
-                                  className={`w-full flex items-center px-4 py-2 text-sm ${
-                                    isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
-                                  }`}
-                                  onClick={(e) => handleOpenLockModal(e, capsule.id)}
-                                >
-                                  <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                  </svg>
-                                  Lock
-                                </button>
-                              )}
+
+<button
+    className={`w-full flex items-center px-4 py-2 text-sm ${
+      isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-700 hover:bg-gray-100'
+    }`}
+    onClick={(e) => handleOpenLockModal(e, capsule.id)}
+  >
+    <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    </svg>
+    Lock Capsule
+  </button>
                               
                               <button
                                 className={`w-full flex items-center px-4 py-2 text-sm ${
@@ -427,7 +387,6 @@ const Capsules = () => {
           </section>
         </div>
       </div>
-
       <LockDateModal
         isOpen={isLockModalOpen}
         onClose={() => setIsLockModalOpen(false)}
