@@ -46,8 +46,9 @@ const Homepage = () => {
   const [newComment, setNewComment] = useState({});
   const [commentLoading, setCommentLoading] = useState(false);
   const [reactionLoading, setReactionLoading] = useState({});
-
   const [expandedComments, setExpandedComments] = useState({});
+  const [editingCommentId, setEditingCommentId] = useState(null);
+  const [editCommentText, setEditCommentText] = useState('');
   
   // Services
   const reportCapsule = ServiceReportCapsule();
@@ -344,6 +345,77 @@ const Homepage = () => {
     );
   }
 
+  // Handle starting to edit a comment
+const handleStartEdit = (commentId, currentText) => {
+  setEditingCommentId(commentId);
+  setEditCommentText(currentText);
+};
+
+// Handle canceling edit
+const handleCancelEdit = () => {
+  setEditingCommentId(null);
+  setEditCommentText('');
+};
+
+// Handle updating a comment
+const handleUpdateComment = async (capsuleId, commentId) => {
+  if (!editCommentText.trim() || !authToken) return;
+  
+  try {
+    setCommentLoading(true);
+    
+    const updatedComment = await CommentServices.updateComment(
+      commentId,
+      editCommentText,
+      authToken
+    );
+    
+    // Update local state with the updated comment
+    setComments(prev => ({
+      ...prev,
+      [capsuleId]: prev[capsuleId].map(comment => 
+        comment.id === commentId 
+          ? { ...comment, text: updatedComment.text } 
+          : comment
+      )
+    }));
+    
+    // Reset editing state
+    setEditingCommentId(null);
+    setEditCommentText('');
+  } catch (error) {
+    console.error('Error updating comment:', error);
+    setError(error.message || 'Failed to update comment');
+  } finally {
+    setCommentLoading(false);
+  }
+};
+
+// Handle deleting a comment
+const handleDeleteComment = async (capsuleId, commentId) => {
+  if (!authToken) return;
+  
+  if (!window.confirm('Are you sure you want to delete this comment?')) {
+    return;
+  }
+  
+  try {
+    setCommentLoading(true);
+    
+    await CommentServices.deleteComment(commentId, authToken);
+    
+    // Update local state by removing the deleted comment
+    setComments(prev => ({
+      ...prev,
+      [capsuleId]: prev[capsuleId].filter(comment => comment.id !== commentId)
+    }));
+  } catch (error) {
+    console.error('Error deleting comment:', error);
+    setError(error.message || 'Failed to delete comment');
+  } finally {
+    setCommentLoading(false);
+  }
+};
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <div className="flex flex-col h-screen">
@@ -566,73 +638,132 @@ const Homepage = () => {
         </div>
         
         {/* Comments list (conditionally rendered) */}
-        {/* Comments list (conditionally rendered) */}
-{/* Comments list */}
-{expandedComments[capsule.id] && (
+        {expandedComments[capsule.id] && (
   <div className="space-y-3">
-    {capsuleComments.map(comment => (
-      <div key={comment.id} className="flex items-start group">
-        {/* User avatar */}
-        <img
-          src={comment.user?.profilePicture || ProfilePictureSample}
-          alt={comment.user?.username || "User"}
-          className="h-8 w-8 rounded-full mr-3 flex-shrink-0"
-          onError={(e) => {
-            e.target.src = ProfilePictureSample;
-          }}
-        />
-        
-        {/* Comment content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline">
-            <span className={`font-semibold text-sm mr-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
-              {comment.user?.username || "Unknown User"}
-            </span>
-            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              {formatTimeAgo(comment.createdAt)}
-            </span>
-          </div>
+    {capsuleComments.map(comment => {
+      const isCurrentUsersComment = comment.user?.id === user?.id;
+      
+      return (
+        <div key={comment.id} className="flex items-start group">
+          {/* User avatar */}
+          <img
+            src={comment.user?.profilePicture || ProfilePictureSample}
+            alt={comment.user?.username || "User"}
+            className="h-8 w-8 rounded-full mr-3 flex-shrink-0"
+            onError={(e) => {
+              e.target.src = ProfilePictureSample;
+            }}
+          />
           
-          <p className={`text-sm mt-0.5 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
-            {comment.text}
-          </p>
-          
-          {/* Like count and action */}
-          <div className="flex items-center mt-1">
-            {comment.reactions?.love?.length > 0 && (
-              <span className={`text-xs mr-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                {comment.reactions.love.length} like{comment.reactions.love.length !== 1 ? 's' : ''}
+          {/* Comment content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline">
+              <span className={`font-semibold text-sm mr-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+                {comment.user?.username || "Unknown User"}
               </span>
+              <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                {formatTimeAgo(comment.createdAt)}
+                {comment.createdAt !== comment.updatedAt && ' (edited)'}
+              </span>
+            </div>
+            
+            {editingCommentId === comment.id ? (
+              <div className="mt-1 relative">
+                <input
+                  type="text"
+                  value={editCommentText}
+                  onChange={(e) => setEditCommentText(e.target.value)}
+                  className={`w-full py-1 px-2 rounded ${
+                    isDark ? 'bg-gray-600 text-white border-gray-500' 
+                    : 'bg-gray-100 text-gray-800 border-gray-300'
+                  } border focus:outline-none`}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleUpdateComment(capsule.id, comment.id);
+                    }
+                  }}
+                />
+                <div className="flex justify-end mt-1 space-x-2">
+                  <button
+                    onClick={handleCancelEdit}
+                    className={`text-xs px-2 py-1 rounded ${
+                      isDark ? 'bg-gray-600 hover:bg-gray-500' : 'bg-gray-200 hover:bg-gray-300'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleUpdateComment(capsule.id, comment.id)}
+                    disabled={!editCommentText.trim() || commentLoading}
+                    className={`text-xs px-2 py-1 rounded bg-blue-500 hover:bg-blue-600 text-white ${
+                      (!editCommentText.trim() || commentLoading) ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
+                  >
+                    {commentLoading ? 'Updating...' : 'Update'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <p className={`text-sm mt-0.5 ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                {comment.text}
+              </p>
             )}
+            
+            {/* Like count and action */}
+            <div className="flex items-center mt-1">
+              {comment.reactions?.love?.length > 0 && (
+                <span className={`text-xs mr-4 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {comment.reactions.love.length} like{comment.reactions.love.length !== 1 ? 's' : ''}
+                </span>
+              )}
+              
+              {/* Edit/Delete buttons (only show for current user's comments) */}
+              {isCurrentUsersComment && (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => handleStartEdit(comment.id, comment.text)}
+                    className={`text-xs ${isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600'}`}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDeleteComment(capsule.id, comment.id)}
+                    className={`text-xs ${isDark ? 'text-gray-400 hover:text-red-400' : 'text-gray-500 hover:text-red-600'}`}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-        
-        {/* Heart reaction - right aligned */}
-        <button 
-          onClick={() => handleReaction(capsule.id, comment.id, 'love')}
-          disabled={reactionLoading[`${comment.id}-love`]}
-          className="ml-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-          aria-label="Like comment"
-        >
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className={`h-4 w-4 ${comment.reactions?.love?.includes(user.id) ? 
-              'fill-red-500 text-red-500' : 
-              (isDark ? 'text-gray-400 hover:text-red-500' : 'text-gray-500 hover:text-red-500')
-            }`} 
-            viewBox="0 0 24 24" 
-            stroke={comment.reactions?.love?.includes(user.id) ? 'none' : 'currentColor'}
-            strokeWidth="2"
+          
+          {/* Heart reaction - right aligned */}
+          <button 
+            onClick={() => handleReaction(capsule.id, comment.id, 'love')}
+            disabled={reactionLoading[`${comment.id}-love`]}
+            className="ml-2 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Like comment"
           >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-            />
-          </svg>
-        </button>
-      </div>
-    ))}
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className={`h-4 w-4 ${comment.reactions?.love?.includes(user.id) ? 
+                'fill-red-500 text-red-500' : 
+                (isDark ? 'text-gray-400 hover:text-red-500' : 'text-gray-500 hover:text-red-500')
+              }`} 
+              viewBox="0 0 24 24" 
+              stroke={comment.reactions?.love?.includes(user.id) ? 'none' : 'currentColor'}
+              strokeWidth="2"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+              />
+            </svg>
+          </button>
+        </div>
+      );
+    })}
     
     {capsuleComments.length === 0 && (
       <p className={`text-center py-2 text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
