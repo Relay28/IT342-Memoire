@@ -10,6 +10,7 @@ import com.example.memoire.models.NotificationDTO
 import com.example.memoire.models.NotificationEntity
 import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.RegisterRequest
+import com.example.memoire.models.SearchResponse
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.models.UpdateRoleRequest
 import com.example.memoire.models.UserEntity
@@ -34,6 +35,14 @@ interface ApiService {
     // Profile endpoint for accessing other users' profiles
     @GET("api/profiles/view/{userId}")
     fun getPublicProfile(@Path("userId") userId: Long): Call<ProfileDTO>
+
+    // For User Search
+    @GET("api/profiles/search")
+    suspend fun searchProfiles(
+        @Query("query") query: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10
+    ): Response<SearchResponse>
 
     // Own profile endpoint
     @GET("api/profiles/me")
