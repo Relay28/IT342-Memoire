@@ -15,6 +15,7 @@ import com.example.memoire.BaseActivity
 import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
+import com.example.memoire.activities.SearchActivity
 import com.example.memoire.adapters.NotificationAdapter
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.NotificationDTO

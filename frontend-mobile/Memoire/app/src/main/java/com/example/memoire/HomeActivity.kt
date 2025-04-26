@@ -17,6 +17,7 @@ import com.example.memoire.CapsuleListActivity
 import com.example.memoire.LockedCapsulesActivity
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
+import com.example.memoire.activities.SearchActivity
 import com.example.memoire.adapter.PublishedCapsulesAdapter
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.TimeCapsuleDTO

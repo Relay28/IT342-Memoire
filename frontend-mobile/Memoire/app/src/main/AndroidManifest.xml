@@ -50,7 +50,7 @@
             android:name=".com.example.memoire.NotificationActivity"
             android:exported="false" />
         <activity
-            android:name=".com.example.memoire.SearchActivity"
+            android:name=".activities.SearchActivity"
             android:exported="false" />
         <activity
             android:name=".com.example.memoire.CreateCapsuleActivity"
