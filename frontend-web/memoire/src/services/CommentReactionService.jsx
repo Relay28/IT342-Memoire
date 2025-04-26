@@ -21,6 +21,10 @@ class CommentReactionService {
       });
       return response.data;
     } catch (error) {
+      if (error.response && error.response.status === 409) {
+        // Reaction already exists
+        throw new Error('You have already reacted to this comment');
+      }
       this.handleError('Error adding reaction', error);
       throw error;
     }
