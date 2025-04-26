@@ -5,9 +5,13 @@ package cit.edu.mmr.controller;
 import cit.edu.mmr.dto.CapsuleAccessDTO;
 import cit.edu.mmr.dto.GrantAccessRequest;
 import cit.edu.mmr.dto.UpdateRoleRequest;
-import cit.edu.mmr.dto.ErrorResponse;
+import cit.edu.mmr.dto.UserSearchDTO;
 import cit.edu.mmr.entity.CapsuleAccessEntity;
+import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.exception.exceptions.DatabaseOperationException;
+import cit.edu.mmr.repository.CapsuleAccessRepository;
+import cit.edu.mmr.repository.TimeCapsuleRepository;
+import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.CapsuleAccessService;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
@@ -18,10 +22,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,13 +39,26 @@ public class CapsuleAccessController {
 
     private final CapsuleAccessService capsuleAccessService;
     private final ModelMapper modelMapper;
+    private final UserRepository userRepository;
+    private final CapsuleAccessRepository capsuleAccessRepository;
 
     @Autowired
-    public CapsuleAccessController(CapsuleAccessService capsuleAccessService, ModelMapper modelMapper) {
+    public CapsuleAccessController(CapsuleAccessService capsuleAccessService, ModelMapper modelMapper,  UserRepository userRepository, CapsuleAccessRepository capsuleAccessRepository) {
         this.capsuleAccessService = capsuleAccessService;
         this.modelMapper = modelMapper;
+        this.capsuleAccessRepository = capsuleAccessRepository;
+        this.userRepository = userRepository;
     }
 
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        logger.debug("Getting authenticated user: {}", username);
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> {
+                    logger.error("User not found during authentication: {}", username);
+                    return new UsernameNotFoundException("User not found");
+                });
+    }
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<CapsuleAccessDTO> grantAccess(@Valid @RequestBody GrantAccessRequest request, Authentication authentication) {
@@ -104,6 +121,48 @@ public class CapsuleAccessController {
         } catch (Exception e) {
             logger.error("Unexpected error updating access role: {}", e.getMessage(), e);
             throw new DatabaseOperationException("Error processing access role update", e);
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<UserSearchDTO>> searchUsers(
+            @RequestParam String query,
+            @RequestParam(required = false) Long excludeCapsuleId,
+            Authentication authentication) {
+
+        logger.info("Searching users with query: {}", query);
+
+        try {
+            // Get current user
+            UserEntity currentUser = getAuthenticatedUser(authentication);
+
+            // Search users (username, email, or name contains query, excluding current user)
+            List<UserEntity> users = userRepository.searchUsers(query, currentUser.getId());
+
+            // If capsuleId is provided, exclude users who already have access
+            if (excludeCapsuleId != null) {
+                List<Long> existingUserIds = capsuleAccessRepository.findUserIdsWithAccessToCapsule(excludeCapsuleId);
+                users = users.stream()
+                        .filter(user -> !existingUserIds.contains(user.getId()))
+                        .collect(Collectors.toList());
+            }
+
+            // Convert to DTO
+            List<UserSearchDTO> results = users.stream()
+                    .map(user -> new UserSearchDTO(
+                            user.getId(),
+                            user.getUsername(),
+                            user.getName(),
+                            user.getEmail(),
+                            user.getProfilePicture()
+                    ))
+                    .collect(Collectors.toList());
+
+            logger.info("Found {} users matching query", results.size());
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            logger.error("Error searching users: {}", e.getMessage(), e);
+            throw new DatabaseOperationException("Error searching users", e);
         }
     }
 
@@ -212,7 +271,5 @@ public class CapsuleAccessController {
         }
     }
 
-    // Since we're using @ControllerAdvice for global exception handling,
-    // we can remove the controller-specific exception handlers.
-    // The global handlers will be used instead.
+
 }

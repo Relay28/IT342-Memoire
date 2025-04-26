@@ -2,6 +2,7 @@ package com.example.memoire.adapter
 
 import android.content.Context
 import android.content.Intent
+import android.media.Image
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatImageButton
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.CapsuleDetailActivity
+import com.example.memoire.GrantAccessDialog
 import com.example.memoire.LockCapsuleDialogFragment
 import com.example.memoire.R
 import com.example.memoire.api.RetrofitClient
@@ -43,6 +45,7 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         val deleteButton: ImageView = view.findViewById(R.id.ivDelete)
         val statusIcon: TextView = view.findViewById(R.id.tvStatus)
         val viewDetailsButton: ImageButton = view.findViewById(R.id.btnViewDetails)
+        val shareButton: ImageButton = view.findViewById(R.id.ivShare)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CapsuleViewHolder {
@@ -120,6 +123,13 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
 
         holder.deleteButton.setOnClickListener {
             showDeleteConfirmationDialog(capsule, position)
+        }
+
+        holder.shareButton.setOnClickListener {
+            val context = holder.itemView.context
+            GrantAccessDialog(context, capsule.id!!) {
+                // Optional: refresh the list if needed
+            }.show()
         }
     }
 

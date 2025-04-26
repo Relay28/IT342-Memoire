@@ -35,4 +35,11 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     @Query("SELECT u.fcmToken FROM UserEntity u WHERE u.id = :userId")
     String findFcmTokenByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT u FROM UserEntity u WHERE " +
+            "(LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+            "LOWER(u.name) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+            "AND u.id != :excludeUserId")
+    List<UserEntity> searchUsers(@Param("query") String query, @Param("excludeUserId") Long excludeUserId);
 }
