@@ -11,6 +11,7 @@ import TimeCapsuleService from '../services/TimeCapsuleService';
 import { useCapsuleContent } from '../context/CapsuleWebContextProvider';
 import CommentServices from "../services/CommentServices";
 import CommentReactionService from "../services/CommentReactionService";
+import MediaCarousel from './MediaShower/MediaCarousel';
 
 const Homepage = () => {
   // Context and hooks
@@ -66,24 +67,6 @@ const Homepage = () => {
     setExpandedComments(prev => ({
       ...prev,
       [capsuleId]: !prev[capsuleId]
-    }));
-  };
-
-  const fetchUserData = async (userId) => {
-    try {
-      // You'll need to implement this service based on your API
-      const userData = await UserService.getUserById(userId);
-      return userData || { id: userId, username: 'Unknown User' };
-    } catch (error) {
-      console.error(`Error fetching user ${userId}:`, error);
-      return { id: userId, username: 'Unknown User' };
-    }
-  };
-
-  const toggleCommentDropdown = (commentId) => {
-    setCommentDropdownOpen(prev => ({
-      ...prev,
-      [commentId]: !prev[commentId]
     }));
   };
 
@@ -654,31 +637,11 @@ return (
 
                       {/* Media gallery */}
                       {capsuleMedia.length > 0 && (
-                        <div className="grid grid-cols-3 gap-2 mt-4 rounded-lg overflow-hidden">
-                          {capsuleMedia.slice(0, 3).map((media, index) => {
-                            const mediaUrl = media.url || bgmemoire;
-                            const isImage = media.contentType?.startsWith('image/') || 
-                                          mediaUrl.match(/\.(jpeg|jpg|gif|png|webp)$/i) !== null;
-                            
-                            return isImage ? (
-                              <div key={media.id || index} className="aspect-square overflow-hidden">
-                                <img 
-                                  src={mediaUrl} 
-                                  alt={`Capsule content ${index + 1}`} 
-                                  className="h-full w-full object-cover hover:scale-105 transition-transform duration-300"
-                                  onError={(e) => {
-                                    e.target.src = bgmemoire;
-                                    e.target.onerror = null;
-                                  }}
-                                  loading="lazy"
-                                />
-                              </div>
-                            ) : (
-                              <div key={media.id || index} className="aspect-square bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center">
-                                <span className="text-gray-500 dark:text-gray-400">Media</span>
-                              </div>
-                            );
-                          })}
+                        <div className="mt-4 rounded-lg overflow-hidden">
+                          <MediaCarousel 
+                            mediaItems={capsuleMedia} 
+                            fallback={bgmemoire}
+                          />
                         </div>
                       )}
 

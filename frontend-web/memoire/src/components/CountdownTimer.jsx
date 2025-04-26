@@ -110,8 +110,8 @@ const CountdownTimerPage = () => {
           <main className="flex-1 overflow-y-auto p-8">
             <div className="max-w-4xl mx-auto">
               <div className="mb-8">
-                <h1 className={`text-3xl font-light ${isDark ? 'text-white' : 'text-gray-900'} mb-2`}>
-                  Sealed Time Capsules
+                <h1 className={`text-3xl font-bold mb-8 ${isDark ? 'text-white' : 'text-gray-900'} mb-2`}>
+                  Time Capsules Countdown
                 </h1>
                 <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   {closedCapsules.length} capsule{closedCapsules.length !== 1 ? 's' : ''} waiting to be opened
