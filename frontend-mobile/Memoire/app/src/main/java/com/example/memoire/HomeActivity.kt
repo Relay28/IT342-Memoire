@@ -58,9 +58,6 @@ class HomeActivity : BaseActivity() {
         adapter = PublishedCapsulesAdapter(emptyList()) { /* No click action needed */ }
         recyclerView.adapter = adapter
 
-        // Fetch published capsules
-        fetchPublishedCapsules()
-
 
 
 
@@ -82,6 +79,7 @@ class HomeActivity : BaseActivity() {
         }
         setupHeaderActions()
         setupBottomNavigation(R.id.navigation_tags)
+        fetchPublishedCapsules()
 
 
     }

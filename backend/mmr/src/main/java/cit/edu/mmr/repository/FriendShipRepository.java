@@ -35,7 +35,20 @@ public interface FriendShipRepository extends JpaRepository<FriendShipEntity, Lo
     boolean existsByUserAndFriend(UserEntity user, UserEntity friend);
     Optional<FriendShipEntity> findByUserAndFriend(UserEntity user, UserEntity friend);
 
+
+    @Query("SELECT f FROM FriendShipEntity f WHERE f.user = :user AND f.Status = :Status")
+    List<FriendShipEntity> findByUserAndStatusCustom(@Param("user") UserEntity user, @Param("Status") String Status);
+
+    @Query("SELECT f FROM FriendShipEntity f WHERE f.friend = :friend AND f.Status = :Status")
+    List<FriendShipEntity> findByFriendAndStatusCustom(@Param("friend") UserEntity friend, @Param("Status") String Status);
     // Additional useful methods
     List<FriendShipEntity> findByUser(UserEntity user);
     List<FriendShipEntity> findByFriend(UserEntity friend);
+
+    @Query("SELECT f FROM FriendShipEntity f WHERE " +
+            "(f.user = :user1 OR f.friend = :user2) AND f.Status = :statusParam")
+    List<FriendShipEntity> findByUserOrFriendAndStatus(
+            @Param("user1") UserEntity user,
+            @Param("user2") UserEntity friend,
+            @Param("statusParam") String Status);
 }

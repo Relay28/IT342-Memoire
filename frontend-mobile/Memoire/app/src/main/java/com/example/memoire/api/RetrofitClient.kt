@@ -15,6 +15,9 @@ object RetrofitClient {
     const val BASE_URL = "http://192.168.1.8:8080/"
 
     private lateinit var sessionManager: SessionManager
+    fun getAuthToken(): String {
+        return (sessionManager.getUserSession()["token"] ?: throw IllegalStateException("Auth token not set")).toString()
+    }
 
     fun init(context: Context) {
         sessionManager = SessionManager(context)

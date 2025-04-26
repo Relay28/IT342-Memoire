@@ -18,10 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Date;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class FriendShipService {
@@ -84,6 +81,32 @@ public class FriendShipService {
 
         return friendship;
 
+    }
+
+    public List<UserEntity> getFriendsList(Authentication auth) {
+        logger.info("Retrieving friends list for user: {}", auth.getName());
+        UserEntity user = getAuthenticatedUser(auth);
+
+        // Get friendships where the current user is either the sender or receiver
+        // and the status is "Friends"
+        List<FriendShipEntity> friendshipsAsUser = friendShipRepository.findByUserAndStatusCustom(user, "Friends");
+        List<FriendShipEntity> friendshipsAsFriend = friendShipRepository.findByFriendAndStatusCustom(user, "Friends");
+
+        // Extract the friend user entities from the friendships
+        List<UserEntity> friends = new ArrayList<>();
+
+        // Add friends where the current user is the sender
+        for (FriendShipEntity friendship : friendshipsAsUser) {
+            friends.add(friendship.getFriend());
+        }
+
+        // Add friends where the current user is the receiver
+        for (FriendShipEntity friendship : friendshipsAsFriend) {
+            friends.add(friendship.getUser());
+        }
+
+        logger.debug("Found {} friends for user {}", friends.size(), user.getUsername());
+        return friends;
     }
 
     @Cacheable(value = "contentMetadata", key = "'friendship_' + #id")
@@ -216,6 +239,8 @@ public class FriendShipService {
         friendshipOpt = friendShipRepository.findByUserAndFriend(friend, user);
         return friendshipOpt.isPresent() && "Pending".equalsIgnoreCase(friendshipOpt.get().getStatus());
     }
+
+
 
     @Transactional
     public void cancelRequest(long friendId, Authentication auth) {

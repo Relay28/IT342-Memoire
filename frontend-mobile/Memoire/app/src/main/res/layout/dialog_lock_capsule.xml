@@ -4,69 +4,88 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="24dp"
+    android:minWidth="300dp"
+    android:background="@android:color/white">
 
+    <!-- Title -->
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/set_unlock_date_time"
-        android:textSize="18sp"
+        android:textColor="@android:color/black"
+        android:textSize="20sp"
         android:textStyle="bold"
         android:gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="24dp"/>
 
-    <LinearLayout
+    <!-- Date Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelectDate"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginBottom="16dp"
+        android:textSize="16sp"
+        android:text="Select Date"
+        android:textColor="@android:color/black"
+        app:icon="@drawable/ic_calendar"
+        app:iconTint="@color/MemoireRed"
+        app:strokeColor="@color/MemoireRed"
+        app:strokeWidth="1dp"/>
+
+    <!-- Time Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSelectTime"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginBottom="16dp"
+        android:textSize="16sp"
+        android:text="Select Time"
+        android:textColor="@android:color/black"
+        app:icon="@drawable/ic_clock"
+        app:iconTint="@color/MemoireRed"
+        app:strokeColor="@color/MemoireRed"
+        app:strokeWidth="1dp"/>
+
+    <!-- Access Control Section -->
+    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="8dp">
+        android:text="Who can access this capsule?"
+        android:textColor="@android:color/black"
+        android:textSize="16sp"
+        android:layout_marginBottom="8dp"/>
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSelectDate"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Select Date"
-            app:icon="@drawable/ic_calendar"
-            app:iconGravity="textStart"/>
-
-        <TextView
-            android:id="@+id/tvSelectedDate"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="Not selected"
-            android:textSize="16sp"/>
-    </LinearLayout>
-
-    <LinearLayout
+    <RadioGroup
+        android:id="@+id/accessRadioGroup"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginBottom="16dp">
+        android:layout_marginBottom="16dp"
+        android:orientation="vertical">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSelectTime"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
+        <RadioButton
+            android:id="@+id/radioPrivate"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Select Time"
-            app:icon="@drawable/ic_clock"
-            app:iconGravity="textStart"/>
+            android:text="Only me"
+            android:checked="true"/>
 
-        <TextView
-            android:id="@+id/tvSelectedTime"
-            android:layout_width="0dp"
+        <RadioButton
+            android:id="@+id/radioFriends"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="Not selected"
-            android:textSize="16sp"/>
-    </LinearLayout>
+            android:text="All my friends"/>
 
+        <RadioButton
+            android:id="@+id/radioSpecific"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Specific friends"/>
+    </RadioGroup>
+
+    <!-- Action Buttons -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -77,17 +96,21 @@
             android:id="@+id/btnCancel"
             style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:layout_weight="1"
-            android:text="Cancel"/>
+            android:textSize="16sp"
+            android:text="Cancel"
+            android:textColor="@android:color/black"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirm"
             style="@style/Widget.MaterialComponents.Button"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:layout_weight="1"
+            android:textSize="16sp"
             android:text="Confirm"
+            android:textColor="@android:color/white"
             android:enabled="false"
             app:backgroundTint="@color/MemoireRed"/>
     </LinearLayout>

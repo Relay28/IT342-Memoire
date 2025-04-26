@@ -2,14 +2,18 @@ package com.example.memoire.api
 
 import com.example.memoire.models.AuthenticationRequest
 import com.example.memoire.models.AuthenticationResponse
+import com.example.memoire.models.CapsuleAccessDTO
 import com.example.memoire.models.CountdownDTO
+import com.example.memoire.models.GrantAccessRequest
 import com.example.memoire.models.LockRequest
 import com.example.memoire.models.NotificationDTO
 import com.example.memoire.models.NotificationEntity
 import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.RegisterRequest
 import com.example.memoire.models.TimeCapsuleDTO
+import com.example.memoire.models.UpdateRoleRequest
 import com.example.memoire.models.UserEntity
+import com.example.memoire.models.UserSearchDTO
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Call
@@ -140,6 +144,70 @@ interface ApiService {
     suspend fun registerFcmToken(
         @Body request: Map<String, String>
     ): Response<Void>
+
+
+
+
+    // Add this data class
+
+    // Add these to your ApiService interface
+    @POST("api/capsule-access")
+    fun grantAccess(@Body request: GrantAccessRequest): Call<CapsuleAccessDTO>
+
+    @PUT("api/capsule-access/{accessId}/role")
+    fun updateAccessRole(
+        @Path("accessId") accessId: Long,
+        @Body request: UpdateRoleRequest
+    ): Call<CapsuleAccessDTO>
+
+    @DELETE("api/capsule-access/{accessId}")
+    fun removeAccess(@Path("accessId") accessId: Long): Call<Void>
+
+    @GET("api/capsule-access/capsule/{capsuleId}")
+    fun getCapsuleAccesses(@Path("capsuleId") capsuleId: Long): Call<List<CapsuleAccessDTO>>
+
+    @GET("api/capsule-access/user/{userId}")
+    fun getUserAccesses(@Path("userId") userId: Long): Call<List<CapsuleAccessDTO>>
+
+    @GET("api/capsule-access/check")
+    fun checkAccess(
+        @Query("capsuleId") capsuleId: Long,
+        @Query("role") role: String
+    ): Call<Boolean>
+
+    @GET("api/profiles/search")
+    fun searchProfiles(
+        @Query("query") query: String,
+        @Query("page") page: Int = 0,
+        @Query("size") size: Int = 10
+    ): Call<Map<String, Any>>
+    //CapsuleAccess
+
+
+        @GET("api/profiles/search")
+        fun searchUsersForGrantAccess(
+            @Query("query") query: String,
+            @Query("page") page: Int = 0,
+            @Query("size") size: Int = 10
+        ): Call<Map<String, Any>>
+
+    @POST("api/auth/logout")
+    fun logout(@Header("Authorization") authToken: String): Call<ResponseBody>
+
+    // Add this to your ApiService interface
+    // Add to ApiService interface
+    @GET("api/friendships/friends")
+    fun getFriendsList(): Call<List<UserEntity>>
+
+    @POST("api/capsule-access/grant-to-friends/{capsuleId}")
+    fun grantAccessToAllFriends(
+        @Path("capsuleId") capsuleId: Long,
+        @Query("role") role: String
+    ): Call<List<CapsuleAccessDTO>>
+
+    @POST("api/capsule-access")
+    fun grantAccessToSpecificFriends(@Body request: GrantAccessRequest): Call<CapsuleAccessDTO>
+
 }
 data class AuthenticationRequest(val username: String, val password: String)
 data class GoogleAuthRequest(val idToken: String)

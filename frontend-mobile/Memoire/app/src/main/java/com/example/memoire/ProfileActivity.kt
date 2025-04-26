@@ -4,8 +4,10 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
+import android.view.MenuItem
 import android.view.View
 import android.widget.ImageView
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -103,6 +105,50 @@ class ProfileActivity : AppCompatActivity() {
             override fun onFailure(call: Call<UserEntity>, t: Throwable) {
                 showLoading(false)
                 Log.e(TAG, "Network error", t)
+                Toast.makeText(this@ProfileActivity, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    fun showMenu(v: View) {
+        val popup = PopupMenu(this, v)
+        popup.menuInflater.inflate(R.menu.profile_menu, popup.menu)
+
+        popup.setOnMenuItemClickListener { item: MenuItem ->
+            when (item.itemId) {
+                R.id.menu_logout -> {
+                    logoutUser()
+                    true
+                }
+                else -> false
+            }
+        }
+
+        popup.show()
+    }
+
+    private fun logoutUser() {
+        showLoading(true)
+        val sessionManager = SessionManager(this)
+        val token = sessionManager.getUserSession()["token"].toString()
+
+        RetrofitClient.instance.logout("Bearer $token").enqueue(object : Callback<ResponseBody> {
+            override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
+                showLoading(false)
+                if (response.isSuccessful) {
+                    // Clear user session and navigate to login
+                    sessionManager.logoutUser()
+                    val intent = Intent(this@ProfileActivity, MainActivity::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    finish()
+                } else {
+                    handleApiError(response.code(), "Logout failed")
+                }
+            }
+
+            override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
+                showLoading(false)
                 Toast.makeText(this@ProfileActivity, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })

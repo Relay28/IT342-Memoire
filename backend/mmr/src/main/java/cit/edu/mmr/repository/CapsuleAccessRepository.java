@@ -16,7 +16,8 @@ import java.util.Optional;
 public interface CapsuleAccessRepository extends JpaRepository<CapsuleAccessEntity, Long> {
     // Find all users with access to a specific capsule
     List<CapsuleAccessEntity> findByCapsule(TimeCapsuleEntity capsule);
-
+    @Query("SELECT ca.user.id FROM CapsuleAccessEntity ca WHERE ca.capsule.id = :capsuleId")
+    List<Long> findUserIdsWithAccessToCapsule(@Param("capsuleId") Long capsuleId);
     Optional<CapsuleAccessEntity> findByCapsuleAndUser(TimeCapsuleEntity capsule, UserEntity user);
 
     boolean existsByUserIdAndCapsuleIdAndRole(Long userId, Long capsuleId, String role);

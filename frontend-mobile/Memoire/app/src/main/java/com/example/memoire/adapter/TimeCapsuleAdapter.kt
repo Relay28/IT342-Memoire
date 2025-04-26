@@ -1,27 +1,33 @@
 package com.example.memoire.adapter
 
+import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.DatePicker
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.TimePicker
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.AppCompatImageButton
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.CapsuleDetailActivity
-import com.example.memoire.LockCapsuleDialogFragment
+import com.example.memoire.GrantAccessDialog
 import com.example.memoire.R
 import com.example.memoire.api.RetrofitClient
+import com.example.memoire.models.CapsuleAccessDTO
+import com.example.memoire.models.GrantAccessRequest
 import com.example.memoire.models.LockRequest
 import com.example.memoire.models.TimeCapsuleDTO
+import com.example.memoire.models.UserEntity
 import com.example.memoire.utils.DateUtils
-import com.google.android.material.button.MaterialButton
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import retrofit2.Call
 import retrofit2.Callback
@@ -31,18 +37,29 @@ import java.util.*
 class TimeCapsuleAdapter(private val context: Context, private var capsules: MutableList<TimeCapsuleDTO>) :
     RecyclerView.Adapter<TimeCapsuleAdapter.CapsuleViewHolder>() {
 
+    // Track if we're currently loading friend data to prevent multiple API calls
+    private var loadingFriends = false
+    private var friendsList: List<UserEntity> = emptyList()
+
+    sealed class AccessType {
+        object Private : AccessType()
+        object AllFriends : AccessType()
+        data class SpecificFriends(val friendIds: List<Long>) : AccessType()
+    }
+
     inner class CapsuleViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val cardView: MaterialCardView = view.findViewById(R.id.cardView)
         val title: TextView = view.findViewById(R.id.tvTitle)
         val description: TextView = view.findViewById(R.id.tvDescription)
         val createdDate: TextView = view.findViewById(R.id.tvCreatedDate)
-        val unlockDate: TextView = view.findViewById(R.id.tvUnlockDate) // 🔁 Renamed
+        val unlockDate: TextView = view.findViewById(R.id.tvUnlockDate)
         val status: TextView = view.findViewById(R.id.tvStatus)
         val editButton: ImageButton = view.findViewById(R.id.btnEdit)
         val publishButton: ImageButton = view.findViewById(R.id.btnPublish)
         val deleteButton: ImageView = view.findViewById(R.id.ivDelete)
         val statusIcon: TextView = view.findViewById(R.id.tvStatus)
         val viewDetailsButton: ImageButton = view.findViewById(R.id.btnViewDetails)
+        val shareButton: ImageButton = view.findViewById(R.id.ivShare)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CapsuleViewHolder {
@@ -66,7 +83,6 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         } else {
             holder.unlockDate.visibility = View.GONE
         }
-
 
         // Set status and icon
         holder.status.text = capsule.status
@@ -92,7 +108,6 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
                 holder.publishButton.isEnabled = false
             }
         }
-
 
         // Set click listeners
         holder.cardView.setOnClickListener {
@@ -121,6 +136,13 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         holder.deleteButton.setOnClickListener {
             showDeleteConfirmationDialog(capsule, position)
         }
+
+        holder.shareButton.setOnClickListener {
+            val context = holder.itemView.context
+            GrantAccessDialog(context, capsule.id!!) {
+                // Optional: refresh the list if needed
+            }.show()
+        }
     }
 
     override fun getItemCount() = capsules.size
@@ -138,37 +160,175 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         }
     }
 
+    // Integrated lock dialog functionality directly into adapter
     private fun showLockDialog(capsuleId: Long) {
-        val dialog = LockCapsuleDialogFragment { selectedDate ->
-            lockTimeCapsule(capsuleId, selectedDate)
+        // If we don't have friends list yet, start loading it
+        if (friendsList.isEmpty() && !loadingFriends) {
+            loadingFriends = true
+            loadFriends()
         }
 
-        // Ensure we're using the FragmentManager from an AppCompatActivity
-        if (context is AppCompatActivity) {
-            dialog.show(context.supportFragmentManager, "LockCapsuleDialog")
-        } else {
-            Toast.makeText(context, "Error: Could not show lock dialog", Toast.LENGTH_SHORT).show()
+        // Create a bottom sheet dialog for better UX
+        val dialog = BottomSheetDialog(context)
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_lock_capsule, null)
+        dialog.setContentView(dialogView)
+
+        // Initialize date/time elements
+        val btnSelectDate = dialogView.findViewById<TextView>(R.id.btnSelectDate)
+        val btnSelectTime = dialogView.findViewById<TextView>(R.id.btnSelectTime)
+        val btnConfirm = dialogView.findViewById<View>(R.id.btnConfirm)
+        val btnCancel = dialogView.findViewById<View>(R.id.btnCancel)
+        val radioPrivate = dialogView.findViewById<View>(R.id.radioPrivate)
+        val radioFriends = dialogView.findViewById<View>(R.id.radioFriends)
+        val radioSpecific = dialogView.findViewById<View>(R.id.radioSpecific)
+        val accessRadioGroup = dialogView.findViewById<View>(R.id.accessRadioGroup)
+
+        // Initialize with current time + 1 hour as default
+        val selectedCalendar = Calendar.getInstance().apply {
+            add(Calendar.HOUR_OF_DAY, 1)
         }
+
+        // Update the date/time display
+        fun updateDateTimeDisplay() {
+            val dateText = android.text.format.DateFormat.format("MMM dd, yyyy", selectedCalendar.time).toString()
+            btnSelectDate.text = dateText
+
+            val timeText = android.text.format.DateFormat.format("hh:mm a", selectedCalendar.time).toString()
+            btnSelectTime.text = timeText
+
+            // Enable confirm button only if date is in future
+            val now = Calendar.getInstance()
+            btnConfirm.isEnabled = selectedCalendar.timeInMillis > now.timeInMillis
+        }
+
+        // Initialize the date/time display
+        updateDateTimeDisplay()
+
+        // Set up date picker
+        btnSelectDate.setOnClickListener {
+            val datePicker = DatePickerDialog(
+                context,
+                { _, year, month, day ->
+                    selectedCalendar.set(year, month, day)
+                    updateDateTimeDisplay()
+                },
+                selectedCalendar.get(Calendar.YEAR),
+                selectedCalendar.get(Calendar.MONTH),
+                selectedCalendar.get(Calendar.DAY_OF_MONTH)
+            )
+            // Set minimum date to tomorrow (can't lock for past dates)
+            val minCalendar = Calendar.getInstance()
+            datePicker.datePicker.minDate = minCalendar.timeInMillis
+            datePicker.show()
+        }
+
+        // Set up time picker
+        btnSelectTime.setOnClickListener {
+            TimePickerDialog(
+                context,
+                { _, hour, minute ->
+                    selectedCalendar.set(Calendar.HOUR_OF_DAY, hour)
+                    selectedCalendar.set(Calendar.MINUTE, minute)
+                    updateDateTimeDisplay()
+                },
+                selectedCalendar.get(Calendar.HOUR_OF_DAY),
+                selectedCalendar.get(Calendar.MINUTE),
+                false
+            ).show()
+        }
+
+        // Handle confirm button
+        btnConfirm.setOnClickListener {
+            val accessType = when (accessRadioGroup.id) {
+                R.id.radioPrivate -> AccessType.Private
+                R.id.radioFriends -> AccessType.AllFriends
+                R.id.radioSpecific -> {
+                    showFriendSelectionUI(capsuleId, selectedCalendar.time)
+                    dialog.dismiss()
+                    return@setOnClickListener
+                }
+                else -> AccessType.Private
+            }
+
+            lockCapsuleWithAccess(capsuleId, selectedCalendar.time, accessType)
+            dialog.dismiss()
+        }
+
+        // Handle cancel button
+        btnCancel.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        // Handle specific friends radio button
+        radioSpecific.setOnClickListener {
+            if (friendsList.isEmpty()) {
+                Toast.makeText(context, "Loading friends...", Toast.LENGTH_SHORT).show()
+                loadFriends()
+            }
+        }
+
+        dialog.show()
     }
 
-    private fun lockTimeCapsule(capsuleId: Long, openDate: Date) {
-        // No need to convert - just send the date as local time
-        // The formatForApi method already handles the conversion to UTC
-        val formattedDate = DateUtils.formatForApi(openDate)
+    private fun loadFriends() {
+        RetrofitClient.instance.getFriendsList().enqueue(object : Callback<List<UserEntity>> {
+            override fun onResponse(call: Call<List<UserEntity>>, response: Response<List<UserEntity>>) {
+                loadingFriends = false
+                if (response.isSuccessful) {
+                    friendsList = response.body() ?: emptyList()
+                } else {
+                    Toast.makeText(context, "Failed to load friends", Toast.LENGTH_SHORT).show()
+                }
+            }
 
-        // Log for debugging
-        Log.d("TimeCapsule", "Local time selected: ${DateUtils.formatDateForDisplay(openDate)} ${DateUtils.formatTimeForDisplay(openDate)}")
-        Log.d("TimeCapsule", "Formatted for API as: $formattedDate")
+            override fun onFailure(call: Call<List<UserEntity>>, t: Throwable) {
+                loadingFriends = false
+                Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
 
-        // Create lock request with properly formatted date
+    private fun showFriendSelectionUI(capsuleId: Long, unlockDate: Date) {
+        if (friendsList.isEmpty()) {
+            Toast.makeText(context, "No friends available", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // This is where you'd show your FriendSelectionDialogFragment
+        // For simplicity, I'm using a basic dialog instead
+        val friendNames = friendsList.map { it.username }.toTypedArray()
+        val checkedItems = BooleanArray(friendNames.size) { false }
+
+        AlertDialog.Builder(context)
+            .setTitle("Select Friends")
+            .setMultiChoiceItems(friendNames, checkedItems) { _, _, _ -> }
+            .setPositiveButton("Confirm") { dialog, _ ->
+                val selectedFriendIds = mutableListOf<Long>()
+                for (i in checkedItems.indices) {
+                    if (checkedItems[i]) {
+                        selectedFriendIds.add(friendsList[i].id)
+                    }
+                }
+                lockCapsuleWithAccess(capsuleId, unlockDate, AccessType.SpecificFriends(selectedFriendIds))
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun lockCapsuleWithAccess(capsuleId: Long, unlockDate: Date, accessType: AccessType) {
+        val formattedDate = DateUtils.formatForApi(unlockDate)
         val lockRequest = LockRequest(openDate = formattedDate)
+
+        Log.d("TimeCapsule", "Local time selected: ${DateUtils.formatDateForDisplay(unlockDate)} ${DateUtils.formatTimeForDisplay(unlockDate)}")
+        Log.d("TimeCapsule", "Formatted for API as: $formattedDate")
 
         RetrofitClient.instance.lockTimeCapsule(capsuleId, lockRequest).enqueue(
             object : Callback<Void> {
                 override fun onResponse(call: Call<Void>, response: Response<Void>) {
                     if (response.isSuccessful) {
+                        handleAccessAfterLock(capsuleId, accessType)
                         Toast.makeText(context, "Capsule locked successfully", Toast.LENGTH_SHORT).show()
-                        refreshCapsuleData()
+                        fetchUpdatedCapsules()
                     } else {
                         Toast.makeText(context, "Failed to lock capsule: ${response.code()}", Toast.LENGTH_SHORT).show()
                         try {
@@ -188,10 +348,97 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         )
     }
 
-    private fun refreshCapsuleData() {
-        // You might want to implement a callback to notify the activity to refresh data
-        // For now, we'll just notify the adapter that data might have changed
-        notifyDataSetChanged()
+    private fun handleAccessAfterLock(capsuleId: Long, accessType: AccessType) {
+        when (accessType) {
+            is AccessType.AllFriends -> {
+                grantAccessToAllFriends(capsuleId)
+            }
+            is AccessType.SpecificFriends -> {
+                if (accessType.friendIds.isNotEmpty()) {
+                    grantAccessToSpecificFriends(capsuleId, accessType.friendIds)
+                }
+            }
+            else -> {
+                // Private - no action needed
+            }
+        }
+    }
+
+    private fun grantAccessToAllFriends(capsuleId: Long) {
+        RetrofitClient.instance.grantAccessToAllFriends(capsuleId, "VIEWER")
+            .enqueue(object : Callback<List<CapsuleAccessDTO>> {
+                override fun onResponse(
+                    call: Call<List<CapsuleAccessDTO>>,
+                    response: Response<List<CapsuleAccessDTO>>
+                ) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(
+                            context,
+                            "Access granted to all friends",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Failed to grant access to all friends",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<List<CapsuleAccessDTO>>, t: Throwable) {
+                    Toast.makeText(
+                        context,
+                        "Error: ${t.message}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            })
+    }
+
+    private fun grantAccessToSpecificFriends(capsuleId: Long, friendIds: List<Long>) {
+        friendIds.forEach { friendId ->
+            val request = GrantAccessRequest(capsuleId, friendId, "VIEWER")
+            RetrofitClient.instance.grantAccessToSpecificFriends(request)
+                .enqueue(object : Callback<CapsuleAccessDTO> {
+                    override fun onResponse(
+                        call: Call<CapsuleAccessDTO>,
+                        response: Response<CapsuleAccessDTO>
+                    ) {
+                        if (!response.isSuccessful) {
+                            Toast.makeText(
+                                context,
+                                "Failed to grant access to some friends",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<CapsuleAccessDTO>, t: Throwable) {
+                        Toast.makeText(
+                            context,
+                            "Error: ${t.message}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                })
+        }
+    }
+
+    private fun fetchUpdatedCapsules() {
+        // Call the API to get the updated list of capsules
+        RetrofitClient.instance.getUnpublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
+            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+                if (response.isSuccessful) {
+                    val newCapsules = response.body() as? MutableList<TimeCapsuleDTO> ?: mutableListOf()
+                    updateData(newCapsules)
+                }
+            }
+
+            override fun onFailure(call: Call<List<TimeCapsuleDTO>>, t: Throwable) {
+                Toast.makeText(context, "Failed to refresh capsules: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     private fun showDeleteConfirmationDialog(capsule: TimeCapsuleDTO, position: Int) {
