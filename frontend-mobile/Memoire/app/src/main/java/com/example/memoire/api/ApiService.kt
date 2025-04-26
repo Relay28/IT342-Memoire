@@ -191,7 +191,8 @@ interface ApiService {
             @Query("size") size: Int = 10
         ): Call<Map<String, Any>>
 
-
+    @POST("api/auth/logout")
+    fun logout(@Header("Authorization") authToken: String): Call<ResponseBody>
 
 }
 data class AuthenticationRequest(val username: String, val password: String)
