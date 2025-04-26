@@ -4,9 +4,10 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { FiLock, FiShare2, FiUsers, FiEye, FiPlus, FiArrowLeft } from 'react-icons/fi';
 import { useTimeCapsule } from '../hooks/useTimeCapsule';
-import { useAuth } from './AuthProvider';
+import { useAuth } from '../components/AuthProvider';
 import CapsuleContentGallery from './MediaShower/CapsuleContentGallery';
 import { useThemeMode } from '../context/ThemeContext';
+import ShareModal from './modals/ShareModal'; // Import your ShareModal component
 
 export default function CreateCapsule() {
   const { isDark } = useThemeMode();
@@ -17,8 +18,9 @@ export default function CreateCapsule() {
   const [capsuleData, setCapsuleData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false); // State for modal visibility
   
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth(); // Destructure user from useAuth
   const { getTimeCapsule, updateTimeCapsule } = useTimeCapsule();
 
   // Save changes automatically with debounce
@@ -149,7 +151,11 @@ export default function CreateCapsule() {
                   <FiLock className="text-sm" />
                 </button>
                 
-                <button className="flex items-center space-x-1 bg-gradient-to-r from-[#AF3535] to-red-600 text-white px-3 py-1.5 rounded-md text-sm hover:from-[#AF3535] hover:to-red-700 transition-all shadow-sm">
+                <button 
+                  onClick={() => setShowShareModal(true)}
+                  className="flex items-center space-x-1 bg-gradient-to-r from-[#AF3535] to-red-600 text-white px-3 py-1.5 rounded-md text-sm hover:from-[#AF3535] hover:to-red-700 transition-all shadow-sm"
+                >
+                  
                   <FiShare2 className="text-xs" />
                   <span>Share</span>
                 </button>
@@ -191,6 +197,15 @@ export default function CreateCapsule() {
           </div>
         </main>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && capsuleData && user && (
+        <ShareModal 
+        title={capsuleData.title} 
+        onClose={() => setShowShareModal(false)} 
+        capsuleData={capsuleData}
+        />
+      )}
     </div>
   );
 }
