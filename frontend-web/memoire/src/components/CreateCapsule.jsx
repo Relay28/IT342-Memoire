@@ -4,9 +4,10 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { FiLock, FiShare2, FiUsers, FiEye, FiPlus, FiArrowLeft } from 'react-icons/fi';
 import { useTimeCapsule } from '../hooks/useTimeCapsule';
-import { useAuth } from './AuthProvider';
+import { useAuth } from '../components/AuthProvider';
 import CapsuleContentGallery from './MediaShower/CapsuleContentGallery';
 import { useThemeMode } from '../context/ThemeContext';
+import ShareModal from './modals/ShareModal'; // Import your ShareModal component
 
 export default function CreateCapsule() {
   const { isDark } = useThemeMode();
@@ -17,8 +18,9 @@ export default function CreateCapsule() {
   const [capsuleData, setCapsuleData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showShareModal, setShowShareModal] = useState(false); // State for modal visibility
   
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth(); // Destructure user from useAuth
   const { getTimeCapsule, updateTimeCapsule } = useTimeCapsule();
 
   // Save changes automatically with debounce
@@ -72,7 +74,7 @@ export default function CreateCapsule() {
         <div className="flex flex-1 h-screen overflow-hidden">
           <Sidebar />
           <main className={`flex-1 overflow-y-auto p-6 flex items-center justify-center ${isDark ? 'text-gray-300' : ''}`}>
-            <div>Loading capsule details...</div>
+            <div className="animate-pulse">Loading capsule details...</div>
           </main>
         </div>
       </div>
@@ -86,7 +88,9 @@ export default function CreateCapsule() {
         <div className="flex flex-1 h-screen overflow-hidden">
           <Sidebar />
           <main className={`flex-1 overflow-y-auto p-6 flex items-center justify-center ${isDark ? 'text-gray-300' : ''}`}>
-            <div className="text-red-500">Error: {error}</div>
+            <div className="p-4 rounded-lg bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200">
+              Error: {error}
+            </div>
           </main>
         </div>
       </div>
@@ -100,86 +104,108 @@ export default function CreateCapsule() {
       <div className="flex flex-1 h-screen overflow-hidden">
         <Sidebar />
         
-        <main className={`flex-1 overflow-y-auto p-6 ${isDark ? 'bg-gray-800' : ''}`}>
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              <button 
-                onClick={() => navigate('/capsules')}
-                className={`mr-4 p-2 rounded-full hover:bg-gray-100 ${
-                  isDark ? 'text-gray-300 hover:text-red-500 hover:bg-gray-700' : 'text-gray-600 hover:text-red-600'
-                }`}
-              >
-                <FiArrowLeft className="text-lg" />
-              </button>
-              <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-gray-800'}`}>
-                {capsuleData ? capsuleData.title : 'Create your capsule'}
-              </h1>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className={`flex items-center space-x-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
-                  isDark ? 'bg-gray-700' : 'bg-gray-100'
-                }`}>
-                  <FiUsers className="text-red-600" />
-                  <span className="text-sm">3</span>
-                </div>
-                
-                <div className={`flex items-center space-x-1 px-2 py-1 rounded ${
-                  isDark ? 'bg-gray-700' : 'bg-gray-100'
-                }`}>
-                  <FiEye className="text-red-600" />
-                  <span className="text-sm">5</span>
-                </div>
-              </div>
-              
-              <button className={`p-2 transition-colors ${
-                isDark ? 'text-gray-300 hover:text-red-500' : 'text-gray-600 hover:text-red-600'
-              }`}>
-                <FiLock className="text-lg" />
-              </button>
-              
-              <button className="flex items-center space-x-2 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
-                <FiShare2 />
-                <span>Share</span>
-              </button>
-            </div>
-          </div>
-          
-          <div className={`border-t my-4 ${isDark ? 'border-gray-700' : 'border-gray-200'}`}></div>
-
-          <div className={`space-y-6 p-6 rounded-lg shadow-sm ${
-            isDark ? 'bg-gray-700' : 'bg-white'
-          }`}>
-            <div>
-              <input
+        <main className={`flex-1 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+          {/* Header Section */}
+          <div className={`sticky top-1 z-10 p-6 pb-4 ${isDark ? 'bg-gray-800' : 'bg-gray-50'} shadow-sm`}>
+            <div className="flex flex-col space-y-4">
+              <div className="flex items-center justify-between">
+                <button 
+                  onClick={() => navigate('/capsules')}
+                  className={`flex items-center space-x-2 p-2 rounded-lg transition-colors ${
+                    isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  <FiArrowLeft className="text-lg" />
+                  
+                </button>
+                <input
                 type="text"
-                placeholder="Title"
-                className={`w-full text-2xl font-bold p-2 border-b focus:outline-none focus:border-red-600 ${
-                  isDark ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'border-gray-200'
+                placeholder="Capsule Title"
+                className={`w-full text-lg font-bold p-2 focus:outline-none ${
+                  isDark ? 'bg-gray-800 text-white placeholder-gray-500' : 'bg-gray-50 text-gray-900 placeholder-gray-400'
                 }`}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
               />
+                
+                <div className="flex items-center space-x-3">
+                <div className={`flex items-center space-x-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                  <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
+                    isDark ? 'bg-gray-700' : 'bg-gray-100'
+                  }`}>
+                    <FiUsers className="text-[#AF3535] text-sm" />
+                    <span>3</span>
+                  </div>
+                  
+                  <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
+                    isDark ? 'bg-gray-700' : 'bg-gray-100'
+                  }`}>
+                    <FiEye className="text-[#AF3535] text-sm" />
+                    <span>5</span>
+                  </div>
+                </div>
+                
+                <button className={`p-1.5 rounded-full transition-colors ${
+                  isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                }`}>
+                  <FiLock className="text-sm" />
+                </button>
+                
+                <button 
+                  onClick={() => setShowShareModal(true)}
+                  className="flex items-center space-x-1 bg-gradient-to-r from-[#AF3535] to-red-600 text-white px-3 py-1.5 rounded-md text-sm hover:from-[#AF3535] hover:to-red-700 transition-all shadow-sm"
+                >
+                  
+                  <FiShare2 className="text-xs" />
+                  <span>Share</span>
+                </button>
+              </div>
+              
+              </div>
             </div>
-            
-            <div>
+          </div>
+          
+          {/* Content Area */}
+          <div className="p-6 space-y-6">
+            {/* Description Section */}
+            <div className={`rounded-xl p-6 ${isDark ? 'bg-gray-700' : 'bg-white'} shadow-sm`}>
+              <h2 className={`text-lg font-semibold mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                Description
+              </h2>
               <input
                 type="text"
-                placeholder="Description"
-                className={`w-full text-lg p-2 border-b focus:outline-none focus:border-red-600 ${
-                  isDark ? 'bg-gray-700 text-white border-gray-600 placeholder-gray-400' : 'border-gray-200'
+                placeholder="What's this capsule about?"
+                className={`w-full p-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-red-500 ${
+                  isDark ? 'bg-gray-600 text-white border-gray-500 placeholder-gray-400' : 'border-gray-200'
                 }`}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
             </div>
-          
-            {/* Integrated MediaViewer component */}
-            <CapsuleContentGallery capsuleId={id} />
+            
+            {/* Media Gallery Section */}
+            <div className={`rounded-xl overflow-hidden ${isDark ? 'bg-gray-700' : 'bg-white'} shadow-sm`}>
+              <div className={`p-6 border-b ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
+                <h2 className={`text-lg font-semibold ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Media Content
+                </h2>
+              </div>
+              <div className="p-4">
+                <CapsuleContentGallery capsuleId={id} />
+              </div>
+            </div>
           </div>
         </main>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && capsuleData && user && (
+        <ShareModal 
+        title={capsuleData.title} 
+        onClose={() => setShowShareModal(false)} 
+        capsuleData={capsuleData}
+        />
+      )}
     </div>
   );
 }

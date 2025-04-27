@@ -2,16 +2,23 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../components/AuthProvider';
 
+const API_BASE_URL = 'http://localhost:8080/api/reports';
+ // Update this to match your Spring Boot backend URL
+
 const ServiceReportCapsule = () => {
     const { authToken } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const createReport = async (reportData) => {
+    const createReport = async (reportedID, itemType) => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.post('/api/reports', reportData, {
+            const response = await axios.post(`${API_BASE_URL}`, {
+                reportedID,
+                itemType,
+                status: 'Pending'
+            }, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`,
                     'Content-Type': 'application/json'
@@ -30,7 +37,7 @@ const ServiceReportCapsule = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get(`/api/reports/${reportId}`, {
+            const response = await axios.get(`${API_BASE_URL}/${reportId}`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`
                 }
@@ -48,7 +55,7 @@ const ServiceReportCapsule = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get(`/api/reports/reporter/${reporterId}`, {
+            const response = await axios.get(`${API_BASE_URL}/reporter/${reporterId}`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`
                 }
@@ -66,7 +73,7 @@ const ServiceReportCapsule = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get(`/api/reports/itemType/${itemType}`, {
+            const response = await axios.get(`${API_BASE_URL}/itemType/${itemType}`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`
                 }
@@ -84,7 +91,7 @@ const ServiceReportCapsule = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.put(`/api/reports/${reportId}/status`, null, {
+            const response = await axios.put(`${API_BASE_URL}/${reportId}/status`, null, {
                 params: { status },
                 headers: {
                     'Authorization': `Bearer ${authToken}`
@@ -103,7 +110,7 @@ const ServiceReportCapsule = () => {
         try {
             setLoading(true);
             setError(null);
-            await axios.delete(`/api/reports/${reportId}`, {
+            await axios.delete(`${API_BASE_URL}/${reportId}`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`
                 }
@@ -121,7 +128,7 @@ const ServiceReportCapsule = () => {
         try {
             setLoading(true);
             setError(null);
-            const response = await axios.get(`/api/reports/${reportId}/entity`, {
+            const response = await axios.get(`${API_BASE_URL}/${reportId}/entity`, {
                 headers: {
                     'Authorization': `Bearer ${authToken}`
                 }

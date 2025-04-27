@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -254,6 +255,9 @@ public class TimeCapsuleService {
         capsule.setOpenDate(null);
         capsule.setStatus("UNPUBLISHED");
         capsule.setLocked(false);
+        if ("CLOSED".equals(capsule.getStatus())) {
+            capsule.setStatus("UNPUBLISHED");
+        }
         tcRepo.save(capsule);
     }
 
@@ -345,5 +349,41 @@ public class TimeCapsuleService {
         return accessibleCapsules.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    public void archiveTimeCapsule(Long id, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        TimeCapsuleEntity capsule = tcRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
+
+        if (!(capsule.getCreatedBy().getId() == (user.getId()))) {
+            throw new AccessDeniedException("You do not have permission to archive this capsule");
+        }
+
+        // Only allow archiving of published capsules
+        if (!"PUBLISHED".equals(capsule.getStatus())) {
+            throw new IllegalStateException("Only published capsules can be archived");
+        }
+
+        capsule.setStatus("ARCHIVED");
+        tcRepo.save(capsule);
+    }
+    // Add this to your TimeCapsuleService.java
+    public void publishTimeCapsule(Long id, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        TimeCapsuleEntity capsule = tcRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
+
+        if (!(capsule.getCreatedBy().getId() == (user.getId()))) {
+            throw new AccessDeniedException("You do not have permission to publish this capsule");
+        }
+
+        // Only allow publishing of archived capsules
+        if (!"ARCHIVED".equals(capsule.getStatus())) {
+            throw new IllegalStateException("Only archived capsules can be published");
+        }
+
+        capsule.setStatus("PUBLISHED");
+        tcRepo.save(capsule);
     }
 }
