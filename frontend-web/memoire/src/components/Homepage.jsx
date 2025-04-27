@@ -556,7 +556,7 @@ return (
                     className={`rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md ${isDark ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}
                   >
                     {/* Capsule header with options */}
-                    <div className="p-5 pb-0 flex justify-between items-start">
+                    <div className="p-6 pb-0 flex justify-between items-start">
                       <div className="flex items-center space-x-3">
                         <img 
                           src={user?.profilePicture || ProfilePictureSample} 
@@ -617,18 +617,23 @@ return (
                     </div>
 
                     {/* Capsule content */}
-                    <div className="p-5">
-                      <h3 className="text-xl font-bold mb-2">{capsule.title || `Memories from ${new Date(capsule.createdAt).getFullYear()}`}</h3>
-                      <div className='pt-4 border-t border-gray-100 dark:border-gray-700'>
-                      <time className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                              Created on {new Date(capsule.createdAt).toLocaleDateString()}
-                            </time>
-                      </div>
+                    <div className="p-6">
+                    <hr className={` ${isDark ? 'border-gray-600' : 'border-gray-200'}`} />
+                    <div className="my-4">
+                          <div className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                            {capsule.title || 'Untitled Capsule'}
+                          </div>
+                          <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Created on {new Date(capsule.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <p className={isDark ? 'text-gray-300' : 'text-gray-700'}>
+                          {capsule.description || 'No message content'}
+                        </p>
                       
                       
-                      {capsule.description && (
-                        <p className="mb-4 text-gray-600 dark:text-gray-300">{capsule.description}</p>
-                      )}
+                      
+                    
                       
                       {capsule.message && (
                         <div className={`p-4 rounded-lg mb-4 ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>

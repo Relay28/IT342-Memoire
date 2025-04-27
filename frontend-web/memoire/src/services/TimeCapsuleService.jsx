@@ -121,6 +121,20 @@ class TimeCapsuleService {
     }
   }
 
+  // Add this to your TimeCapsuleService
+async publishTimeCapsule(id, authToken) {
+  try {
+    return await axios.patch(`${API_URL}/${id}/publish`, {}, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    });
+  } catch (error) {
+    this.handleError(`Error publishing time capsule with ID ${id}`, error);
+    throw error;
+  }
+}
+
   /**
    * Gets all ARCHIVED time capsules
    * @param {string} authToken - The authentication token
@@ -263,7 +277,6 @@ async archiveTimeCapsule(id, authToken) {
       throw error;
     }
   }
-
   /**
    * Standardized error handling for API requests
    * @param {string} message - The error message
@@ -286,6 +299,8 @@ async archiveTimeCapsule(id, authToken) {
     }
   }
 }
+
+
 
 // Create and export a singleton instance
 const timeCapsuleService = new TimeCapsuleService();
