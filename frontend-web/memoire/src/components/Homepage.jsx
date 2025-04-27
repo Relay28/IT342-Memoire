@@ -558,7 +558,7 @@ return (
                     <div className="p-5 pb-0 flex justify-between items-start">
                       <div className="flex items-center space-x-3">
                         <img 
-                          src={capsule.user?.profilePicture || ProfilePictureSample} 
+                          src={user?.profilePicture || ProfilePictureSample} 
                           alt="user" 
                           className="h-10 w-10 rounded-full object-cover"
                           onError={(e) => {
@@ -566,7 +566,7 @@ return (
                           }}
                         />
                         <div>
-                          <h2 className="font-semibold">{capsule.user?.fullName || capsule.user?.username || 'Unknown User'}</h2>
+                          <h2 className="font-semibold">{user?.fullName || user?.username || 'Unknown User'}</h2>
                           <time className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                               Opened on {new Date(capsule.openDate).toLocaleDateString()}
                             </time>
@@ -719,13 +719,13 @@ return (
                         {expandedComments[capsule.id] && (
                           <div className="space-y-4">
                             {capsuleComments.map(comment => {
-                              const isCurrentUsersComment = comment.user?.id === user?.id;
+                              const isCurrentUsersComment = user?.id === user?.id;
                               
                               return (
                                 <div key={comment.id} className="flex items-start group">
                                   <img
-                                    src={comment.user?.profilePicture || ProfilePictureSample}
-                                    alt={comment.user?.username || "User"}
+                                    src={user?.profilePicture || ProfilePictureSample}
+                                    alt={user?.username || "User"}
                                     className="h-8 w-8 rounded-full mr-3 flex-shrink-0"
                                     onError={(e) => {
                                       e.target.src = ProfilePictureSample;
@@ -735,7 +735,7 @@ return (
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline">
                                       <span className={`font-semibold text-sm mr-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
-                                        {comment.user?.username || "Unknown User"}
+                                        {user?.username || "Unknown User"}
                                       </span>
                                       <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                                         {formatTimeAgo(comment.createdAt)}
