@@ -15,6 +15,7 @@ import com.example.memoire.adapters.UserAdapter
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.com.example.memoire.HomeActivity
 import com.example.memoire.models.ProfileDTO
+import com.example.memoire.models.ProfileDTO2
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,7 +27,7 @@ class SearchActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var searchInput: EditText
 
-    private var fullUserList = listOf<ProfileDTO>()
+    private var fullUserList = listOf<ProfileDTO2>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -73,7 +73,7 @@ class RegisterActivity : AppCompatActivity() {
                         val authResponse = response.body()
                         Toast.makeText(this@RegisterActivity, "Registration Successful!", Toast.LENGTH_SHORT).show()
                         // 🔹 Navigate to another activity after login
-                        val intent = Intent(this@RegisterActivity, HomeActivity::class.java)
+                        val intent = Intent(this@RegisterActivity, MainActivity::class.java)
                         startActivity(intent)
                         finish()
                     } else {

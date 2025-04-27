@@ -82,6 +82,17 @@ public class FriendShipService {
         return friendship;
 
     }
+    public List<FriendShipEntity> getReceivedFriendRequests(Authentication auth) {
+        logger.info("Retrieving received friend requests for user: {}", auth.getName());
+        UserEntity user = getAuthenticatedUser(auth);
+
+        // Get friendships where the current user is the receiver
+        // and the status is "Pending"
+        List<FriendShipEntity> receivedRequests = friendShipRepository.findByFriendAndStatusCustom(user, "Pending");
+
+        logger.debug("Found {} received friend requests for user {}", receivedRequests.size(), user.getUsername());
+        return receivedRequests;
+    }
 
     public List<UserEntity> getFriendsList(Authentication auth) {
         logger.info("Retrieving friends list for user: {}", auth.getName());

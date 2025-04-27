@@ -43,12 +43,12 @@ abstract class BaseActivity : AppCompatActivity() {
                     true
                 }
 
-//                R.id.navigation_friendList -> {
-//                    if (this !is FriendListActivity) {
-//                        navigateTo(FriendListActivity::class.java)
-//                    }
-//                    true
-//                }
+                R.id.navigation_friendList -> {
+                    if (this !is FriendListActivity) {
+                        navigateTo(FriendListActivity::class.java)
+                    }
+                    true
+                }
                 R.id.navigation_timer -> {
                     if (this !is LockedCapsulesActivity) {
                         navigateTo(LockedCapsulesActivity::class.java)

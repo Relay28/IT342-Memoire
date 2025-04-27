@@ -8,6 +8,7 @@ import com.example.memoire.models.GrantAccessRequest
 import com.example.memoire.models.LockRequest
 import com.example.memoire.models.NotificationEntity
 import com.example.memoire.models.ProfileDTO
+import com.example.memoire.models.ProfileDTO2
 import com.example.memoire.models.RegisterRequest
 import com.example.memoire.models.SearchResponse
 import com.example.memoire.models.TimeCapsuleDTO
@@ -33,6 +34,9 @@ interface ApiService {
     // Profile endpoint for accessing other users' profiles
     @GET("api/profiles/view/{userId}")
     fun getPublicProfile(@Path("userId") userId: Long): Call<ProfileDTO>
+
+    @GET("api/profiles/view/{userId}")
+    fun getPublicProfile2(@Path("userId") userId: Long): Call<ProfileDTO2>
 
     // For User Search
     @GET("api/profiles/search")

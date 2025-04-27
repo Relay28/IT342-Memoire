@@ -19,6 +19,7 @@ import java.util.NoSuchElementException;
 
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.ResponseEntity.*;
+
 @RestController
 @RequestMapping("/api/friendships")
 public class FriendshipController {
@@ -138,6 +139,17 @@ public class FriendshipController {
             return new ResponseEntity<>(isReceiver, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error checking receiver status: {}", e.getMessage(), e);
+            return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/requests/received")
+    public ResponseEntity<?> getReceivedFriendRequests(Authentication auth) {
+        try {
+            List<FriendShipEntity> pendingRequests = friendShipService.getReceivedFriendRequests(auth);
+            return new ResponseEntity<>(pendingRequests, HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Error retrieving received friend requests: {}", e.getMessage(), e);
             return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
         }
     }
