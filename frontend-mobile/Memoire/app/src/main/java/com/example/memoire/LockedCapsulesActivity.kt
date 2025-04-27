@@ -46,7 +46,7 @@ class LockedCapsulesActivity : BaseActivity() {
         setupViews()
         loadLockedCapsules()
         setupHeaderActions()
-        setupBottomNavigation(R.id.navigation_tags)
+        setupBottomNavigation(R.id.navigation_timer)
     }
 
     private fun setupViews() {

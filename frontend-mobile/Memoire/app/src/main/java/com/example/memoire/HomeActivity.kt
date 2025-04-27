@@ -82,7 +82,7 @@ class HomeActivity : BaseActivity() {
             finish()
         }
         setupHeaderActions()
-        setupBottomNavigation(R.id.navigation_tags)
+        setupBottomNavigation(R.id.navigation_home)
         fetchPublishedCapsules()
 
 
