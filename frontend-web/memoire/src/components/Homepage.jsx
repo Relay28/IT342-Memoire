@@ -95,27 +95,28 @@ const fetchCapsules = useCallback(async () => {
         const capsuleComments = await CommentServices.getCommentsByCapsule(capsule.id);
 
         // Fetch reactions for each comment
-        const commentsWithReactions = await Promise.all(
-          (capsuleComments || []).map(async (comment) => {
-            try {
-              const reactions = await CommentReactionService.getReactionsByCommentId(comment.id);
-              return {
-                ...comment,
-                userId: comment.userId, // Ensure userId is included
-                reactions: {
-                  love: reactions.filter(r => r.type === 'love').map(r => r.userId),
-                },
-              };
-            } catch (err) {
-              console.error(`Error fetching reactions for comment ${comment.id}:`, err);
-              return {
-                ...comment,
-                userId: comment.userId, // Ensure userId is included
-                reactions: { love: [] },
-              };
-            }
-          })
-        );
+        // In fetchCapsules function:
+const commentsWithReactions = await Promise.all(
+  (capsuleComments || []).map(async (comment) => {
+    try {
+      const reactions = await CommentReactionService.getReactionsByCommentId(comment.id);
+      return {
+        ...comment,
+        userId: comment.userId, // Ensure userId is included
+        reactions: {
+          love: reactions.filter(r => r.type === 'love').map(r => r.userId),
+        },
+      };
+    } catch (err) {
+      console.error(`Error fetching reactions for comment ${comment.id}:`, err);
+      return {
+        ...comment,
+        userId: comment.userId, // Ensure userId is included
+        reactions: { love: [] },
+      };
+    }
+  })
+);
         
         initialComments[capsule.id] = commentsWithReactions;
       } catch (err) {
@@ -258,14 +259,14 @@ const fetchCapsules = useCallback(async () => {
       
       // Update local state with the new comment
       // In handleCommentSubmit, update the new comment state:
-setComments(prev => ({
-  ...prev,
-  [capsuleId]: [...(prev[capsuleId] || []), {
-    ...comment,
-    userId: user.id, // Include userId
-    reactions: { love: [] }
-  }]
-}));
+      setComments(prev => ({
+        ...prev,
+        [capsuleId]: [...(prev[capsuleId] || []), {
+          ...comment,
+          userId: user.id, // Ensure userId is included
+          reactions: { love: [] }
+        }]
+      }));
       
       // Clear input
       setNewComment(prev => ({
@@ -328,7 +329,7 @@ setComments(prev => ({
   
       if (userReaction) {
         // Unlike
-        await CommentReactionService.deleteReaction(userReaction.id, authToken);
+        await CommentReactionService.deleteReaction(userReaction.reaction_id, authToken);
       } else {
         // Like
         await CommentReactionService.addReaction(commentId, reactionType, authToken);
@@ -794,7 +795,7 @@ return (
                                                                           
                                       
                                      {/* In the comment rendering */}
-{(comment.userId === user?.id) && (
+                                     {(user?.id) && (
   <div className="flex space-x-3">
     <button
       onClick={() => handleStartEdit(comment.id, comment.text)}
