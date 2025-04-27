@@ -139,7 +139,7 @@ public class ProfileService {
         ProfileDTO profileDTO = new ProfileDTO();
         profileDTO.setUserId(user.getId());
         profileDTO.setUsername(user.getUsername());
-        profileDTO.setProfilePicture(user.getProfilePicture());
+        profileDTO.setProfilePicture(user.getProfilePictureData());
         profileDTO.setCreatedAt(user.getCreatedAt());
         profileDTO.setBiography(user.getBiography());
 

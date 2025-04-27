@@ -77,7 +77,7 @@ public class AuthenticationController {
                 userEntity = new UserEntity();
                 userEntity.setEmail(email);
                 userEntity.setUsername(username);
-                userEntity.setRole("USER");
+                userEntity.setRole("ROLE_USER");
                 userEntity.setActive(true);
                 userEntity.setPassword("N/A"); // OAuth users don't use passwords
                 userEntity.setCreatedAt(new Date());

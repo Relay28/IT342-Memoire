@@ -6,8 +6,8 @@
         android:title=""
       />
     <item
-        android:id="@+id/navigation_stats"
-        android:icon="@drawable/ic_stats"
+        android:id="@+id/navigation_friendList"
+        android:icon="@drawable/ic_friend"
         android:title="" />
     <item
         android:id="@+id/navigation_add"

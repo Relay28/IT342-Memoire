@@ -113,7 +113,7 @@ public class ProfileController {
             profileDTO.setUserId(user.getId());
             profileDTO.setUsername(user.getUsername());
             profileDTO.setEmail(user.getEmail());
-            profileDTO.setProfilePicture(user.getProfilePicture());
+            profileDTO.setProfilePicture(user.getProfilePictureData());
             profileDTO.setCreatedAt(user.getCreatedAt());
             profileDTO.setRole(user.getRole());
             profileDTO.setOauthUser(user.isOauthUser());

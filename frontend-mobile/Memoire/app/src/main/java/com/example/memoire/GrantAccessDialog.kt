@@ -139,7 +139,7 @@ class GrantAccessDialog(
     private fun searchUsers(query: String) {
         binding.tvNoResults.visibility = View.GONE
 
-        RetrofitClient.instance.searchProfiles(query).enqueue(
+        RetrofitClient.instance.searchProfiles2(query).enqueue(
             object : Callback<Map<String, Any>> {
                 override fun onResponse(call: Call<Map<String, Any>>, response: Response<Map<String, Any>>) {
                     if (response.isSuccessful) {

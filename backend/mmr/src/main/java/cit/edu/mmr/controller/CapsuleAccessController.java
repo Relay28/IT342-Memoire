@@ -188,7 +188,7 @@ public class CapsuleAccessController {
                             user.getUsername(),
                             user.getName(),
                             user.getEmail(),
-                            user.getProfilePicture()
+                            user.getProfilePictureData()
                     ))
                     .collect(Collectors.toList());
 

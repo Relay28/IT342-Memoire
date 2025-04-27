@@ -2,11 +2,15 @@ package com.example.memoire
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.widget.ImageView
@@ -39,6 +43,7 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 
@@ -51,10 +56,13 @@ class EditProfileActivity : AppCompatActivity() {
     private lateinit var bioField: TextInputEditText
     private lateinit var progressIndicator: CircularProgressIndicator
     private lateinit var saveButton: TextView
+    private lateinit var sessionManager: SessionManager
 
-    private val REQUEST_STORAGE_PERMISSION = 100
+    private val REQUEST_READ_EXTERNAL_STORAGE = 100
+    private val REQUEST_CAMERA = 101
+    private val REQUEST_IMAGE_CAPTURE = 102
     private val TAG = "EditProfileActivity"
-    private val API_BASE_URL = "http://192.168.1.8:8080/" // Define the API base URL here or get it from a config
+    private val API_BASE_URL = RetrofitClient.BASE_URL
 
     // Activity result launcher for image picking
     private val pickImageLauncher = registerForActivityResult(
@@ -63,7 +71,19 @@ class EditProfileActivity : AppCompatActivity() {
         if (result.resultCode == Activity.RESULT_OK) {
             result.data?.data?.let { uri ->
                 selectedImageUri = uri
-                profileImageView.setImageURI(uri)
+                loadSelectedImage(uri)
+            }
+        }
+    }
+
+    private val takePictureLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val imageBitmap = result.data?.extras?.get("data") as? Bitmap
+            imageBitmap?.let { bitmap ->
+                selectedImageUri = getImageUriFromBitmap(bitmap)
+                profileImageView.setImageBitmap(bitmap)
             }
         }
     }
@@ -78,7 +98,12 @@ class EditProfileActivity : AppCompatActivity() {
             insets
         }
 
-        // Initialize UI components
+        sessionManager = SessionManager(this)
+        initializeViews()
+        fetchCurrentUser()
+    }
+
+    private fun initializeViews() {
         usernameField = findViewById(R.id.et_username)
         nameField = findViewById(R.id.et_name)
         bioField = findViewById(R.id.et_bio)
@@ -89,69 +114,54 @@ class EditProfileActivity : AppCompatActivity() {
         val changePhotoText = findViewById<TextView>(R.id.tv_change_photo)
         val editOverlay = findViewById<android.widget.FrameLayout>(R.id.iv_edit_overlay)
 
-        // Fetch the current user data and populate the fields
-        fetchCurrentUser()
-
-        // Set click listener for image selection via text
-        changePhotoText.setOnClickListener {
+        // Single click listener for both change photo options
+        val imageSelectionListener = View.OnClickListener {
             if (checkStoragePermission()) {
-                openImagePicker()
+                showImageSourceDialog()
             } else {
                 requestStoragePermission()
             }
         }
 
-        // Set click listener for image selection via overlay
-        editOverlay.setOnClickListener {
-            if (checkStoragePermission()) {
-                openImagePicker()
-            } else {
-                requestStoragePermission()
-            }
-        }
+        changePhotoText.setOnClickListener(imageSelectionListener)
+        editOverlay.setOnClickListener(imageSelectionListener)
 
-        // Back button functionality
         findViewById<android.widget.ImageButton>(R.id.btn_back).setOnClickListener {
             finish()
         }
 
-        // Save button click listener
         saveButton.setOnClickListener {
-            // Show loading indicator
-            showLoading(true)
+            saveProfileChanges()
+        }
+    }
 
-            // Check if user attempted to change username
-            if (usernameField.text.toString() != currentUser.username) {
-                // Show an error message
-                Toast.makeText(this, "Username cannot be changed", Toast.LENGTH_SHORT).show()
-                // Reset the username field to current value
-                usernameField.setText(currentUser.username)
-                showLoading(false)
-                return@setOnClickListener
-            }
+    private fun saveProfileChanges() {
+        showLoading(true)
 
-            // Create updated profile object
-            val updatedProfile = ProfileDTO(
-                id = currentUser.id,
-                username = currentUser.username,
-                name = nameField.text.toString(),
-                email = currentUser.email,
-                biography = bioField.text.toString()
-            )
+        if (usernameField.text.toString() != currentUser.username) {
+            Toast.makeText(this, "Username cannot be changed", Toast.LENGTH_SHORT).show()
+            usernameField.setText(currentUser.username)
+            showLoading(false)
+            return
+        }
 
-            // Handle profile update with or without image
-            if (selectedImageUri != null) {
-                uploadProfileImage(updatedProfile)
-            } else {
-                updateUserProfile(updatedProfile)
-            }
+        val updatedProfile = ProfileDTO(
+            id = currentUser.id,
+            username = currentUser.username,
+            name = nameField.text.toString(),
+            email = currentUser.email,
+            biography = bioField.text.toString()
+        )
+
+        if (selectedImageUri != null) {
+            uploadProfileImage(updatedProfile)
+        } else {
+            updateUserProfile(updatedProfile)
         }
     }
 
     private fun fetchCurrentUser() {
-        val sessionManager = SessionManager(this)
-        val token = sessionManager.getUserSession()["token"]
-        if (token == null) {
+        val token = sessionManager.getUserSession()["token"] ?: run {
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -159,13 +169,11 @@ class EditProfileActivity : AppCompatActivity() {
 
         showLoading(true)
 
-        // Use Retrofit client to fetch current user data
         RetrofitClient.instance.getCurrentUser("Bearer $token").enqueue(object : Callback<UserEntity> {
             override fun onResponse(call: Call<UserEntity>, response: Response<UserEntity>) {
                 showLoading(false)
                 if (response.isSuccessful) {
-                    val user = response.body()
-                    if (user != null) {
+                    response.body()?.let { user ->
                         currentUser = user
                         populateUserData(user)
                     }
@@ -183,37 +191,27 @@ class EditProfileActivity : AppCompatActivity() {
     }
 
     private fun populateUserData(user: UserEntity) {
-        // Set fields
         usernameField.setText(user.username)
-        // Make username field non-editable
         usernameField.isEnabled = false
         usernameField.setTextColor(getColor(R.color.gray))
 
         nameField.setText(user.name ?: "")
         bioField.setText(user.biography ?: "")
 
-        // Load profile image if available
-        user.profilePicture?.let { imageUrl ->
-            if (imageUrl.isNotEmpty()) {
-                loadProfileImage()
-            }
-        }
+        loadProfileImage()
     }
 
     private fun loadProfileImage() {
-        val sessionManager = SessionManager(this)
         val token = sessionManager.getUserSession()["token"] ?: return
 
         try {
-            // Create a GlideUrl with headers for authorization
             val glideUrl = GlideUrl(
-                "$API_BASE_URL/api/users/profile-picture",
+                "$API_BASE_URL/api/users/profile-picture/${currentUser.id}",
                 LazyHeaders.Builder()
                     .addHeader("Authorization", "Bearer $token")
                     .build()
             )
 
-            // Use Glide to load the image with the header
             Glide.with(this)
                 .load(glideUrl)
                 .placeholder(R.drawable.default_profile)
@@ -225,10 +223,22 @@ class EditProfileActivity : AppCompatActivity() {
         }
     }
 
+    private fun loadSelectedImage(uri: Uri) {
+        try {
+            Glide.with(this)
+                .load(uri)
+                .placeholder(R.drawable.default_profile)
+                .error(R.drawable.default_profile)
+                .circleCrop()
+                .into(profileImageView)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error loading selected image", e)
+            Toast.makeText(this, "Error loading image", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun updateUserProfile(profile: ProfileDTO) {
-        val sessionManager = SessionManager(this)
-        val token = sessionManager.getUserSession()["token"]
-        if (token == null) {
+        val token = sessionManager.getUserSession()["token"] ?: run {
             showLoading(false)
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
             return
@@ -236,7 +246,6 @@ class EditProfileActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Use Retrofit client to update user profile
                 val response = RetrofitClient.instance.updateUser("Bearer $token", profile)
                 withContext(Dispatchers.Main) {
                     showLoading(false)
@@ -258,90 +267,109 @@ class EditProfileActivity : AppCompatActivity() {
     }
 
     private fun uploadProfileImage(profile: ProfileDTO) {
-        val sessionManager = SessionManager(this)
-        val token = sessionManager.getUserSession()["token"]
-        if (token == null) {
+        val token = sessionManager.getUserSession()["token"] ?: run {
             showLoading(false)
             Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show()
             return
         }
 
-        try {
-            // Get the file from the URI
-            val imageFile = getFileFromUri(selectedImageUri!!)
-            if (imageFile == null) {
-                showLoading(false)
-                Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show()
-                return
-            }
+        selectedImageUri?.let { uri ->
+            try {
+                val imageFile = getFileFromUri(uri) ?: run {
+                    showLoading(false)
+                    Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show()
+                    return
+                }
 
-            // Create request body
-            val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
-            val imagePart = MultipartBody.Part.createFormData("profileImg", imageFile.name, requestFile)
+                val requestFile = imageFile.asRequestBody("image/*".toMediaTypeOrNull())
+                val imagePart = MultipartBody.Part.createFormData("profileImg", imageFile.name, requestFile)
 
-            // Upload the image using Retrofit client
-            CoroutineScope(Dispatchers.IO).launch {
-                try {
-                    val response = RetrofitClient.instance.uploadProfileImage("Bearer $token", imagePart)
-
-                    // After image upload, update the rest of the profile
-                    withContext(Dispatchers.Main) {
-                        if (response.isSuccessful) {
-                            updateUserProfile(profile)
-                        } else {
+                CoroutineScope(Dispatchers.IO).launch {
+                    try {
+                        val response = RetrofitClient.instance.uploadProfileImage("Bearer $token", imagePart)
+                        withContext(Dispatchers.Main) {
+                            if (response.isSuccessful) {
+                                updateUserProfile(profile)
+                            } else {
+                                showLoading(false)
+                                handleApiError(response.code(), "Failed to upload image")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        withContext(Dispatchers.Main) {
                             showLoading(false)
-                            handleApiError(response.code(), "Failed to upload image")
+                            Log.e(TAG, "Image upload error", e)
+                            Toast.makeText(this@EditProfileActivity, "Image upload error: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
                     }
-                } catch (e: Exception) {
-                    withContext(Dispatchers.Main) {
-                        showLoading(false)
-                        Log.e(TAG, "Image upload error", e)
-                        Toast.makeText(this@EditProfileActivity, "Image upload error: ${e.message}", Toast.LENGTH_SHORT).show()
-                    }
                 }
+            } catch (e: Exception) {
+                showLoading(false)
+                Log.e(TAG, "Error processing image", e)
+                Toast.makeText(this, "Error processing image: ${e.message}", Toast.LENGTH_SHORT).show()
             }
-        } catch (e: Exception) {
+        } ?: run {
             showLoading(false)
-            Log.e(TAG, "Error processing image", e)
-            Toast.makeText(this, "Error processing image: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "No image selected", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun getFileFromUri(uri: Uri): File? {
-        try {
+        return try {
             val inputStream = contentResolver.openInputStream(uri) ?: return null
             val file = File(cacheDir, "profile_image_${System.currentTimeMillis()}.jpg")
 
             FileOutputStream(file).use { outputStream ->
-                val buffer = ByteArray(4 * 1024) // 4k buffer
+                val buffer = ByteArray(4 * 1024)
                 var read: Int
                 while (inputStream.read(buffer).also { read = it } != -1) {
                     outputStream.write(buffer, 0, read)
                 }
                 outputStream.flush()
             }
-
-            return file
+            file
         } catch (e: Exception) {
             Log.e(TAG, "Error converting URI to file", e)
-            return null
+            null
         }
     }
 
+    private fun getImageUriFromBitmap(bitmap: Bitmap): Uri {
+        val bytes = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, bytes)
+        val path = MediaStore.Images.Media.insertImage(contentResolver, bitmap, "Profile", null)
+        return Uri.parse(path)
+    }
+
+    // Permission handling methods
     private fun checkStoragePermission(): Boolean {
-        return ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.READ_EXTERNAL_STORAGE
-        ) == PackageManager.PERMISSION_GRANTED
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_MEDIA_IMAGES
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED
+        }
     }
 
     private fun requestStoragePermission() {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-            REQUEST_STORAGE_PERMISSION
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_MEDIA_IMAGES),
+                REQUEST_READ_EXTERNAL_STORAGE
+            )
+        } else {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
+                REQUEST_READ_EXTERNAL_STORAGE
+            )
+        }
     }
 
     override fun onRequestPermissionsResult(
@@ -350,22 +378,83 @@ class EditProfileActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_STORAGE_PERMISSION && grantResults.isNotEmpty() &&
-            grantResults[0] == PackageManager.PERMISSION_GRANTED
-        ) {
-            openImagePicker()
-        } else {
-            Toast.makeText(
-                this,
-                "Permission required to select profile image",
-                Toast.LENGTH_SHORT
-            ).show()
+        when (requestCode) {
+            REQUEST_READ_EXTERNAL_STORAGE -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    showImageSourceDialog()
+                } else {
+                    if (ActivityCompat.shouldShowRequestPermissionRationale(
+                            this,
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                Manifest.permission.READ_MEDIA_IMAGES
+                            } else {
+                                Manifest.permission.READ_EXTERNAL_STORAGE
+                            }
+                        )
+                    ) {
+                        showPermissionExplanationDialog()
+                    } else {
+                        showPermissionPermanentlyDeniedDialog()
+                    }
+                }
+            }
+            REQUEST_CAMERA -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    openCamera()
+                }
+            }
         }
     }
 
-    private fun openImagePicker() {
+    private fun showImageSourceDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Change Profile Photo")
+            .setItems(arrayOf("Take Photo", "Choose from Gallery")) { _, which ->
+                when (which) {
+                    0 -> openCamera()
+                    1 -> openGallery()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun openGallery() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
         pickImageLauncher.launch(intent)
+    }
+
+    private fun openCamera() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQUEST_CAMERA)
+        } else {
+            val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            takePictureIntent.resolveActivity(packageManager)?.let {
+                takePictureLauncher.launch(takePictureIntent)
+            } ?: Toast.makeText(this, "No camera app found", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showPermissionExplanationDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Permission Needed")
+            .setMessage("This permission is required to change your profile picture")
+            .setPositiveButton("Grant") { _, _ -> requestStoragePermission() }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showPermissionPermanentlyDeniedDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Permission Denied")
+            .setMessage("Please enable permission in app settings to change your profile picture")
+            .setPositiveButton("Settings") { _, _ ->
+                val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                intent.data = Uri.fromParts("package", packageName, null)
+                startActivity(intent)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun showLoading(isLoading: Boolean) {
@@ -382,7 +471,6 @@ class EditProfileActivity : AppCompatActivity() {
             422 -> "Invalid data provided."
             else -> "$defaultMessage (Error $code)"
         }
-
         Snackbar.make(findViewById(R.id.editProfileView), message, Snackbar.LENGTH_LONG).show()
     }
 }

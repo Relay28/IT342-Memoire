@@ -4,6 +4,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -226,7 +227,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
 
                     // Check if current user is the owner
                     val currentUserId = sessionManager.getUserSession()["userId"]
-                    isOwner = currentUserId == capsule?.createdById?.toLong()
+                    isOwner = currentUserId == capsule?.createdBy?.id?.toLong()
 
                     // Set up views based on ownership
                     if (isOwner) {
@@ -492,31 +493,57 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
         override fun onBindViewHolder(holder: ContentViewHolder, position: Int) {
             val content = contents[position]
 
+            // Set default file icon initially
+            holder.imageView.setImageResource(R.drawable.ic_file)
+
+            // Set a title if available
+            holder.titleView.text = content.uploadedBy ?: "File ${position + 1}"
+
+            // Show/hide delete button based on permissions
+            holder.deleteBtn.visibility = if (isOwner) View.VISIBLE else View.GONE
 
             when {
                 content.contentType?.startsWith("image/") == true -> {
+                    // Show loading indicator if needed
+                    holder.imageView.setImageResource(R.drawable.loading)
+
                     lifecycleScope.launch(Dispatchers.IO) {
                         try {
+                            // Use your existing downloadContent API to get the byte[] data
                             val response = apiService.downloadContent(content.id!!)
                             if (response.isSuccessful) {
-                                val bitmap = BitmapFactory.decodeStream(response.body()?.byteStream())
+                                // The response body now contains the raw byte[] data from the database
+                                val byteStream = response.body()?.byteStream()
+                                val bitmap = BitmapFactory.decodeStream(byteStream)
+
                                 withContext(Dispatchers.Main) {
-                                    holder.imageView.setImageBitmap(bitmap)
+                                    if (bitmap != null) {
+                                        holder.imageView.setImageBitmap(bitmap)
+                                    } else {
+                                        // If we couldn't decode as bitmap, show generic image icon
+                                        holder.imageView.setImageResource(R.drawable.ic_image)
+                                    }
                                 }
                             } else {
                                 withContext(Dispatchers.Main) {
                                     holder.imageView.setImageResource(R.drawable.ic_file)
+                                    Toast.makeText(this@CapsuleDetailActivity,
+                                        "Failed to load image", Toast.LENGTH_SHORT).show()
                                 }
                             }
                         } catch (e: Exception) {
                             withContext(Dispatchers.Main) {
                                 holder.imageView.setImageResource(R.drawable.ic_file)
+                                Log.e("ContentAdapter", "Error loading image", e)
                             }
                         }
                     }
                 }
                 content.contentType?.startsWith("video/") == true -> {
                     holder.imageView.setImageResource(R.drawable.ic_video)
+                }
+                content.contentType?.startsWith("audio/") == true -> {
+                    holder.imageView.setImageResource(R.drawable.ic_audio)
                 }
                 else -> {
                     holder.imageView.setImageResource(R.drawable.ic_file)
@@ -531,6 +558,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
                 showDeleteConfirmation(content)
             }
         }
+
 
         override fun getItemCount() = contents.size
     }
@@ -571,13 +599,73 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
     }
 
     private fun openContent(content: CapsuleContentEntity) {
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            val url = "${RetrofitClient.BASE_URL}api/capsule-content/${content.id}/download"
-            val mimeType = content.contentType ?: getMimeType(url)
-            setDataAndType(Uri.parse(url), mimeType)
-            flags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+        progressBar.visibility = View.VISIBLE
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val response = apiService.downloadContent(content.id!!)
+                if (response.isSuccessful) {
+                    // For all file types, save to cache first
+                    val fileName = content.contentType ?: "file_${content.id}.${getExtensionFromMimeType(content.contentType)}"
+                    val file = File(cacheDir, fileName)
+
+                    response.body()?.byteStream()?.use { input ->
+                        file.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+
+                    // Create content URI for the file
+                    val contentUri = androidx.core.content.FileProvider.getUriForFile(
+                        this@CapsuleDetailActivity,
+                        "${packageName}.fileprovider",
+                        file
+                    )
+
+                    withContext(Dispatchers.Main) {
+                        val intent = Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(contentUri, content.contentType)
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
+                        try {
+                            startActivity(intent)
+                        } catch (e: Exception) {
+                            Toast.makeText(this@CapsuleDetailActivity,
+                                "No app found to open this file type", Toast.LENGTH_LONG).show()
+                        }
+                        progressBar.visibility = View.GONE
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@CapsuleDetailActivity,
+                            "Failed to download file", Toast.LENGTH_SHORT).show()
+                        progressBar.visibility = View.GONE
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@CapsuleDetailActivity,
+                        "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    progressBar.visibility = View.GONE
+                }
+            }
         }
-        startActivity(intent)
+    }
+
+    // Helper function to get a file extension from MIME type
+    private fun getExtensionFromMimeType(mimeType: String?): String {
+        return when {
+            mimeType == null -> "bin"
+            mimeType.startsWith("image/jpeg") -> "jpg"
+            mimeType.startsWith("image/png") -> "png"
+            mimeType.startsWith("image/gif") -> "gif"
+            mimeType.startsWith("video/mp4") -> "mp4"
+            mimeType.startsWith("audio/mpeg") -> "mp3"
+            mimeType.startsWith("text/plain") -> "txt"
+            mimeType.startsWith("application/pdf") -> "pdf"
+            else -> "bin"
+        }
     }
 
     private fun getMimeType(url: String): String {

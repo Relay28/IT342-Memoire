@@ -15,12 +15,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.model.GlideUrl
-import com.bumptech.glide.load.model.LazyHeaders
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.com.example.memoire.HomeActivity
-import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.UserEntity
 import com.example.memoire.utils.SessionManager
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -31,7 +27,7 @@ import retrofit2.Response
 
 class ProfileActivity : AppCompatActivity() {
     private val TAG = "ProfileActivity"
-
+    private lateinit var sessionManager: SessionManager
     private lateinit var tvName: TextView
     private lateinit var Username: TextView
     private lateinit var tvFullName: TextView
@@ -48,12 +44,12 @@ class ProfileActivity : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-
+        sessionManager = SessionManager(this)
         // Find UI elements
         tvName = findViewById(R.id.tv_username_display)
 
         Username = findViewById(R.id.tv_username)
-        tvFullName = findViewById(R.id.tv_full_name)
+        tvFullName = findViewById(R.id.tv_username_display)
         tvBio = findViewById(R.id.tv_bio)
         ivProfile = findViewById(R.id.iv_profile)
         progressIndicator = findViewById(R.id.progress_indicator)
@@ -91,9 +87,9 @@ class ProfileActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val user = response.body()
                     if (user != null) {
-
+                      val id = sessionManager.getUserSession()["userId"] as Long
                         displayUserData(user)
-                        loadProfileImage(token)
+                        loadProfileImage(token,id)
                     }
                 } else {
                     showLoading(false)
@@ -162,24 +158,19 @@ class ProfileActivity : AppCompatActivity() {
         showLoading(false)
     }
 
-    private fun loadProfileImage(token: String) {
+    private fun loadProfileImage(token: String, userId: Long) {
         try {
-            // Create a direct implementation to handle the image loading with proper error handling
-            RetrofitClient.instance.getProfilePicture().enqueue(object : Callback<ResponseBody> {
+            RetrofitClient.instance.getProfilePicture(userId).enqueue(object : Callback<ResponseBody> {
                 override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                     if (response.isSuccessful) {
                         try {
-
-                            // Process the image data
                             val inputStream = response.body()?.byteStream()
                             Log.d(TAG, "Content-Type: ${response.headers()["Content-Type"]}")
 
                             if (inputStream != null) {
-                                // Convert to bitmap to ensure it's a valid image
                                 val bitmap = BitmapFactory.decodeStream(inputStream)
 
                                 if (bitmap != null) {
-                                    // Update UI on main thread
                                     runOnUiThread {
                                         ivProfile.setImageBitmap(bitmap)
                                     }
@@ -196,7 +187,6 @@ class ProfileActivity : AppCompatActivity() {
                             loadDefaultImage()
                         }
                     } else {
-                        // Log detailed error information
                         Log.e(TAG, "Server error: ${response.code()} - ${response.message()}")
                         try {
                             val errorBody = response.errorBody()?.string()
@@ -218,6 +208,7 @@ class ProfileActivity : AppCompatActivity() {
             loadDefaultImage()
         }
     }
+
 
     private fun loadDefaultImage() {
         runOnUiThread {

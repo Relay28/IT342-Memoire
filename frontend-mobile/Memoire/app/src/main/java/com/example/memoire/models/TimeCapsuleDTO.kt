@@ -8,9 +8,10 @@ data class TimeCapsuleDTO(
     val description: String? = null,
     val createdAt: Date? = null,
     val openDate: Date? = null,
-    val contents: List<Any>? = null,
+    val contents: List<CapsuleContentEntity>? = emptyList(),
     val locked: Boolean = false,
     val createdById: Long? = null,
+    val createdBy: UserEntity? = null,
     val status: String? = null,
 
 )

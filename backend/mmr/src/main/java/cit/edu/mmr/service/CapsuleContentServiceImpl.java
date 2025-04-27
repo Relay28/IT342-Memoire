@@ -22,10 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -49,20 +45,20 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
     private final UserRepository userRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(CapsuleContentServiceImpl.class);
-    private static final String UPLOAD_DIR = "uploads/";
 
     @Autowired
     public CapsuleContentServiceImpl(CapsuleContentRepository capsuleContentRepository,
                                      TimeCapsuleRepository timeCapsuleRepository,
-                                     SimpMessagingTemplate messagingTemplate, CapsuleAccessRepository capsuleAccessRepository,
+                                     SimpMessagingTemplate messagingTemplate,
+                                     CapsuleAccessRepository capsuleAccessRepository,
                                      UserRepository userRepository) {
-
         this.capsuleContentRepository = capsuleContentRepository;
         this.timeCapsuleRepository = timeCapsuleRepository;
         this.messagingTemplate = messagingTemplate;
         this.capsuleAccessRepository = capsuleAccessRepository;
         this.userRepository = userRepository;
     }
+
     private UserEntity getAuthenticatedUser(Authentication authentication) {
         String username = authentication.getName();
         return userRepository.findByUsername(username)
@@ -114,7 +110,6 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
 
                 // For images, we can add width and height if available
                 if (content.getContentType() != null && content.getContentType().startsWith("image/")) {
-                    // You could potentially extract image dimensions here if needed
                     contentMap.put("isImage", true);
                 } else {
                     contentMap.put("isImage", false);
@@ -124,15 +119,13 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
             }
 
             logger.debug("Prepared {} renderable contents for capsule ID: {}", renderableContents.size(), capsuleId);
-
-
-
             return renderableContents;
         } catch (Exception e) {
             logger.error("Error fetching renderable contents for capsule ID: {}", capsuleId, e);
             throw e;
         }
     }
+
     @CacheEvict(value = {CAPSULE_CONTENTS_CACHE, CONTENT_METADATA_CACHE}, key = "#capsuleId")
     @Override
     public CapsuleContentEntity uploadContent(Long capsuleId, MultipartFile file, Authentication authentication) throws IOException {
@@ -145,7 +138,7 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
                         return new EntityNotFoundException("Capsule not found with id " + capsuleId);
                     });
 
-            boolean isOwner = capsule.getCreatedBy().getId()==(user.getId());
+            boolean isOwner = capsule.getCreatedBy().getId() == user.getId();
             if (!isOwner) {
                 Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
                 if (accessOpt.isEmpty() || !"EDITOR".equals(accessOpt.get().getRole())) {
@@ -153,14 +146,11 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
                     throw new AccessDeniedException("You do not have permission to upload content.");
                 }
             }
-            String eventId = UUID.randomUUID().toString();
-            String filePath = saveFile(file);
-            logger.debug("File saved successfully at path: {}", filePath);
 
             CapsuleContentEntity content = new CapsuleContentEntity();
             content.setCapsule(capsule);
             content.setContentUploadedBy(user);
-            content.setFilePath(filePath);
+            content.setFileData(file.getBytes());  // Store file data directly as byte array
             content.setContentType(file.getContentType());
             content.setUploadedAt(new Date());
 
@@ -179,8 +169,6 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
         }
     }
 
-
-
     @Transactional
     @CacheEvict(value = {CAPSULE_CONTENTS_CACHE, CONTENT_METADATA_CACHE}, allEntries = true)
     @Override
@@ -197,7 +185,6 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
         // Store critical IDs before any deletion attempts
         Long contentId = content.getId();
         Long capsuleId = content.getCapsule().getId();
-        String filePath = content.getFilePath();
 
         try {
             UserEntity user = getAuthenticatedUser(authentication);
@@ -208,30 +195,12 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
                 throw new AccessDeniedException("You do not have permission to delete content.");
             }
 
-            // 1. First remove from database to prevent any race conditions
+            // Just delete from database - no file system cleanup needed
             capsuleContentRepository.delete(content);
             capsuleContentRepository.flush();
-            logger.debug("Database record deleted for content ID: {}", contentId);
-
-            // 2. Then attempt file deletion if path exists
-            if (filePath != null && !filePath.isBlank()) {
-                try {
-                    Path path = Path.of(filePath).normalize().toAbsolutePath();
-                    if (Files.exists(path)) {
-                        Files.delete(path);
-                        logger.debug("File deleted successfully at path: {}", path);
-                    } else {
-                        logger.warn("File not found at path: {} - may have been already deleted", path);
-                    }
-                } catch (IOException e) {
-                    logger.error("Failed to delete file at path: {}. Error: {}", filePath, e.getMessage());
-                    // This is non-critical since DB record is already deleted
-                }
-            }
-
             logger.info("Successfully deleted content with ID: {}", contentId);
 
-            // 3. Send notification
+            // Send notification
             notifyContentDeletion(capsuleId, contentId);
 
         } catch (Exception e) {
@@ -240,26 +209,8 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
         }
     }
 
-    private void deleteContentFile(CapsuleContentEntity content) throws IOException {
-        if (content.getFilePath() == null || content.getFilePath().isBlank()) {
-            logger.warn("No file path associated with content ID: {}", content.getId());
-            return;
-        }
-
-        try {
-            Path path = Path.of(content.getFilePath());
-            if (Files.exists(path)) {
-                Files.delete(path);
-                logger.debug("Deleted file at path: {}", content.getFilePath());
-            }
-        } catch (IOException e) {
-            logger.error("Failed to delete file at path: {}", content.getFilePath(), e);
-            throw new IOException("Failed to delete content file", e);
-        }
-    }
-
     private boolean hasEditPermission(UserEntity user, TimeCapsuleEntity capsule) {
-        if (capsule.getCreatedBy().getId()==(user.getId())) {
+        if (capsule.getCreatedBy().getId() == user.getId()) {
             return true;
         }
         return capsuleAccessRepository.existsByUserIdAndCapsuleIdAndRole(
@@ -267,15 +218,16 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
     }
 
     private boolean canDeleteContent(UserEntity user, CapsuleContentEntity content) {
-        if (content.getContentUploadedBy().getId()==(user.getId())) {
+        if (content.getContentUploadedBy().getId() == user.getId()) {
             return true;
         }
-        if (content.getCapsule().getCreatedBy().getId()==(user.getId())) {
+        if (content.getCapsule().getCreatedBy().getId() == user.getId()) {
             return true;
         }
         return capsuleAccessRepository.existsByUserIdAndCapsuleIdAndRole(
                 user.getId(), content.getCapsule().getId(), "EDITOR");
     }
+
     @Cacheable(value = CAPSULE_CONTENTS_CACHE, key = "#capsuleId")
     @Override
     public List<CapsuleContentEntity> getContentsByCapsuleId(Long capsuleId, Authentication authentication) {
@@ -288,7 +240,7 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
                         return new EntityNotFoundException("Capsule not found with id " + capsuleId);
                     });
 
-            if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
+            if (!(capsule.getCreatedBy().getId() == user.getId())) {
                 Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
                 if (accessOpt.isEmpty()) {
                     logger.warn("User {} attempted unauthorized access to capsule ID: {}", user.getUsername(), capsuleId);
@@ -305,7 +257,6 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
         }
     }
 
-
     @Override
     public byte[] getFileContent(Long id, Authentication authentication) throws IOException {
         try {
@@ -318,7 +269,7 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
                     });
 
             TimeCapsuleEntity capsule = content.getCapsule();
-            if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
+            if (!(capsule.getCreatedBy().getId() == user.getId())) {
                 Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
                 if (accessOpt.isEmpty()) {
                     logger.warn("User {} attempted unauthorized access to content ID: {}", user.getUsername(), id);
@@ -326,42 +277,36 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
                 }
             }
 
-            byte[] fileBytes = Files.readAllBytes(Path.of(content.getFilePath()));
-            logger.debug("Successfully read file content for ID: {}", id);
-            return fileBytes;
+            return content.getFileData();  // Directly return the stored byte array
         } catch (Exception e) {
             logger.error("Error reading file content for ID: {}", id, e);
             throw e;
         }
     }
 
-
-
-
-
-
     @CacheEvict(value = {CAPSULE_CONTENTS_CACHE, CONTENT_METADATA_CACHE}, key = "#id")
     @Override
-    public CapsuleContentEntity updateContent(Long id, MultipartFile file,Authentication authentication) throws IOException {
+    public CapsuleContentEntity updateContent(Long id, MultipartFile file, Authentication authentication) throws IOException {
         UserEntity user = getAuthenticatedUser(authentication);
         CapsuleContentEntity existingContent = capsuleContentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Content not found with id " + id));
 
-
-        // 🔹 Check if the user is the uploader (owner)
-        boolean isOwner = existingContent.getContentUploadedBy().getId()==(user.getId());
+        // Check if the user is the uploader (owner)
+        boolean isOwner = existingContent.getContentUploadedBy().getId() == user.getId();
 
         if (!isOwner) {
-            // 🔹 If not the owner, check if user has EDITOR access
+            // If not the owner, check if user has EDITOR access
             Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, existingContent.getCapsule());
 
-            if (accessOpt.isEmpty() || !("EDITOR" ==(accessOpt.get().getRole()))) {
+            if (accessOpt.isEmpty() || !("EDITOR".equals(accessOpt.get().getRole()))) {
                 throw new AccessDeniedException("You do not have permission to update this content.");
             }
         }
 
-        // Delete old file
-        Files.deleteIfExists(Path.of(existingContent.getFilePath()));
+        // Update content data
+        existingContent.setFileData(file.getBytes());
+        existingContent.setContentType(file.getContentType());
+        existingContent.setUploadedAt(new Date());
 
         CapsuleContentEntity updatedContent = capsuleContentRepository.save(existingContent);
 
@@ -383,18 +328,17 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
         return updatedContent;
     }
 
-
     @Cacheable(value = CONTENT_METADATA_CACHE, key = "#id")
     @Override
     public Optional<CapsuleContentEntity> getContentById(Long id) {
         logger.debug("Fetching content metadata from DB for ID: {}", id);
         return capsuleContentRepository.findById(id);
     }
+
     private CapsuleAccessEntity getCapsuleAccess(UserEntity user, TimeCapsuleEntity capsule) {
         return capsuleAccessRepository.findByUserAndCapsule(user, capsule)
                 .orElseThrow(() -> new AccessDeniedException("You do not have access to this capsule."));
     }
-
 
     private void notifyContentUpdate(Long capsuleId, CapsuleContentEntity content, String action) {
         Map<String, Object> payload = new HashMap<>();
@@ -402,16 +346,13 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
         payload.put("contentType", content.getContentType());
         payload.put("action", action);
         payload.put("timestamp", System.currentTimeMillis());
-        // Add the full download URL
         payload.put("contentUrl", "/api/capsule-content/" + content.getId() + "/download");
-        // Add flag for image content
         payload.put("isImage", content.getContentType() != null && content.getContentType().startsWith("image/"));
         logger.info("Capsule Updates Notified");
         messagingTemplate.convertAndSend(
                 "/topic/capsule-content/updates/" + capsuleId,
                 payload
         );
-
     }
 
     private void notifyContentDeletion(Long capsuleId, Long contentId) {
@@ -430,27 +371,6 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
         }
     }
 
-
-    private String saveFile(MultipartFile file) throws IOException {
-        // Use the configured upload directory from properties
-        String uploadDir = System.getProperty("file.upload-dir", UPLOAD_DIR);
-        Path uploadPath = Path.of(uploadDir);
-
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-        Path filePath = uploadPath.resolve(fileName).normalize();
-
-        // Security check to prevent path traversal
-        if (!filePath.startsWith(uploadPath.normalize())) {
-            throw new IOException("Invalid file path");
-        }
-
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-        return filePath.toString();
-    }
     @Override
     public void handleConnectionRequest(Long capsuleId, Authentication authentication, String sessionId) {
         try {
@@ -460,8 +380,6 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
                     capsuleId, username, sessionId);
 
             Authentication auth = (Authentication) authentication;
-
-
 
             // Get the basic capsule contents
             List<CapsuleContentEntity> contentEntities = getContentsByCapsuleId(capsuleId, auth);
@@ -474,7 +392,7 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
                 contentMap.put("uploadedAt", content.getUploadedAt());
                 contentMap.put("uploadedBy", content.getContentUploadedBy().getUsername());
 
-                // Use the download endpoint URL instead of the file endpoint
+                // Use the download endpoint URL
                 contentMap.put("contentUrl", "/api/capsule-content/" + content.getId() + "/download");
 
                 // Add flag for image content
@@ -497,6 +415,7 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
                 contentMap.put("canEdit", canEdit);
                 renderableContents.add(contentMap);
             }
+
             Map<String, Object> response = new HashMap<>();
             response.put("capsuleId", capsuleId);
             response.put("contents", renderableContents);

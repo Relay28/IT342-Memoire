@@ -72,4 +72,12 @@ object RetrofitClient {
             .build()
             .create(ApiCommentService::class.java)
     }
+    val friendInstance: FriendshipApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(FriendshipApiService::class.java)
+    }
 }

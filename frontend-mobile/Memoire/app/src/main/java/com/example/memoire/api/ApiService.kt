@@ -6,15 +6,14 @@ import com.example.memoire.models.CapsuleAccessDTO
 import com.example.memoire.models.CountdownDTO
 import com.example.memoire.models.GrantAccessRequest
 import com.example.memoire.models.LockRequest
-import com.example.memoire.models.NotificationDTO
 import com.example.memoire.models.NotificationEntity
 import com.example.memoire.models.ProfileDTO
+import com.example.memoire.models.ProfileDTO2
 import com.example.memoire.models.RegisterRequest
 import com.example.memoire.models.SearchResponse
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.models.UpdateRoleRequest
 import com.example.memoire.models.UserEntity
-import com.example.memoire.models.UserSearchDTO
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Call
@@ -28,13 +27,16 @@ interface ApiService {
     fun getCurrentUser(@Header("Authorization") authToken: String): Call<UserEntity>
 
     // Get profile image endpoint
-    @GET("api/users/profile-picture")
-    @Streaming
-    fun getProfilePicture(): Call<ResponseBody>
+    @GET("api/users/profile-picture/{userId}")
+    fun getProfilePicture(@Path("userId") userId: Long): Call<ResponseBody>
+
 
     // Profile endpoint for accessing other users' profiles
     @GET("api/profiles/view/{userId}")
     fun getPublicProfile(@Path("userId") userId: Long): Call<ProfileDTO>
+
+    @GET("api/profiles/view/{userId}")
+    fun getPublicProfile2(@Path("userId") userId: Long): Call<ProfileDTO2>
 
     // For User Search
     @GET("api/profiles/search")
@@ -185,7 +187,7 @@ interface ApiService {
     ): Call<Boolean>
 
     @GET("api/profiles/search")
-    fun searchProfiles(
+    fun searchProfiles2(
         @Query("query") query: String,
         @Query("page") page: Int = 0,
         @Query("size") size: Int = 10
