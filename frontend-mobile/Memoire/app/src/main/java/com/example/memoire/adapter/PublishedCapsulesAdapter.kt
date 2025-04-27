@@ -1,5 +1,6 @@
 package com.example.memoire.adapter
 
+import CommentEntity
 import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
@@ -20,11 +21,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.text.SimpleDateFormat
 import java.util.Locale
 class PublishedCapsulesAdapter(
     private var capsules: List<TimeCapsuleDTO>,
-    private val onItemClick: (TimeCapsuleDTO) -> Unit
+    private val onItemClick: (TimeCapsuleDTO) -> Unit,
+    private val onCommentClick: (TimeCapsuleDTO) -> Unit
 ) : RecyclerView.Adapter<PublishedCapsulesAdapter.CapsuleViewHolder>() {
 
     private val dateFormat = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
@@ -32,7 +37,8 @@ class PublishedCapsulesAdapter(
     inner class CapsuleViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val viewPager: ViewPager2 = itemView.findViewById(R.id.viewPager)
         private val indicatorsLayout: LinearLayout = itemView.findViewById(R.id.layoutIndicators)
-
+        private val commentSection: LinearLayout = itemView.findViewById(R.id.commentSection)
+        private val commentCount: TextView = itemView.findViewById(R.id.tvCommentCount)
         fun bind(capsule: TimeCapsuleDTO) {
             // Bind basic info
             itemView.findViewById<TextView>(R.id.tvCapsuleTitle).text = capsule.title ?: "Untitled Memory"
@@ -57,7 +63,19 @@ class PublishedCapsulesAdapter(
                 viewPager.visibility = View.GONE
                 indicatorsLayout.visibility = View.GONE
             }
+
+            fetchCommentCount(capsule.id!!, commentCount)
+
+            commentSection.setOnClickListener {
+                onCommentClick(capsule)
+            }
+
+            // Also make the whole item clickable for viewing the capsule details
+            itemView.setOnClickListener {
+                onItemClick(capsule)
+            }
         }
+
 
         private fun setupCarousel(contents: List<CapsuleContentEntity>) {
             viewPager.visibility = View.VISIBLE
@@ -77,7 +95,29 @@ class PublishedCapsulesAdapter(
                 }
             })
         }
+        private fun fetchCommentCount(capsuleId: Long, textView: TextView) {
+            // Fetch comment count from API
+            RetrofitClient.commentInstance.getCommentsByCapsule(capsuleId).enqueue(object :
+                Callback<List<CommentEntity>> {
+                override fun onResponse(call: Call<List<CommentEntity>>, response: Response<List<CommentEntity>>) {
+                    if (response.isSuccessful) {
+                        val comments = response.body() ?: emptyList()
+                        val count = comments.size
+                        textView.text = when (count) {
+                            0 -> "No comments"
+                            1 -> "1 comment"
+                            else -> "$count comments"
+                        }
+                    } else {
+                        textView.text = "Comments unavailable"
+                    }
+                }
 
+                override fun onFailure(call: Call<List<CommentEntity>>, t: Throwable) {
+                    textView.text = "Comments unavailable"
+                }
+            })
+        }
         private fun setupIndicators(count: Int) {
             indicatorsLayout.removeAllViews()
             for (i in 0 until count) {

@@ -44,8 +44,6 @@
     <string name="set_unlock_date_time"><![CDATA[Set Unlock Date & Time]]></string>
 
 
-
-
     <!-- Notification Titles -->
     <string name="notification_title_friend_request">New Friend Request</string>
     <string name="notification_title_friend_request_accepted">Friend Request Accepted</string>

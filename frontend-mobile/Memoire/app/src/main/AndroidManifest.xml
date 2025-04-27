@@ -5,15 +5,14 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-
-    <!-- Storage permissions -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> <!-- Storage permissions -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28" />
-<!--    <uses-permission android:name="android.permission.CAMERA" />-->
 
     <application
         android:name=".MyApplication"
@@ -28,6 +27,12 @@
         android:theme="@style/Theme.Memoire"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+        <activity
+            android:name=".CommentsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CommentActivity"
+            android:exported="false" />
         <activity
             android:name=".LockedCapsulesActivity"
             android:exported="false" />
@@ -72,6 +77,7 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
             android:resource="@drawable/ic_notification" />

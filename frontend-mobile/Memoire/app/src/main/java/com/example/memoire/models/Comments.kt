@@ -1,5 +1,6 @@
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.models.UserEntity
+import java.util.Date
 
 // CommentRequest.kt
 data class CommentRequest(
@@ -14,7 +15,7 @@ data class CommentEntity(
     val timeCapsule: TimeCapsuleDTO,
     val user: UserEntity,
     val reactions: List<CommentReactionEntity> = emptyList(),
-    val createdAt: String,
+    val createdAt: Date,
     val updatedAt: String?
 )
 
