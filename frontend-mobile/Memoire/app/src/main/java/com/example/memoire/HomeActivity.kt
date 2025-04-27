@@ -104,7 +104,13 @@ class HomeActivity : BaseActivity() {
                 if (response.isSuccessful) {
                     response.body()?.let { capsules ->
                         publishedCapsules = capsules
-                        adapter.updateData(capsules)
+                        adapter = PublishedCapsulesAdapter(capsules) { capsule ->
+                            // Handle capsule click if needed
+                            val intent = Intent(this@HomeActivity, CapsuleDetailActivity::class.java)
+                            intent.putExtra("capsuleId", capsule.id.toString())
+                            startActivity(intent)
+                        }
+                        recyclerView.adapter = adapter
                         updateEmptyState()
                     }
                 } else {
@@ -119,7 +125,6 @@ class HomeActivity : BaseActivity() {
             }
         })
     }
-
     private fun updateEmptyState() {
         if (publishedCapsules.isEmpty()) {
             emptyStateText.visibility = View.VISIBLE

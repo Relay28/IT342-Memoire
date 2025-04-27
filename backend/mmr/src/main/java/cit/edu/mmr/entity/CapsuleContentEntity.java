@@ -39,7 +39,8 @@ public class CapsuleContentEntity {
     private TimeCapsuleEntity capsule;
 
     @Lob
-    private String filePath;
+    @Column(columnDefinition = "LONGBLOB")
+    private byte[] fileData;
 
 
     private String contentType;

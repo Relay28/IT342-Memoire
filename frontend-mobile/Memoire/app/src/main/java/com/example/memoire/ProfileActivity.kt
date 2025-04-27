@@ -49,7 +49,7 @@ class ProfileActivity : AppCompatActivity() {
         tvName = findViewById(R.id.tv_username_display)
 
         Username = findViewById(R.id.tv_username)
-        tvFullName = findViewById(R.id.tv_full_name)
+        tvFullName = findViewById(R.id.tv_username_display)
         tvBio = findViewById(R.id.tv_bio)
         ivProfile = findViewById(R.id.iv_profile)
         progressIndicator = findViewById(R.id.progress_indicator)

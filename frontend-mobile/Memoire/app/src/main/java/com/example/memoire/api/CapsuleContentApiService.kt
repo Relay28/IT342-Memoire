@@ -2,6 +2,7 @@ package com.example.memoire.api
 
 
 import com.example.memoire.models.CapsuleContentEntity
+import com.example.memoire.models.RenderableContent
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
 import retrofit2.Call
@@ -18,11 +19,6 @@ interface CapsuleContentService {
     ): Response<CapsuleContentEntity>
 
     // Download content by ID ; Used for rendering Images
-    @GET("api/capsule-content/{id}/download")
-    @Streaming
-    suspend fun downloadContent(
-        @Path("id") id: Long
-    ): Response<ResponseBody>
 
     // Delete content by ID ,
     @DELETE("api/capsule-content/{id}")
@@ -36,13 +32,17 @@ interface CapsuleContentService {
         @Path("capsuleId") capsuleId: Long
     ): Response<List<CapsuleContentEntity>>
 
-    // Get content metadata by ID
-    @GET("api/capsule-content/{id}/metadata")
-    suspend fun getContentMetadata(
+
+
+    @GET("api/capsule-content/renderable/{capsuleId}")
+    suspend fun getRenderableContents(
+        @Path("capsuleId") capsuleId: Long
+    ): Response<List<RenderableContent>>
+
+    @GET("api/capsule-content/{id}/download")
+    suspend fun downloadContent(
         @Path("id") id: Long
-    ): Response<CapsuleContentEntity>
-
-
+    ): Response<ResponseBody>
 }
 
 // Data classes for request/response models
