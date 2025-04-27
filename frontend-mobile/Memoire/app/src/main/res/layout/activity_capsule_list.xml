@@ -187,7 +187,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/topborder"
-        app:itemIconSize="20dp"
+        app:itemIconSize="24dp"
         app:itemIconTint="@color/MemoireRed"
         android:paddingBottom="0dp"
         app:labelVisibilityMode="unlabeled"

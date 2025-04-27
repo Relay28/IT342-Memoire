@@ -3,7 +3,9 @@ package com.example.memoire.com.example.memoire
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -33,7 +35,7 @@ class HomeActivity : BaseActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: PublishedCapsulesAdapter
     private var publishedCapsules: List<TimeCapsuleDTO> = emptyList()
-
+    private lateinit var emptyStateText: TextView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -55,6 +57,7 @@ class HomeActivity : BaseActivity() {
         }
         // Initialize RecyclerView
         recyclerView = findViewById(R.id.rvPublishedCapsules)
+        emptyStateText = findViewById(R.id.emptyStateText)
         recyclerView.layoutManager = LinearLayoutManager(this)
         adapter = PublishedCapsulesAdapter(emptyList()) { /* No click action needed */ }
         recyclerView.adapter = adapter
@@ -102,17 +105,31 @@ class HomeActivity : BaseActivity() {
                     response.body()?.let { capsules ->
                         publishedCapsules = capsules
                         adapter.updateData(capsules)
+                        updateEmptyState()
                     }
                 } else {
                     Toast.makeText(this@HomeActivity, "Failed to load capsules", Toast.LENGTH_SHORT).show()
+                    updateEmptyState()
                 }
             }
 
             override fun onFailure(call: Call<List<TimeCapsuleDTO>>, t: Throwable) {
                 Toast.makeText(this@HomeActivity, "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                updateEmptyState()
             }
         })
     }
+
+    private fun updateEmptyState() {
+        if (publishedCapsules.isEmpty()) {
+            emptyStateText.visibility = View.VISIBLE
+            recyclerView.visibility = View.GONE
+        } else {
+            emptyStateText.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+        }
+    }
+
     private fun handleNotificationIntent(intent: Intent?) {
         intent?.extras?.let { extras ->
             val type = extras.getString("type")

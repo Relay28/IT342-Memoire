@@ -42,7 +42,7 @@ class RegisterActivity : AppCompatActivity() {
         }
 
         registerBtn.setOnClickListener(){
-            val userVal = email.text.toString().trim()
+            val userVal = username.text.toString().trim()
             val passVal = password.text.toString().trim()
             val confPass = confirmPassword.text.toString().trim()
             val emailVal = email.text.toString().trim()

@@ -6,6 +6,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="#FFFFFF"
     tools:context=".LockedCapsulesActivity">
 
 
@@ -14,6 +15,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@drawable/btmborder"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_scrollFlags="scroll|enterAlways|snap">
 
         <RelativeLayout
@@ -100,28 +102,28 @@
         android:textColor="#757575"
         android:textSize="16sp"
         android:visibility="gone"
-        app:layout_constraintTop_toTopOf="parent"/>
+        app:layout_constraintTop_toBottomOf="@id/toolbar2"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewLockedCapsules"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:padding="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar2"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"/>
+        />
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/topborder"
-        app:itemIconSize="20dp"
+        app:itemIconSize="24dp"
         app:itemIconTint="@color/MemoireRed"
         android:paddingBottom="0dp"
         app:labelVisibilityMode="unlabeled"
-        android:layout_marginBottom="-50dp"
+        android:layout_marginBottom="-40dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

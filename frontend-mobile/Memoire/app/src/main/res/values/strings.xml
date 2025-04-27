@@ -7,6 +7,9 @@
     <string name="entUser">Enter your Username</string>
     <string name="entEmail">Enter your Username</string>
     <string name="email">Enter your Username</string>
+
+    <string name="entEmail1">Enter your Email</string>
+    <string name="email1">Enter your Email</string>
     <string name="entPassword">Enter your password</string>
     <string name="dontHaveAcc">Don\'t have an Account? Register Here</string>
     <string name="orLoginWith">OR LOGIN WITH</string>
