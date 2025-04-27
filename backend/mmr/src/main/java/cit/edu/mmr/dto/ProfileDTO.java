@@ -1,5 +1,7 @@
 package cit.edu.mmr.dto;
 
+import jakarta.persistence.Lob;
+
 public class ProfileDTO {
     private long userId;
     private String username;
@@ -14,7 +16,9 @@ public class ProfileDTO {
     }
 
     private String biography;
-    private String profilePicture;
+
+    @Lob
+    private byte[] profilePicture;
     private java.util.Date createdAt;
     private String role;
     private boolean isOauthUser;
@@ -29,8 +33,13 @@ public class ProfileDTO {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getProfilePicture() { return profilePicture; }
-    public void setProfilePicture(String profilePicture) { this.profilePicture = profilePicture; }
+    public byte[] getProfilePicture() {
+        return profilePicture;
+    }
+
+    public void setProfilePicture(byte[] profilePicture) {
+        this.profilePicture = profilePicture;
+    }
 
     public java.util.Date getCreatedAt() { return createdAt; }
     public void setCreatedAt(java.util.Date createdAt) { this.createdAt = createdAt; }

@@ -65,18 +65,18 @@ public class UserService {
     }
     private void saveProfileImage(MultipartFile profileImg, UserEntity user) {
         try {
-            String folder = "uploads/profileImages/";
-            String filename = System.currentTimeMillis() + "_" + profileImg.getOriginalFilename(); // Avoid duplicate names
-
-            Path path = Paths.get(folder + filename);
-            Files.createDirectories(path.getParent());
-            Files.write(path, profileImg.getBytes());
-
-            user.setProfilePicture(filename); // Store the filename in the user entity
+            user.setProfilePictureData(profileImg.getBytes());
         } catch (IOException e) {
-            throw new RuntimeException("Failed to save profile image: " + e.getMessage(), e);
+            throw new RuntimeException("Failed to save profile image to database: " + e.getMessage(), e);
         }
     }
+
+    public byte[] getProfileImageFromDatabase(long userId) {
+        UserEntity user = urepo.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+        return user.getProfilePictureData();
+    }
+
 
     public UserEntity findById(long userid){
         Optional<UserEntity> user = urepo.findById(userid);

@@ -16,8 +16,9 @@ public class UserDTO {
     private Long id;
     private String username;
     private String email;
+
     @Lob
-    private String profilePicture;
+    private byte[] profilePicture;
     private String role;
 
     private String biography;

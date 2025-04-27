@@ -1,5 +1,6 @@
 package cit.edu.mmr.dto;
 
+import jakarta.persistence.Lob;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -10,5 +11,6 @@ public class UserSearchDTO {
     private String username;
     private String name;
     private String email;
-    private String profilePicture;
+    @Lob
+    private byte[] profilePicture;
 }

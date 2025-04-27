@@ -47,7 +47,7 @@ public class ReportMapper {
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getProfilePicture(),
+                user.getProfilePictureData(),
                 user.getRole(),
                 user.getBiography(),
                 user.isActive(),

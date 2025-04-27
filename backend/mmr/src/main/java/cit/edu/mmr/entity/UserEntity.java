@@ -39,7 +39,9 @@ public class UserEntity implements UserDetails {
 //    private String googleSub;
 
     @Lob
-    private String profilePicture;
+    @Column(name = "profile_picture_data", columnDefinition = "LONGBLOB")
+    private byte[] profilePictureData;
+
 
     private String biography;
 
