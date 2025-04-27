@@ -692,7 +692,7 @@ return (
                                   isDark ? 'bg-gray-700 text-white placeholder-gray-400 border-gray-600' 
                                   : 'bg-gray-100 text-gray-800 placeholder-gray-500 border-gray-200'
                                 } border focus:outline-none focus:ring-2 ${
-                                  isDark ? 'focus:ring-blue-500' : 'focus:ring-blue-400'
+                                  isDark ? 'focus:ring-[#AF3535]' : 'focus:ring-red-400'
                                 }`}
                                 onKeyPress={(e) => {
                                   if (e.key === 'Enter') {
@@ -703,7 +703,7 @@ return (
                               <button
                                 disabled={commentLoading || !newComment[capsule.id]?.trim()}
                                 onClick={() => handleCommentSubmit(capsule.id)}
-                                className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-500 hover:text-blue-600'} ${
+                                className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${isDark ? 'text-red-500 hover:text-red-400' : 'text-[#AF3535] hover:text-red-600'} ${
                                   (!newComment[capsule.id]?.trim() || commentLoading) ? 'opacity-50 cursor-not-allowed' : ''
                                 }`}
                               >
@@ -771,7 +771,7 @@ return (
                                           <button
                                             onClick={() => handleUpdateComment(capsule.id, comment.id)}
                                             disabled={!editCommentText.trim() || commentLoading}
-                                            className={`text-xs px-2 py-1 rounded bg-blue-500 hover:bg-blue-600 text-white ${
+                                            className={`text-xs px-2 py-1 rounded bg-[#AF3535] hover:bg-red-600 text-white ${
                                               (!editCommentText.trim() || commentLoading) ? 'opacity-50 cursor-not-allowed' : ''
                                             }`}
                                           >
