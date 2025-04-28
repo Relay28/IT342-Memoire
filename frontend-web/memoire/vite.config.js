@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
-  base: process.env.VITE_BASE_PATH || "/IT342-Memoire",
+  base: process.env.VITE_BASE_PATH || "/",
   server: {
     headers: {
       'Service-Worker-Allowed': '/'
@@ -25,5 +25,7 @@ export default defineConfig({
     rollupOptions: {
       plugins: [rollupNodePolyFill()],
     },
+    outDir: "dist",
+    assetsDir: "assets",
   },
 })
