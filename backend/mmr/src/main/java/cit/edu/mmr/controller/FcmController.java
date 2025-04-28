@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/fcm")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://it-342-memoire.vercel.app/")
 @RequiredArgsConstructor
 
 public class FcmController {
