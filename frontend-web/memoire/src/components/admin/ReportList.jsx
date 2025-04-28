@@ -76,7 +76,7 @@ const ReportListComponent = ({
     
     try {
       // Using the endpoint from ReportController.java
-      const response = await fetch('http://localhost:8080/api/reports/getAll', {
+      const response = await fetch('https://memoire-it342.as.r.appspot.com/api/reports/getAll', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,

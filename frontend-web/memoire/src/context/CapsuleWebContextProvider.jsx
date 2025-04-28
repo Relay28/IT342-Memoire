@@ -3,7 +3,7 @@ import axios from 'axios';
 import capsuleContentService from '../services/CapsuleContentService';
 import { useAuth } from '../components/AuthProvider';
 
-const API_BASE_URL = 'http://localhost:8080/api/capsule-content';
+const API_BASE_URL = 'https://memoire-it342.as.r.appspot.com/api/capsule-content';
 
 const CapsuleContentContext = createContext();
 
