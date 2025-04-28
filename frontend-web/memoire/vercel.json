@@ -1,13 +1,17 @@
 {
-    "version": 2,
-    "routes": [
-      {
-        "src": "/assets/(.*)",
-        "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
-      },
-      {
-        "src": "/(.*)",
-        "dest": "/index.html"
-      }
-    ]
-  }
+  "version": 2,
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "headers": { "Cache-Control": "public, max-age=31536000, immutable" }
+    },
+    {
+      "src": "/api/(.*)",  
+      "dest": "https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"  
+    }
+  ]
+}
