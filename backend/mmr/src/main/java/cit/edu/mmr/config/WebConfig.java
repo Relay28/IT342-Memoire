@@ -12,14 +12,7 @@ public class WebConfig implements WebMvcConfigurer {
 
 
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOriginPatterns("*")
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH")
-                .allowedHeaders("*")
-                .allowCredentials(true); // Enable credentials support
-    }
+
     @Bean
     public AuthTokenHandshakeInterceptor authTokenHandshakeInterceptor() {
         return new AuthTokenHandshakeInterceptor();
