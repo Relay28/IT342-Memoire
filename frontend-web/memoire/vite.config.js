@@ -15,7 +15,8 @@ export default defineConfig({
     }
   },
   define: {
-    global: 'window',
+    global: 'globalThis',
+    'process.env': {},
   },
   optimizeDeps: {
     include: ['buffer'],
