@@ -62,7 +62,7 @@
             android:id="@+id/ivComment"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_notification_comment"
+            android:src="@drawable/ic_comment"
             android:contentDescription="Comment"/>
 
         <TextView

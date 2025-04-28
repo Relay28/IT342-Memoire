@@ -1,0 +1,31 @@
+runtime: java
+env: flex
+
+runtime_config:
+  operating_system: "ubuntu22"
+  runtime_version: "21"
+
+# Instance configuration
+instance_class: F4
+
+# Automatic scaling configuration
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 3
+  cool_down_period_sec: 300
+
+# Critical for WebSockets
+network:
+  session_affinity: true
+  forwarded_ports:
+    - 80:8080
+    - 443:8443
+
+handlers:
+  - url: /.*
+    script: auto
+    secure: always
+
+env_variables:
+  SPRING_PROFILES_ACTIVE: "prod"
+  JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75 -Xms1G -Xmx2G"
