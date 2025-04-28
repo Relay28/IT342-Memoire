@@ -23,7 +23,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import org.springframework.web.bind.annotation.CrossOrigin;
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "https://it-342-memoire.vercel.app")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthenticationController {
