@@ -72,7 +72,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
-                    corsConfig.setAllowedOrigins(List.of("http://localhost:5173")); // Allow your frontend URL
+                    corsConfig.setAllowedOrigins(List.of("*")); // Allow your frontend URL
                     corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
                     corsConfig.setAllowedHeaders(List.of("*"));
                     corsConfig.addAllowedHeader("Authorization");
@@ -100,6 +100,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow preflight
                         .requestMatchers("/app/**", "/topic/**", "/queue/**","user/**").authenticated()
                         .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**","/ws-**/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
                         .anyRequest().authenticated()
 

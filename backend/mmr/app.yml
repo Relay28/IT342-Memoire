@@ -1,6 +1,0 @@
-runtime: java21  # Use java11 if you're using Spring Boot with Java 11
-instance_class: F2
-
-env_variables:
-  SPRING_PROFILES_ACTIVE: "prod"
-  # Add any other environment variables your app needs

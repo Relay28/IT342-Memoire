@@ -47,7 +47,7 @@ class CapsuleContentStompService(
         // Initialize STOMP client with SockJS
         stompClient = Stomp.over(
             Stomp.ConnectionProvider.OKHTTP,
-            "ws://192.168.1.8:8080/ws-capsule-content/websocket" // SockJS endpoint
+            "wss://20250428t092311-dot-memoire-it342.as.r.appspot.com/ws-capsule-content/websocket" // Use your actual GAE URL
         )
 
         stompClient?.let { client ->
