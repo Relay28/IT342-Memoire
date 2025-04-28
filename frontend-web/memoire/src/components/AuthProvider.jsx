@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        "https://memoire-it342.as.r.appspot.com/api/auth/login",
+        "https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/auth/login",
         credentials,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        "https://memoire-it342.as.r.appspot.com/api/auth/admin/login",
+        "https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/auth/admin/login",
         credentials,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -133,7 +133,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await fetch(
-        `https://memoire-it342.as.r.appspot.com/api/auth/verify-token?idToken=${credential}`,
+        `https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/auth/verify-token?idToken=${credential}`,
         { method: "POST", credentials: "include" }
       );
       
@@ -170,7 +170,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        "https://memoire-it342.as.r.appspot.com/api/auth/register",
+        "https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/auth/register",
         userData,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -209,7 +209,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // Use PUT without user ID in the URL, as the backend gets the user from the authentication context
       const response = await axios.put(
-        "https://memoire-it342.as.r.appspot.com/api/users",
+        "https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/users",
         updatedData,
         {
           headers: {
@@ -248,7 +248,7 @@ export const AuthProvider = ({ children }) => {
       formData.append('profileImg', imageFile);
       
       const response = await axios.put(
-        "https://memoire-it342.as.r.appspot.com/api/users/profile-picture",
+        "https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/users/profile-picture",
         formData,
         {
           headers: {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../components/AuthProvider';
 
-const API_BASE_URL = 'https://memoire-it342.as.r.appspot.com/api/reports';
+const API_BASE_URL = 'https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/reports';
  // Update this to match your Spring Boot backend URL
 
 const ServiceReportCapsule = () => {
