@@ -45,8 +45,15 @@ export const CapsuleContentProvider = ({ children }) => {
         `${API_BASE_URL}/${capsuleId}`,
         getAuthHeaders()
       );
+      
+      // Transform the response to include downloadable URLs
+      const transformedData = response.data.map(item => ({
+        ...item,
+        url: `${API_BASE_URL}/${item.id}/download`
+      }));
+      
       setLoading(false);
-      return response.data;
+      return transformedData;
     } catch (err) {
       setError(err.message || 'Failed to fetch capsule contents');
       setLoading(false);
@@ -111,7 +118,7 @@ export const CapsuleContentProvider = ({ children }) => {
         return { ...prev, [capsuleId]: remaining };
       }
   
-      // Handle add/update
+      // Handle add/update with url for binary data access
       return {
         ...prev,
         [capsuleId]: {
@@ -119,7 +126,9 @@ export const CapsuleContentProvider = ({ children }) => {
           [contentId]: {
             ...(current[contentId] || {}),
             ...update,
-            id: contentId
+            id: contentId,
+            // Add direct download URL
+            url: update.contentUrl || `${API_BASE_URL}/${contentId}/download`
           }
         }
       };
@@ -131,7 +140,11 @@ export const CapsuleContentProvider = ({ children }) => {
     
     const contentsMap = initialContents.reduce((acc, item) => {
       if (item?.id) {
-        acc[item.id] = item;
+        // Add download URL for accessing binary data
+        acc[item.id] = {
+          ...item,
+          url: item.contentUrl || `${API_BASE_URL}/${item.id}/download`
+        };
       }
       return acc;
     }, {});
@@ -158,8 +171,15 @@ export const CapsuleContentProvider = ({ children }) => {
         `${API_BASE_URL}/renderable/${capsuleId}`,
         getAuthHeaders()
       );
+      
+      // Transform to add direct download URLs
+      const renderableWithUrls = response.data.map(item => ({
+        ...item,
+        url: item.contentUrl || `${API_BASE_URL}/${item.id}/download`
+      }));
+      
       setLoading(false);
-      return response.data;
+      return renderableWithUrls;
     } catch (err) {
       setError(err.message || 'Failed to fetch renderable contents');
       setLoading(false);
@@ -182,6 +202,7 @@ export const CapsuleContentProvider = ({ children }) => {
         )
         .map(content => ({
           ...content,
+          // Direct URL to access binary data
           url: `${API_BASE_URL}/${content.id}/download`
         }));
       
@@ -207,8 +228,12 @@ export const CapsuleContentProvider = ({ children }) => {
       );
       
       // Manually trigger WebSocket-like update
-      // This ensures we get immediate updates even if WebSocket is delayed
-      const uploadedContent = response.data;
+      // Add download URL to the uploaded content
+      const uploadedContent = {
+        ...response.data,
+        url: `${API_BASE_URL}/${response.data.id}/download`
+      };
+      
       handleUpdate(capsuleId, {
         ...uploadedContent,
         action: 'add',
@@ -216,7 +241,7 @@ export const CapsuleContentProvider = ({ children }) => {
       });
       
       setLoading(false);
-      return response.data;
+      return uploadedContent;
     } catch (err) {
       setError(err.message || 'Failed to upload content');
       setLoading(false);
