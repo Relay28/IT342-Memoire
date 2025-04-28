@@ -72,7 +72,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration corsConfig = new CorsConfiguration();
-                    corsConfig.setAllowedOrigins(List.of("*")); // Allow your frontend URL
+                    corsConfig.setAllowedOrigins(List.of("*","https://it-342-memoire.vercel.app")); // Allow your frontend URL
                     corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"));
                     corsConfig.setAllowedHeaders(List.of("*"));
                     corsConfig.addAllowedHeader("Authorization");
