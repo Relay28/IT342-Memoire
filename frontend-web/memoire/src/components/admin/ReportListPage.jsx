@@ -87,7 +87,7 @@ const ReportsListPage = () => {
     setError(null);
     
     try {
-      const response = await fetch('https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/reports/getAll', {
+      const response = await fetch('https://memoire-it342.as.r.appspot.com/api/reports/getAll', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -157,7 +157,7 @@ const ReportsListPage = () => {
 
       switch (confirmAction) {
         case 'report-approve':
-          response = await fetch(`https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/reports/${selectedReport.id}/status?status=APPROVED`, {
+          response = await fetch(`https://memoire-it342.as.r.appspot.com/api/reports/${selectedReport.id}/status?status=APPROVED`, {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${authToken}`,
@@ -168,7 +168,7 @@ const ReportsListPage = () => {
           break;
         
         case 'report-reject':
-          response = await fetch(`https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/reports/${selectedReport.id}/status?status=REJECTED`, {
+          response = await fetch(`https://memoire-it342.as.r.appspot.com/api/reports/${selectedReport.id}/status?status=REJECTED`, {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${authToken}`,
@@ -179,7 +179,7 @@ const ReportsListPage = () => {
           break;
         
         case 'report-delete':
-          response = await fetch(`https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/reports/${selectedReport.id}`, {
+          response = await fetch(`https://memoire-it342.as.r.appspot.com/api/reports/${selectedReport.id}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${authToken}`

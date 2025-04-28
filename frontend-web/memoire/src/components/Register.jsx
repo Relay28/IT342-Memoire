@@ -44,7 +44,7 @@ const Register = () => {
 
     try {
       const response = await axios.post(
-        "https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/auth/register",
+        "https://memoire-it342.as.r.appspot.com/api/auth/register",
         formData,
         { headers: { "Content-Type": "application/json" } }
       );
