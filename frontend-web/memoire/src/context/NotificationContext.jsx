@@ -103,7 +103,7 @@ export const NotificationProvider = ({ children }) => {
   const markAsRead = async (notificationId) => {
     try {
       const response = await axios.patch(
-        `https://memoire-it342.as.r.appspot.com/api/notifications/${notificationId}/read`,
+        `https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -130,7 +130,7 @@ export const NotificationProvider = ({ children }) => {
   const markAllAsRead = async () => {
     try {
       const response = await axios.patch(
-        'https://memoire-it342.as.r.appspot.com/api/notifications/read-all',
+        'https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/notifications/read-all',
         {},
         {
           headers: {
@@ -156,7 +156,7 @@ export const NotificationProvider = ({ children }) => {
     if (!isAuthenticated || !authToken) return;
     
     try {
-      const response = await axios.get('https://memoire-it342.as.r.appspot.com/api/notifications', {
+      const response = await axios.get('https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/notifications', {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -179,7 +179,7 @@ export const NotificationProvider = ({ children }) => {
     if (!isAuthenticated || !authToken) return;
     
     try {
-      const response = await axios.get('https://memoire-it342.as.r.appspot.com/api/notifications/unread-count', {
+      const response = await axios.get('https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/notifications/unread-count', {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }

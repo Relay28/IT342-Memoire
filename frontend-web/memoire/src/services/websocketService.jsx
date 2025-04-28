@@ -2,7 +2,7 @@
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
-const BASE_URL = 'https://memoire-it342.as.r.appspot.com';
+const BASE_URL = 'https://20250428t092311-dot-memoire-it342.as.r.appspot.com';
 const CONNECTION_TIMEOUT = 15000; // 15 seconds timeout
 
 class WebSocketService {

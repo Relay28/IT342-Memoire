@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://memoire-it342.as.r.appspot.com/api/users';
+const API_BASE_URL = 'https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/users';
 
 // Helper function to get auth headers
 const getAuthHeaders = (contentType = 'application/json') => {

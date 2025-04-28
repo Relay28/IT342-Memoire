@@ -88,7 +88,7 @@ const UserListComponent = ({
     setError(null);
     
     try {
-      const response = await fetch('https://memoire-it342.as.r.appspot.com/api/users/admin/dashboard', {
+      const response = await fetch('https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/users/admin/dashboard', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -121,7 +121,7 @@ const UserListComponent = ({
   
   const fetchPendingReportsCount = async () => {
     try {
-      const response = await fetch('https://memoire-it342.as.r.appspot.com/api/reports', {
+      const response = await fetch('https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/reports', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
