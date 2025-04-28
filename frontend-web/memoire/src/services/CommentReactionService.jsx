@@ -1,7 +1,7 @@
 // src/services/CommentReactionService.js
 import axios from 'axios';
 
-const API_URL = 'https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/comment-reactions';
+const API_URL = 'https://memoire-it342.as.r.appspot.com/api/comment-reactions';
 
 class CommentReactionService {
   /**

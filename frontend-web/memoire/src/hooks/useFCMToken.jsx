@@ -16,7 +16,7 @@ export const useFCMToken = (userId, jwtToken) => {
             params.append("userId", Number(userId).toString()); // Ensures userId is sent as a numeric string
             params.append("fcmToken", String(fcmToken));          // Ensures fcmToken is sent as a string
 
-            const response = await fetch(`https://20250428t092311-dot-memoire-it342.as.r.appspot.com/api/fcm/update-token?${params.toString()}`, {
+            const response = await fetch(`https://memoire-it342.as.r.appspot.com/api/fcm/update-token?${params.toString()}`, {
                 method: "POST",
                 headers: { 
                 "Authorization": `Bearer ${jwtToken}`  // JWT token header remains as before
