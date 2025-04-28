@@ -8,6 +8,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  base: process.env.VITE_BASE_PATH || "/IT342-Memoire",
   server: {
     headers: {
       'Service-Worker-Allowed': '/'

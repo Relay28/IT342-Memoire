@@ -60,7 +60,7 @@ const ReportDetailsPage = () => {
     setError(null);
     
     try {
-      const response = await fetch(`http://localhost:8080/api/reports/${reportId}`, {
+      const response = await fetch(`https://memoire-it342.as.r.appspot.com/api/reports/${reportId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -124,7 +124,7 @@ const ReportDetailsPage = () => {
       switch (confirmAction) {
         case 'report-approve':
           // Use the new report resolution endpoint with 'GOOD' resolution
-          response = await fetch(`http://localhost:8080/api/admin/reports/${reportId}/resolve`, {
+          response = await fetch(`https://memoire-it342.as.r.appspot.com/api/admin/reports/${reportId}/resolve`, {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${authToken}`,
@@ -140,7 +140,7 @@ const ReportDetailsPage = () => {
         case 'report-reject':
           // Use the new report resolution endpoint with 'BAD' resolution
           try {
-            response = await fetch(`http://localhost:8080/api/admin/reports/${reportId}/resolve`, {
+            response = await fetch(`https://memoire-it342.as.r.appspot.com/api/admin/reports/${reportId}/resolve`, {
               method: 'PUT',
               headers: {
                 'Authorization': `Bearer ${authToken}`,
@@ -169,7 +169,7 @@ const ReportDetailsPage = () => {
           break;
         
         case 'report-delete':
-          response = await fetch(`http://localhost:8080/api/reports/${reportId}`, {
+          response = await fetch(`https://memoire-it342.as.r.appspot.com/api/reports/${reportId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${authToken}`

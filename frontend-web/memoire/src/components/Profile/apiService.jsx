@@ -4,7 +4,7 @@ const token = sessionStorage.getItem('authToken');
 console.log("TOKEN RECEIVED: " + token);
 
 const apiService = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://memoire-it342.as.r.appspot.com',
   headers: {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}` 

@@ -53,7 +53,7 @@ const AdminDashboard = () => {
     
     try {
       // Fetch users for stats
-      const usersResponse = await fetch('http://localhost:8080/api/users/admin/dashboard', {
+      const usersResponse = await fetch('https://memoire-it342.as.r.appspot.com/api/users/admin/dashboard', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -68,7 +68,7 @@ const AdminDashboard = () => {
       const usersData = await usersResponse.json();
       
       // Fetch reports for stats
-      const reportsResponse = await fetch('http://localhost:8080/api/reports', {
+      const reportsResponse = await fetch('https://memoire-it342.as.r.appspot.com/api/reports', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,

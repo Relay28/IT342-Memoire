@@ -1,7 +1,7 @@
 // src/services/CommentServices.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api/comments';
+const API_URL = 'https://memoire-it342.as.r.appspot.com/api/comments';
 
 class CommentServices {
   /**

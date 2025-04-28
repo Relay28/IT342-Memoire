@@ -1,7 +1,7 @@
 // src/services/timeCapsuleService.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8080/api/timecapsules';
+const API_URL = 'https://memoire-it342.as.r.appspot.com/api/timecapsules';
 
 class TimeCapsuleService {
   /**

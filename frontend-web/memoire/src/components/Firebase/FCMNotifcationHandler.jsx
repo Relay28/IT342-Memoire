@@ -10,7 +10,7 @@ const FCMNotificationHandler = () => {
       if (token) {
         console.log("FCM Token:", token);
         // Send token to your Spring Boot backend
-        await fetch("http://localhost:8080/api/fcm/update-token", {
+        await fetch("https://memoire-it342.as.r.appspot.com/api/fcm/update-token", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: "6", fcmToken: token }),

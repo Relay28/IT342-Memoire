@@ -56,7 +56,7 @@ const ConfiscatedContentPage = () => {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:8080/api/admin/reports/confiscated-content', {
+      const response = await fetch('https://memoire-it342.as.r.appspot.com/api/admin/reports/confiscated-content', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
