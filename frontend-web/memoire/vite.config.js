@@ -25,5 +25,7 @@ export default defineConfig({
     rollupOptions: {
       plugins: [rollupNodePolyFill()],
     },
+    outDir: "dist",
+    assetsDir: "assets",
   },
 })
