@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import capsuleContentService from '../services/CapsuleContentService';
+import capsuleContentService from '../services/capsuleContentService';
 import { useAuth } from '../components/AuthProvider';
 
 const API_BASE_URL = 'https://memoire-it342.as.r.appspot.com/api/capsule-content';
