@@ -12,19 +12,10 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.config.annotation.web.messaging.MessageSecurityMetadataSourceRegistry;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.socket.config.annotation.*;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-
-import java.util.List;
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
@@ -63,9 +54,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // Replace wildcard with specific origins for GAE compatibility
         // General notifications endpoint
         registry.addEndpoint("/ws-notifications")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
                 .addInterceptors(authTokenHandshakeInterceptor)
                 .withSockJS()
                 .setWebSocketEnabled(true)
@@ -74,7 +66,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         // Specific endpoint for capsule content real-time updates
         registry.addEndpoint("/ws-capsule-content")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
                 .addInterceptors(authTokenHandshakeInterceptor)
                 .withSockJS()
                 .setWebSocketEnabled(true)
@@ -86,21 +78,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         // Keep existing comments endpoint
         registry.addEndpoint("/ws-comments")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
                 .withSockJS()
                 .setWebSocketEnabled(true);
 
         // Add raw WebSocket endpoints (no SockJS) as fallback
         registry.addEndpoint("/ws-capsule-content")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
                 .addInterceptors(authTokenHandshakeInterceptor);
 
         registry.addEndpoint("/ws-notifications")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
                 .addInterceptors(authTokenHandshakeInterceptor);
 
         registry.addEndpoint("/ws-comments")
-                .setAllowedOriginPatterns("*");
+                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173");
     }
 
     @Override

@@ -16,15 +16,17 @@ public class TimeCapsuleDTO {
     private boolean isLocked;
     private Long createdById;
     private String status;
-    private List<CapsuleContentEntity> contents = new ArrayList<>();
+    private List<CapsuleContentDTO> contents = new ArrayList<>();  // Changed to use CapsuleContentDTO
 
-    public List<CapsuleContentEntity> getContents() {
+    public List<CapsuleContentDTO> getContents() {  // Updated return type
         return contents;
     }
 
-    public void setContents(List<CapsuleContentEntity> contents) {
+    public void setContents(List<CapsuleContentDTO> contents) {  // Updated parameter type
         this.contents = contents;
     }
+
+
 
     public Long getId() {
         return id;
