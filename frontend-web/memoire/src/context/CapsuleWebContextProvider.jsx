@@ -3,7 +3,8 @@ import axios from 'axios';
 import capsuleContentService from '../services/capsuleContentService';
 import { useAuth } from '../components/AuthProvider';
 
-const API_BASE_URL = 'https://memoire-it342.as.r.appspot.com/api/capsule-content';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = `${API_BASE_URL}/api/capsule-content`;
 
 const CapsuleContentContext = createContext();
 
@@ -42,14 +43,14 @@ export const CapsuleContentProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/${capsuleId}`,
+        `${BASE_URL}/${capsuleId}`,
         getAuthHeaders()
       );
       
       // Transform the response to include downloadable URLs
       const transformedData = response.data.map(item => ({
         ...item,
-        url: `${API_BASE_URL}/${item.id}/download`
+        url: `${BASE_URL}/${item.id}/download`
       }));
       
       setLoading(false);
@@ -128,7 +129,7 @@ export const CapsuleContentProvider = ({ children }) => {
             ...update,
             id: contentId,
             // Add direct download URL
-            url: update.contentUrl || `${API_BASE_URL}/${contentId}/download`
+            url: update.contentUrl || `${BASE_URL}/${contentId}/download`
           }
         }
       };
@@ -143,7 +144,7 @@ export const CapsuleContentProvider = ({ children }) => {
         // Add download URL for accessing binary data
         acc[item.id] = {
           ...item,
-          url: item.contentUrl || `${API_BASE_URL}/${item.id}/download`
+          url: item.contentUrl || `${BASE_URL}/${item.id}/download`
         };
       }
       return acc;
@@ -168,14 +169,14 @@ export const CapsuleContentProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/renderable/${capsuleId}`,
+        `${BASE_URL}/renderable/${capsuleId}`,
         getAuthHeaders()
       );
       
       // Transform to add direct download URLs
       const renderableWithUrls = response.data.map(item => ({
         ...item,
-        url: item.contentUrl || `${API_BASE_URL}/${item.id}/download`
+        url: item.contentUrl || `${BASE_URL}/${item.id}/download`
       }));
       
       setLoading(false);
@@ -191,7 +192,7 @@ export const CapsuleContentProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/${capsuleId}`,
+        `${BASE_URL}/${capsuleId}`,
         getAuthHeaders()
       );
       
@@ -203,7 +204,7 @@ export const CapsuleContentProvider = ({ children }) => {
         .map(content => ({
           ...content,
           // Direct URL to access binary data
-          url: `${API_BASE_URL}/${content.id}/download`
+          url: `${BASE_URL}/${content.id}/download`
         }));
       
       setLoading(false);
@@ -222,7 +223,7 @@ export const CapsuleContentProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/${capsuleId}/upload`,
+        `${BASE_URL}/${capsuleId}/upload`,
         formData,
         getContentTypeHeaders()
       );
@@ -231,7 +232,7 @@ export const CapsuleContentProvider = ({ children }) => {
       // Add download URL to the uploaded content
       const uploadedContent = {
         ...response.data,
-        url: `${API_BASE_URL}/${response.data.id}/download`
+        url: `${BASE_URL}/${response.data.id}/download`
       };
       
       handleUpdate(capsuleId, {
@@ -253,7 +254,7 @@ export const CapsuleContentProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/${contentId}/download`,
+        `${BASE_URL}/${contentId}/download`,
         {
           ...getAuthHeaders(),
           responseType: 'blob'
@@ -272,7 +273,7 @@ export const CapsuleContentProvider = ({ children }) => {
     setLoading(true);
     try {
       await axios.delete(
-        `${API_BASE_URL}/${contentId}`,
+        `${BASE_URL}/${contentId}`,
         getAuthHeaders()
       );
       

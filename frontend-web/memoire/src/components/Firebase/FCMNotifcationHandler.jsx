@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import { toast } from "react-toastify";
 import { requestForToken, onMessageListener } from '../Firebase/FirebaseIntializer'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const FCMNotificationHandler = () => {
   useEffect(() => {
     // 1. Request permission & get FCM token
@@ -10,7 +12,7 @@ const FCMNotificationHandler = () => {
       if (token) {
         console.log("FCM Token:", token);
         // Send token to your Spring Boot backend
-        await fetch("https://memoire-it342.as.r.appspot.com/api/fcm/update-token", {
+        await fetch(`${API_BASE_URL}/api/fcm/update-token`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: "6", fcmToken: token }),

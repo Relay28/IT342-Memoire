@@ -22,6 +22,8 @@ import {
 } from '@mui/icons-material';
 import AdminLayout from './AdminLayout';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const ConfiscatedContentPage = () => {
   const navigate = useNavigate();
   
@@ -56,7 +58,7 @@ const ConfiscatedContentPage = () => {
     setError(null);
     
     try {
-      const response = await fetch('https://memoire-it342.as.r.appspot.com/api/admin/reports/confiscated-content', {
+      const response = await fetch(`${API_BASE_URL}/api/admin/reports/confiscated-content`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,

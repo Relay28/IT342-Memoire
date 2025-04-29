@@ -1,7 +1,9 @@
 // src/services/CommentServices.js
 import axios from 'axios';
 
-const API_URL = 'https://memoire-it342.as.r.appspot.com/api/comments';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const API_URL = `${API_BASE_URL}/api/comments`;
 
 class CommentServices {
   /**

@@ -7,6 +7,8 @@ import { useAuth } from '../components/AuthProvider';
 
 const NotificationContext = createContext();
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export const useNotifications = () => useContext(NotificationContext);
 
 export const NotificationProvider = ({ children }) => {
@@ -103,7 +105,7 @@ export const NotificationProvider = ({ children }) => {
   const markAsRead = async (notificationId) => {
     try {
       const response = await axios.patch(
-        `https://memoire-it342.as.r.appspot.com/api/notifications/${notificationId}/read`,
+        `${API_BASE_URL}/api/notifications/${notificationId}/read`,
         {},
         {
           headers: {
@@ -130,7 +132,7 @@ export const NotificationProvider = ({ children }) => {
   const markAllAsRead = async () => {
     try {
       const response = await axios.patch(
-        'https://memoire-it342.as.r.appspot.com/api/notifications/read-all',
+        `${API_BASE_URL}/api/notifications/read-all`,
         {},
         {
           headers: {
@@ -156,7 +158,7 @@ export const NotificationProvider = ({ children }) => {
     if (!isAuthenticated || !authToken) return;
     
     try {
-      const response = await axios.get('https://memoire-it342.as.r.appspot.com/api/notifications', {
+      const response = await axios.get(`${API_BASE_URL}/api/notifications`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -179,7 +181,7 @@ export const NotificationProvider = ({ children }) => {
     if (!isAuthenticated || !authToken) return;
     
     try {
-      const response = await axios.get('https://memoire-it342.as.r.appspot.com/api/notifications/unread-count', {
+      const response = await axios.get(`${API_BASE_URL}/api/notifications/unread-count`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }

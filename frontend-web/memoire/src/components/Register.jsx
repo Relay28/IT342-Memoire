@@ -6,6 +6,8 @@ import mmrlogo from "../assets/mmrlogo.png";
 import sunsetGif from "../assets/sunset.gif";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const togglePasswordVisibility = () => {
@@ -44,7 +46,7 @@ const Register = () => {
 
     try {
       const response = await axios.post(
-        "https://memoire-it342.as.r.appspot.com/api/auth/register",
+        `${API_BASE_URL}/api/auth/register`,
         formData,
         { headers: { "Content-Type": "application/json" } }
       );

@@ -29,6 +29,8 @@ import {
   Flag
 } from '@mui/icons-material';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const ReportListComponent = ({ 
   preview = false, 
   previewLimit = 5, 
@@ -76,7 +78,7 @@ const ReportListComponent = ({
     
     try {
       // Using the endpoint from ReportController.java
-      const response = await fetch('https://memoire-it342.as.r.appspot.com/api/reports/getAll', {
+      const response = await fetch(`${API_BASE_URL}/api/reports/getAll`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
