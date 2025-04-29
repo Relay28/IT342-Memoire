@@ -51,7 +51,7 @@ class NotificationWebsocketService(
         // Initialize STOMP client with SockJS
         stompClient = Stomp.over(
             Stomp.ConnectionProvider.OKHTTP,
-            "wss://20250428t092311-dot-memoire-it342.as.r.appspot.com/ws-notifications/websocket" // SockJS endpoint for notifications
+            "wss://memoire-it342.as.r.appspot.com/ws-notifications/websocket" // SockJS endpoint for notifications
         ).withClientHeartbeat(10000).withServerHeartbeat(10000)
 
         stompClient?.let { client ->

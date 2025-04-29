@@ -123,14 +123,15 @@
                         android:id="@+id/capsuleTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
-                        android:text="Capsule Title"
-                        android:textColor="@android:color/black"
                         android:background="@null"
-                        android:inputType="textCapSentences"
                         android:imeOptions="actionDone"
+                        android:inputType="textCapSentences"
                         android:maxLines="2"
-                        android:singleLine="false"/>
+                        android:minHeight="48dp"
+                        android:singleLine="false"
+                        android:text="Capsule Title"
+                        android:textAppearance="@style/TextAppearance.AppCompat.Headline"
+                        android:textColor="@android:color/black" />
 
                     <EditText
                         android:id="@+id/capsuleDescription"

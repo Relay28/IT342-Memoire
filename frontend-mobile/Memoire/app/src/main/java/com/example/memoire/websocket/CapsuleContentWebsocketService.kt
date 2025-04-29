@@ -39,16 +39,25 @@ class CapsuleContentStompService(
             return
         }
 
-        // Create headers with authorization
-        val headers = ArrayList<StompHeader>()
-        headers.add(StompHeader("Authorization", "Bearer $token"))
-        headers.add(StompHeader("Capsule-ID", capsuleId.toString()))
 
         // Initialize STOMP client with SockJS
+        val headers = ArrayList<StompHeader>().apply {
+            add(StompHeader("Authorization", "Bearer $token"))
+            add(StompHeader("Capsule-ID", capsuleId.toString()))
+            add(StompHeader("Origin", "https://memoire-it342.as.r.appspot.com"))
+            add(StompHeader("Accept-Encoding", "gzip, deflate, br"))
+        }
+
+        // Initialize STOMP client - try both SockJS and raw WebSocket
+        val connectionUrl = "https://memoire-it342.as.r.appspot.com/ws-capsule-content"
+
         stompClient = Stomp.over(
             Stomp.ConnectionProvider.OKHTTP,
-            "wss://20250428t092311-dot-memoire-it342.as.r.appspot.com/ws-capsule-content/websocket" // Use your actual GAE URL
-        )
+            connectionUrl
+        ).apply {
+            withClientHeartbeat(15000)
+            withServerHeartbeat(15000)
+        }
 
         stompClient?.let { client ->
             // Track connection state

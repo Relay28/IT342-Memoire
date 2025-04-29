@@ -16,7 +16,7 @@ import androidx.appcompat.widget.AppCompatButton
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.memoire.api.RetrofitClient
-import com.example.memoire.com.example.memoire.HomeActivity
+
 import com.example.memoire.models.UserEntity
 import com.example.memoire.utils.SessionManager
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -56,7 +56,7 @@ class ProfileActivity : AppCompatActivity() {
 
         // Back button functionality
         findViewById<ImageView>(R.id.btn_back).setOnClickListener {
-            startActivity(Intent(this, HomeActivity::class.java))
+            startActivity(Intent(this, MainContainerActivity::class.java))
             finish()
         }
 
@@ -87,7 +87,7 @@ class ProfileActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val user = response.body()
                     if (user != null) {
-                      val id = sessionManager.getUserSession()["userId"] as Long
+                        val id = sessionManager.getUserSession()["userId"] as Long
                         displayUserData(user)
                         loadProfileImage(token,id)
                     }

@@ -1,0 +1,113 @@
+<!--<?xml version="1.0" encoding="utf-8"?>-->
+<!--<RelativeLayout-->
+<!--    xmlns:android="http://schemas.android.com/apk/res/android"-->
+<!--    xmlns:app="http://schemas.android.com/apk/res-auto"-->
+<!--    xmlns:tools="http://schemas.android.com/tools"-->
+<!--    android:id="@+id/activity_notification"-->
+<!--    android:layout_width="match_parent"-->
+<!--    android:layout_height="match_parent"-->
+<!--    android:background="#FFFFFF"-->
+<!--    tools:context=".WastePeroHadlokIdeleteInkaso.NotificationActivity">-->
+
+<!--    <com.google.android.material.appbar.AppBarLayout-->
+<!--        android:id="@+id/appBarLayout"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentTop="true"-->
+<!--        android:background="#FFFFFF"-->
+<!--        app:elevation="4dp">-->
+
+<!--        <androidx.appcompat.widget.Toolbar-->
+<!--            android:id="@+id/toolbar"-->
+<!--            android:layout_width="match_parent"-->
+<!--            android:layout_height="?attr/actionBarSize"-->
+<!--            android:background="@drawable/btmborder">-->
+
+<!--            <RelativeLayout-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="match_parent">-->
+
+<!--                <LinearLayout-->
+<!--                    android:id="@+id/Logo"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_alignParentStart="true"-->
+<!--                    android:gravity="center_vertical"-->
+<!--                    android:orientation="horizontal">-->
+
+<!--                    <ImageView-->
+<!--                        android:id="@+id/ivLogo"-->
+<!--                        android:layout_width="32dp"-->
+<!--                        android:layout_height="32dp"-->
+<!--                        android:contentDescription="App Logo"-->
+<!--                        android:src="@drawable/mmrlogo_removebg_preview" />-->
+
+<!--                    <TextView-->
+<!--                        android:layout_width="wrap_content"-->
+<!--                        android:layout_height="wrap_content"-->
+<!--                        android:layout_marginStart="8dp"-->
+<!--                        android:text="MEMOIRE"-->
+<!--                        android:textColor="#000000"-->
+<!--                        android:textSize="18sp"-->
+<!--                        android:textStyle="bold" />-->
+<!--                </LinearLayout>-->
+
+<!--                <LinearLayout-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_alignParentEnd="true"-->
+<!--                    android:gravity="center_vertical"-->
+<!--                    android:orientation="horizontal">-->
+
+<!--                    <ImageView-->
+<!--                        android:id="@+id/ivSearch"-->
+<!--                        android:layout_width="24dp"-->
+<!--                        android:layout_height="24dp"-->
+<!--                        android:layout_marginEnd="16dp"-->
+<!--                        android:contentDescription="Search"-->
+<!--                        android:src="@drawable/ic_search" />-->
+
+<!--                    <ImageView-->
+<!--                        android:id="@+id/ivNotification"-->
+<!--                        android:layout_width="24dp"-->
+<!--                        android:layout_height="24dp"-->
+<!--                        android:layout_marginEnd="16dp"-->
+<!--                        android:contentDescription="Notifications"-->
+<!--                        android:src="@drawable/ic_notification" />-->
+
+<!--                    <ImageView-->
+<!--                        android:id="@+id/prof"-->
+<!--                        android:layout_width="27dp"-->
+<!--                        android:layout_height="27dp"-->
+<!--                        android:layout_marginEnd="16dp"-->
+<!--                        android:contentDescription="Profile"-->
+<!--                        android:src="@drawable/ic_placeholder" />-->
+<!--                </LinearLayout>-->
+<!--            </RelativeLayout>-->
+<!--        </androidx.appcompat.widget.Toolbar>-->
+<!--    </com.google.android.material.appbar.AppBarLayout>-->
+
+<!--    <com.google.android.material.bottomnavigation.BottomNavigationView-->
+<!--        android:id="@+id/bottomNavigation"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:background="@drawable/topborder"-->
+<!--        app:itemIconSize="20dp"-->
+<!--        app:itemIconTint="@color/MemoireRed"-->
+<!--        android:layout_marginBottom="-40dp"-->
+<!--        app:labelVisibilityMode="unlabeled"-->
+<!--        app:menu="@menu/bottom_navigation_menu" />-->
+
+<!--    <androidx.recyclerview.widget.RecyclerView-->
+<!--        android:id="@+id/notificationsRecyclerView"-->
+<!--        android:layout_width="match_parent"-->
+<!--        android:layout_height="match_parent"-->
+<!--        android:layout_below="@id/appBarLayout"-->
+<!--        android:layout_above="@id/bottomNavigation"-->
+<!--        android:clipToPadding="false"-->
+
+<!--        android:paddingTop="8dp"-->
+<!--        android:paddingBottom="8dp" />-->
+
+<!--</RelativeLayout>-->

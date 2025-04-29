@@ -1,17 +1,18 @@
+package com.example.memoire.fragments
 
-package com.example.memoire
-
+import android.app.AlertDialog
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AlertDialog
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.memoire.R
 import com.example.memoire.adapter.LockedCapsuleAdapter
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.CountdownDTO
@@ -23,49 +24,47 @@ import retrofit2.Response
 import java.util.Timer
 import java.util.TimerTask
 
-class LockedCapsulesActivity : BaseActivity() {
-
+class LockedCapsulesFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: LockedCapsuleAdapter
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyStateView: TextView
     private var timer: Timer? = null
-    private lateinit var sessionManager : SessionManager
+    private lateinit var sessionManager: SessionManager
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_locked_capsules)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_locked_capsules, container, false)
+    }
 
-        sessionManager = SessionManager(this)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        sessionManager = SessionManager(requireContext())
         setupViews()
         loadLockedCapsules()
-        setupHeaderActions()
-        setupBottomNavigation(R.id.navigation_timer)
     }
 
     private fun setupViews() {
-        recyclerView = findViewById(R.id.recyclerViewLockedCapsules)
-        progressBar = findViewById(R.id.progressBar1)
-        emptyStateView = findViewById(R.id.emptyStateText)
+        recyclerView = requireView().findViewById(R.id.recyclerViewLockedCapsules)
+        progressBar = requireView().findViewById(R.id.progressBar1)
+        emptyStateView = requireView().findViewById(R.id.emptyStateText)
 
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
         adapter = LockedCapsuleAdapter(
             mutableListOf(),
             { capsuleId -> /* Handle capsule click if needed */ },
-            { capsuleId -> showUnlockConfirmation(capsuleId) } ,
-            {sessionManager}// Add unlock handler
+            { capsuleId -> showUnlockConfirmation(capsuleId) },
+            { sessionManager }
         )
         recyclerView.adapter = adapter
     }
 
     private fun showUnlockConfirmation(capsuleId: Long) {
-        AlertDialog.Builder(this)
+        AlertDialog.Builder(requireContext())
             .setTitle("Confirm Unlock")
             .setMessage("Are you sure you want to unlock this time capsule? This will cancel the locking and allow immediate access.")
             .setPositiveButton("Yes, Unlock") { _, _ ->
@@ -81,24 +80,19 @@ class LockedCapsulesActivity : BaseActivity() {
             override fun onResponse(call: Call<Void>, response: Response<Void>) {
                 hideLoading()
                 if (response.isSuccessful) {
-                    // Remove the unlocked capsule from the list
                     adapter.removeCapsule(capsuleId)
-
-                    // Show success message
                     Toast.makeText(
-                        this@LockedCapsulesActivity,
+                        requireContext(),
                         "Capsule unlocked successfully",
                         Toast.LENGTH_SHORT
                     ).show()
 
-                    // If list is now empty, show empty state
                     if (adapter.itemCount == 0) {
                         showEmptyState("You have no locked capsules")
                     }
                 } else {
-                    // Show error message
                     Toast.makeText(
-                        this@LockedCapsulesActivity,
+                        requireContext(),
                         "Failed to unlock capsule",
                         Toast.LENGTH_SHORT
                     ).show()
@@ -112,12 +106,13 @@ class LockedCapsulesActivity : BaseActivity() {
         })
     }
 
-    // Rest of the existing methods remain the same
-
     private fun loadLockedCapsules() {
         showLoading()
         RetrofitClient.instance.getClosedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
-            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+            override fun onResponse(
+                call: Call<List<TimeCapsuleDTO>>,
+                response: Response<List<TimeCapsuleDTO>>
+            ) {
                 hideLoading()
                 if (response.isSuccessful) {
                     val capsules = response.body() ?: emptyList()
@@ -142,10 +137,9 @@ class LockedCapsulesActivity : BaseActivity() {
     private fun startCountdownUpdates() {
         timer?.cancel()
         timer = Timer().apply {
-            // Update immediately and then every second
             scheduleAtFixedRate(object : TimerTask() {
                 override fun run() {
-                    runOnUiThread {
+                    activity?.runOnUiThread {
                         updateAllCountdowns()
                     }
                 }
@@ -162,11 +156,13 @@ class LockedCapsulesActivity : BaseActivity() {
 
     private fun updateSingleCountdown(capsuleId: Long, position: Int) {
         RetrofitClient.instance.getCountdown(capsuleId).enqueue(object : Callback<CountdownDTO> {
-            override fun onResponse(call: Call<CountdownDTO>, response: Response<CountdownDTO>) {
+            override fun onResponse(
+                call: Call<CountdownDTO>,
+                response: Response<CountdownDTO>
+            ) {
                 if (response.isSuccessful) {
                     response.body()?.let { countdown ->
                         if (countdown.isOpen) {
-                            // Refresh the list if any capsule is ready to open
                             loadLockedCapsules()
                         } else {
                             adapter.updateCountdownAtPosition(position, countdown)
@@ -176,7 +172,7 @@ class LockedCapsulesActivity : BaseActivity() {
             }
 
             override fun onFailure(call: Call<CountdownDTO>, t: Throwable) {
-                // Silently fail - we'll try again on next update
+                // Silently fail
             }
         })
     }
@@ -193,18 +189,18 @@ class LockedCapsulesActivity : BaseActivity() {
         emptyStateView.isVisible = true
     }
 
-    override fun showLoading() {
+    private fun showLoading() {
         progressBar.isVisible = true
         recyclerView.isVisible = false
         emptyStateView.isVisible = false
     }
 
-    override fun hideLoading() {
+    private fun hideLoading() {
         progressBar.isVisible = false
     }
 
-    override fun showError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    private fun showError(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         showEmptyState(message)
     }
 
@@ -215,13 +211,13 @@ class LockedCapsulesActivity : BaseActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (adapter.itemCount > 0) {
+        if (::adapter.isInitialized && adapter.itemCount > 0) {
             startCountdownUpdates()
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        super.onDestroyView()
         timer?.cancel()
     }
 }
