@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/activity_home"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
-    tools:context=".com.example.memoire.HomeActivity">
+    android:background="#FFFFFF">
 
-    <!-- AppBar with collapsing toolbar for header -->
+    <!-- Header -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="0dp"
@@ -23,14 +21,13 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="@drawable/btmborder"
-            app:layout_scrollFlags="scroll|enterAlways|snap">
+            android:background="@drawable/btmborder">
 
+            <!-- Your existing header content -->
             <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent">
 
-                <!-- Logo -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
@@ -42,7 +39,6 @@
                         android:id="@+id/ivLogo"
                         android:layout_width="32dp"
                         android:layout_height="32dp"
-                        android:contentDescription="App Logo"
                         android:src="@drawable/mmrlogo_removebg_preview" />
 
                     <TextView
@@ -55,7 +51,6 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Search and Notification Icons -->
                 <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
@@ -68,7 +63,6 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:contentDescription="Search"
                         android:src="@drawable/ic_search" />
 
                     <ImageView
@@ -76,7 +70,6 @@
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:layout_marginEnd="16dp"
-                        android:contentDescription="Notifications"
                         android:src="@drawable/ic_notification" />
 
                     <ImageView
@@ -84,52 +77,23 @@
                         android:layout_width="27dp"
                         android:layout_height="27dp"
                         android:layout_marginEnd="16dp"
-                        android:contentDescription="Profile"
                         android:src="@drawable/ic_placeholder" />
                 </LinearLayout>
             </RelativeLayout>
         </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Scrollable Content Area - Between AppBar and Bottom Nav -->
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/nestedScrollView"
+    <!-- Fragment Container -->
+    <FrameLayout
+        android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:background="#FFFFFF"
-        android:clipToPadding="false"
-        android:fillViewport="true"
-        android:paddingBottom="56dp"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/appBarLayout">
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/emptyStateText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:gravity="center"
-                android:text="No Memoires open yet"
-                android:textColor="#757575"
-                android:textSize="16sp"
-                android:visibility="gone" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvPublishedCapsules"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="8dp" />
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
-    <!-- Bottom Navigation - Positioned at the VERY bottom -->
+    <!-- Bottom Navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"
         android:layout_width="match_parent"
@@ -137,15 +101,10 @@
         android:background="@drawable/topborder"
         app:itemIconSize="24dp"
         app:itemIconTint="@color/MemoireRed"
-        android:paddingBottom="0dp"
         app:labelVisibilityMode="unlabeled"
-        android:layout_marginBottom="-50dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:menu="@menu/bottom_navigation_menu"
-        android:backgroundTint="#FFFFFF"
-        app:itemRippleColor="@android:color/transparent"
-        android:foreground="@null" />
+        app:menu="@menu/bottom_navigation_menu" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

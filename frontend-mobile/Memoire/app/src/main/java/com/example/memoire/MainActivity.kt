@@ -13,7 +13,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.lifecycle.lifecycleScope
 import com.example.memoire.api.RetrofitClient
-import com.example.memoire.com.example.memoire.HomeActivity
 import com.example.memoire.models.AuthenticationRequest
 import com.example.memoire.utils.SessionManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -128,7 +127,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Navigate to home
-        startActivity(Intent(this, HomeActivity::class.java))
+        startActivity(Intent(this, MainContainerActivity::class.java))
         finish()
     }
 

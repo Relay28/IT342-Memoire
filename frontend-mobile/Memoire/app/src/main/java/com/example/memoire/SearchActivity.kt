@@ -10,10 +10,11 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.memoire.MainContainerActivity
 import com.example.memoire.R
 import com.example.memoire.adapters.UserAdapter
 import com.example.memoire.api.RetrofitClient
-import com.example.memoire.com.example.memoire.HomeActivity
+
 import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.ProfileDTO2
 import kotlinx.coroutines.CoroutineScope
@@ -42,7 +43,7 @@ class SearchActivity : AppCompatActivity() {
 
         // Back button to return to the home screen
         findViewById<ImageView>(R.id.btn_back).setOnClickListener {
-            startActivity(Intent(this, HomeActivity::class.java))
+            startActivity(Intent(this, MainContainerActivity::class.java))
             finish()
         }
 

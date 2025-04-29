@@ -1,39 +1,37 @@
-package com.example.memoire
+package com.example.memoire.fragments
 
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import androidx.viewpager2.widget.ViewPager2
+import com.example.memoire.FriendRequestsFragment
+import com.example.memoire.FriendsFragment
+import com.example.memoire.R
 import com.example.memoire.viewmodels.FriendListViewModel
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 
-class FriendListActivity : BaseActivity() {
-
+class FriendListFragment : Fragment() {
     private lateinit var viewModel: FriendListViewModel
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_friend_list)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_friend_list, container, false)
+    }
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
 
-        // Setup the toolbar and bottom navigation
-        setupHeaderActions()
-        setupBottomNavigation(R.id.navigation_friendList)
-
-        // Initialize the ViewModel
+        // Initialize ViewModel
         viewModel = ViewModelProvider(this)[FriendListViewModel::class.java]
 
         // Setup ViewPager and TabLayout
@@ -41,8 +39,8 @@ class FriendListActivity : BaseActivity() {
     }
 
     private fun setupViewPager() {
-        viewPager = findViewById(R.id.viewPager)
-        tabLayout = findViewById(R.id.tabLayout)
+        viewPager = requireView().findViewById(R.id.viewPager)
+        tabLayout = requireView().findViewById(R.id.tabLayout)
 
         // Create adapter for the viewPager
         val adapter = FriendPagerAdapter(this)
@@ -59,8 +57,8 @@ class FriendListActivity : BaseActivity() {
     }
 
     // ViewPager adapter to manage fragments
-    private inner class FriendPagerAdapter(activity: AppCompatActivity) :
-        androidx.viewpager2.adapter.FragmentStateAdapter(activity) {
+    private inner class FriendPagerAdapter(fragment: Fragment) :
+        FragmentStateAdapter(fragment) {
 
         override fun getItemCount(): Int = 2
 

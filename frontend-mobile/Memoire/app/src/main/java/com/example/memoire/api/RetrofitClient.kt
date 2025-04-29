@@ -12,7 +12,7 @@ import org.w3c.dom.Comment
 import java.time.LocalDateTime
 
 object RetrofitClient {
-    const val BASE_URL = "https://20250428t092311-dot-memoire-it342.as.r.appspot.com/"
+    const val BASE_URL = "https://memoire-it342.as.r.appspot.com/"
 
     private lateinit var sessionManager: SessionManager
     fun getAuthToken(): String {

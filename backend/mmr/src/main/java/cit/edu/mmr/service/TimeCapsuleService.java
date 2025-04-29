@@ -1,10 +1,8 @@
 package cit.edu.mmr.service;
 
+import cit.edu.mmr.dto.CapsuleContentDTO;
 import cit.edu.mmr.dto.TimeCapsuleDTO;
-import cit.edu.mmr.entity.CapsuleAccessEntity;
-import cit.edu.mmr.entity.NotificationEntity;
-import cit.edu.mmr.entity.TimeCapsuleEntity;
-import cit.edu.mmr.entity.UserEntity;
+import cit.edu.mmr.entity.*;
 import cit.edu.mmr.repository.CapsuleAccessRepository;
 import cit.edu.mmr.repository.TimeCapsuleRepository;
 import cit.edu.mmr.repository.UserRepository;
@@ -116,6 +114,7 @@ public class TimeCapsuleService {
         }
     }
 
+    @Transactional // Ensure this annotation is present
     public TimeCapsuleDTO getTimeCapsule(Long id, Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
         TimeCapsuleEntity capsule = tcRepo.findById(id)
@@ -143,9 +142,12 @@ public class TimeCapsuleService {
             throw new AccessDeniedException("You do not have permission to view this capsule");
         }
 
+        // Explicitly initialize the contents collection to avoid LazyInitializationException
+        // This should load the contents within the transaction
+        capsule.getContents().size();
+
         return convertToDTO(capsule);
     }
-
     public List<TimeCapsuleDTO> getUserTimeCapsules(Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
 
@@ -268,13 +270,28 @@ public class TimeCapsuleService {
         dto.setDescription(entity.getDescription());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setOpenDate(entity.getOpenDate());
-        dto.setContents(entity.getContents());
         dto.setLocked(entity.isLocked());
         dto.setCreatedById(entity.getCreatedBy().getId());
         dto.setStatus(entity.getStatus());
+
+        // Convert entity contents to DTOs
+        List<CapsuleContentDTO> contentDTOs = new ArrayList<>();
+        if (entity.getContents() != null) {
+            for (CapsuleContentEntity content : entity.getContents()) {
+                CapsuleContentDTO contentDTO = new CapsuleContentDTO();
+                contentDTO.setId(content.getId());
+                contentDTO.setContentType(content.getContentType());
+                contentDTO.setUploadedAt(content.getUploadedAt());
+                if (content.getContentUploadedBy() != null) {
+                    contentDTO.setContentUploadedById(content.getContentUploadedBy().getId());
+                }
+                contentDTOs.add(contentDTO);
+            }
+        }
+        dto.setContents(contentDTOs);
+
         return dto;
     }
-
     // Method to get all time capsules user has access to (owned + shared with them)
     public List<TimeCapsuleDTO> getAllAccessibleTimeCapsules(Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);

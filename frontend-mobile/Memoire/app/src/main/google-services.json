@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "117689149240",
+    "project_id": "memoire-b5584",
+    "storage_bucket": "memoire-b5584.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:117689149240:android:7422a4a6408577363c43cd",
+        "android_client_info": {
+          "package_name": "com.example.memoire"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYOWhrIaEo__f8wGUeJKEO-pAQsG-V6cA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

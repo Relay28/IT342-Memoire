@@ -1,28 +1,20 @@
-package com.example.memoire
+package com.example.memoire.fragments
 
-import android.content.Intent
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.ImageView
+import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.memoire.ProfileActivity
 import com.example.memoire.R
 import com.example.memoire.adapter.TimeCapsuleAdapter
 import com.example.memoire.api.RetrofitClient
-
-import com.example.memoire.com.example.memoire.NotificationActivity
-import com.example.memoire.activities.SearchActivity
 import com.example.memoire.models.TimeCapsuleDTO
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import retrofit2.Call
@@ -30,53 +22,46 @@ import retrofit2.Callback
 import retrofit2.Response
 import java.util.Locale
 
-class CapsuleListActivity : BaseActivity() {
-
+class CapsuleListFragment : Fragment() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: TimeCapsuleAdapter
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyStateView: TextView
     private lateinit var chipGroup: ChipGroup
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_capsule_list)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_capsule_list, container, false)
+    }
 
-        recyclerView = findViewById(R.id.recyclerViewCapsules)
-        progressBar = findViewById(R.id.progressBar)
-        emptyStateView = findViewById(R.id.emptyStateText)
-        chipGroup = findViewById(R.id.chipGroup)
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        // Initialize views
+        recyclerView = view.findViewById(R.id.recyclerViewCapsules)
+        progressBar = view.findViewById(R.id.progressBar)
+        emptyStateView = view.findViewById(R.id.emptyStateText)
+        chipGroup = view.findViewById(R.id.chipGroup)
 
         // Setup RecyclerView
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        adapter = TimeCapsuleAdapter(this, mutableListOf())
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        adapter = TimeCapsuleAdapter(requireContext(), mutableListOf())
         recyclerView.adapter = adapter
-
-        // Setup header actions
-        setupHeaderActions()
-
-        // Setup bottom navigation
 
         // Setup filter chips
         setupFilterChips()
 
         // Load user's time capsules by default
         loadUserTimeCapsules()
-        setupHeaderActions()
-        setupBottomNavigation(R.id.navigation_tags)
     }
 
-
     private fun setupFilterChips() {
-        val chipAll = findViewById<Chip>(R.id.chipAll)
-        val chipPublished = findViewById<Chip>(R.id.chipPublished)
-        val chipUnpublished = findViewById<Chip>(R.id.chipUnpublished)
+        val chipAll = requireView().findViewById<Chip>(R.id.chipAll)
+        val chipPublished = requireView().findViewById<Chip>(R.id.chipPublished)
+        val chipUnpublished = requireView().findViewById<Chip>(R.id.chipUnpublished)
 
         chipAll.setOnClickListener { loadUserTimeCapsules() }
         chipPublished.setOnClickListener { loadCapsulesByStatus("PUBLISHED") }
@@ -85,8 +70,12 @@ class CapsuleListActivity : BaseActivity() {
 
     private fun loadUserTimeCapsules() {
         showLoading()
-        RetrofitClient.instance.getUserTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
-            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+        RetrofitClient.instance.getUserTimeCapsules().enqueue(object :
+            Callback<List<TimeCapsuleDTO>> {
+            override fun onResponse(
+                call: Call<List<TimeCapsuleDTO>>,
+                response: Response<List<TimeCapsuleDTO>>
+            ) {
                 hideLoading()
                 if (response.isSuccessful) {
                     val allCapsules = response.body() ?: emptyList()
@@ -107,6 +96,7 @@ class CapsuleListActivity : BaseActivity() {
             }
         })
     }
+
     private fun loadCapsulesByStatus(status: String) {
         showLoading()
         val apiCall = when (status) {
@@ -116,7 +106,10 @@ class CapsuleListActivity : BaseActivity() {
         }
 
         apiCall.enqueue(object : Callback<List<TimeCapsuleDTO>> {
-            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+            override fun onResponse(
+                call: Call<List<TimeCapsuleDTO>>,
+                response: Response<List<TimeCapsuleDTO>>
+            ) {
                 hideLoading()
                 if (response.isSuccessful) {
                     val capsules = response.body() ?: emptyList()
@@ -144,18 +137,18 @@ class CapsuleListActivity : BaseActivity() {
         }
     }
 
-    override fun showLoading() {
+    private fun showLoading() {
         progressBar.isVisible = true
         recyclerView.isVisible = false
         emptyStateView.isVisible = false
     }
 
-    override  fun hideLoading() {
+    private fun hideLoading() {
         progressBar.isVisible = false
     }
 
-   override  fun showError(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+    private fun showError(message: String) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
         emptyStateView.text = "Something went wrong. Please try again."
         emptyStateView.isVisible = true
         recyclerView.isVisible = false

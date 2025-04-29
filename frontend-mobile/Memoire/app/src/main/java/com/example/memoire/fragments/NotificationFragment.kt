@@ -1,26 +1,20 @@
-package com.example.memoire.com.example.memoire
+package com.example.memoire.fragments
 
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.widget.ImageView
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.memoire.BaseActivity
 import com.example.memoire.CapsuleDetailActivity
-import com.example.memoire.ProfileActivity
 import com.example.memoire.R
-import com.example.memoire.activities.SearchActivity
 import com.example.memoire.adapters.NotificationAdapter
 import com.example.memoire.api.RetrofitClient
-import com.example.memoire.models.NotificationDTO
 import com.example.memoire.models.NotificationEntity
-import com.example.memoire.utils.SessionManager
 import com.example.memoire.websocket.NotificationWebSocketListener
 import com.example.memoire.websocket.NotificationWebsocketService
 import kotlinx.coroutines.CoroutineScope
@@ -28,90 +22,68 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class NotificationActivity : BaseActivity(), NotificationWebSocketListener {
-
+class NotificationFragment : Fragment(), NotificationWebSocketListener {
     private lateinit var notificationAdapter: NotificationAdapter
     private lateinit var websocketService: NotificationWebsocketService
     private lateinit var recyclerView: RecyclerView
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(R.layout.activity_notification)
-        RetrofitClient.init(applicationContext)
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        return inflater.inflate(R.layout.fragment_notification, container, false)
+    }
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.activity_notification)) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
-        }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        RetrofitClient.init(requireContext())
 
         // Initialize RecyclerView
-        recyclerView = findViewById(R.id.notificationsRecyclerView)
+        recyclerView = view.findViewById(R.id.notificationsRecyclerView)
         notificationAdapter = NotificationAdapter(mutableListOf()) { notification ->
             // Handle notification click
             markNotificationAsRead(notification)
         }
-        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = notificationAdapter
 
         // Initialize WebSocket service
-        websocketService = NotificationWebsocketService(this, this)
+        websocketService = NotificationWebsocketService(requireContext(), this)
         websocketService.connect()
 
         // Load initial notifications
         loadInitialNotifications()
-        setupHeaderActions()
-        setupBottomNavigation(R.id.navigation_tags)
-
-        val profile = findViewById<ImageView>(R.id.prof)
-        profile.setOnClickListener {
-            val intent = Intent(this@NotificationActivity, ProfileActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
-
-        val notificationBtn = findViewById<ImageView>(R.id.ivNotification)
-        notificationBtn.setOnClickListener {
-            val intent = Intent(this@NotificationActivity, HomeActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
-
-        val searchbtn = findViewById<ImageView>(R.id.ivSearch)
-        searchbtn.setOnClickListener {
-            val intent = Intent(this@NotificationActivity, SearchActivity::class.java)
-            startActivity(intent)
-            finish()
-        }
     }
+
     private fun loadInitialNotifications() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = RetrofitClient.instance.getNotifications(false).execute()
                 if (response.isSuccessful) {
                     val notifications = response.body() ?: emptyList()
-                    Log.d("NotificationActivity", "Loaded notifications: $notifications")
+                    Log.d("NotificationFragment", "Loaded notifications: $notifications")
                     withContext(Dispatchers.Main) {
                         notificationAdapter.updateNotifications(notifications)
                     }
                 } else {
                     val errorBody = response.errorBody()?.string() ?: "No error body"
-                    Log.e("NotificationActivity",
+                    Log.e("NotificationFragment",
                         "Error: ${response.code()} - $errorBody")
                     withContext(Dispatchers.Main) {
                         Toast.makeText(
-                            this@NotificationActivity,
+                            requireContext(),
                             "Failed to load notifications",
                             Toast.LENGTH_SHORT
                         ).show()
                     }
                 }
             } catch (e: Exception) {
-                Log.e("NotificationActivity", "Exception: ${e.message}", e)
+                Log.e("NotificationFragment", "Exception: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
-                        this@NotificationActivity,
+                        requireContext(),
                         "Error: ${e.message}",
                         Toast.LENGTH_SHORT
                     ).show()
@@ -119,7 +91,6 @@ class NotificationActivity : BaseActivity(), NotificationWebSocketListener {
             }
         }
     }
-
 
     private fun markNotificationAsRead(notification: NotificationEntity) {
         if (!notification.isRead) {
@@ -137,7 +108,7 @@ class NotificationActivity : BaseActivity(), NotificationWebSocketListener {
         when (notification.itemType) {
             "TimeCapsule" -> {
                 // Navigate to time capsule detail
-                val intent = Intent(this, CapsuleDetailActivity::class.java).apply {
+                val intent = Intent(requireActivity(), CapsuleDetailActivity::class.java).apply {
                     putExtra("timeCapsuleId", notification.relatedItemId)
                 }
                 startActivity(intent)
@@ -146,37 +117,35 @@ class NotificationActivity : BaseActivity(), NotificationWebSocketListener {
         }
     }
 
-
-
-    override fun onDestroy() {
-        super.onDestroy()
+    override fun onDestroyView() {
+        super.onDestroyView()
         websocketService.disconnect()
     }
 
     // WebSocket callbacks
     override fun onConnected() {
-        runOnUiThread {
-            Toast.makeText(this, "Connected to notifications", Toast.LENGTH_SHORT).show()
+        activity?.runOnUiThread {
+            Toast.makeText(requireContext(), "Connected to notifications", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun onDisconnected(reason: String) {
-        runOnUiThread {
-            Toast.makeText(this, "Disconnected: $reason", Toast.LENGTH_SHORT).show()
+        activity?.runOnUiThread {
+            Toast.makeText(requireContext(), "Disconnected: $reason", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun onError(error: String) {
-        runOnUiThread {
-            Toast.makeText(this, "Error: $error", Toast.LENGTH_SHORT).show()
+        activity?.runOnUiThread {
+            Toast.makeText(requireContext(), "Error: $error", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun onNotificationReceived(notification: NotificationEntity) {
-        runOnUiThread {
+        activity?.runOnUiThread {
             notificationAdapter.addNotification(notification)
             // Show a toast for new notifications
-            Toast.makeText(this, notification.text, Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), notification.text, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -185,7 +154,7 @@ class NotificationActivity : BaseActivity(), NotificationWebSocketListener {
     }
 
     override fun onInitialNotificationsReceived(notifications: List<NotificationEntity>) {
-        runOnUiThread {
+        activity?.runOnUiThread {
             notificationAdapter.updateNotifications(notifications)
         }
     }

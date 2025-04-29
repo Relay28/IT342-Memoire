@@ -222,13 +222,16 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
                 progressBar.visibility = View.GONE
                 if (response.isSuccessful) {
                     val capsule = response.body()
-                    titleTextView.text = capsule?.title ?: "Unnamed Capsule"
-                    descriptionTextView.text = capsule?.description ?: "No description"
+                    Log.d("CAPSULE CONTENT ", capsule.toString())
+                    Toast.makeText(this@CapsuleDetailActivity, "Current Id "+capsule, Toast.LENGTH_SHORT).show()
+                    titleTextView.text = capsule?.title ?: "Untitled"
+                    descriptionTextView.text = capsule?.description ?: ""
 
                     // Check if current user is the owner
                     val currentUserId = sessionManager.getUserSession()["userId"]
-                    isOwner = currentUserId == capsule?.createdBy?.id?.toLong()
+                    isOwner = currentUserId == capsule?.createdById?.toLong()
 
+                    Toast.makeText(this@CapsuleDetailActivity, "Creator Id "+capsule?.createdBy?.id, Toast.LENGTH_SHORT).show()
                     // Set up views based on ownership
                     if (isOwner) {
                         // For owners, make views editable and set up focus change listeners
