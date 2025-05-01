@@ -21,16 +21,16 @@ const CapsuleContentGallery = ({ capsuleId }) => {
   const [mediaContents, setMediaContents] = useState([]);
   const [selectedMedia, setSelectedMedia] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const fileInputRef = useRef();
   const lastUpdateTimeRef = useRef(0);
   const checkIntervalRef = useRef(null);
   
   // Load media with error handling
   const loadMedia = useCallback(async () => {
-    // Prevent loading too frequently
     const now = Date.now();
     if (now - lastUpdateTimeRef.current < 2000) {
-      return; // Don't refresh if less than 2 seconds passed
+      return;
     }
     
     lastUpdateTimeRef.current = now;
@@ -39,17 +39,14 @@ const CapsuleContentGallery = ({ capsuleId }) => {
     try {
       const list = await fetchMediaContent(capsuleId);
       
-      // Update media contents
       setMediaContents(prev => {
-        // Check if content has actually changed to prevent needless rerenders
         const prevIds = prev.map(item => item.id).sort().join(',');
         const newIds = list.map(item => item.id).sort().join(',');
         
         if (prevIds === newIds) {
-          return prev; // No change, keep previous state
+          return prev;
         }
         
-        // Content has changed, update state
         if (!selectedMedia && list.length > 0) {
           setSelectedMedia(list[0]);
         } else if (selectedMedia) {
@@ -70,16 +67,10 @@ const CapsuleContentGallery = ({ capsuleId }) => {
     }
   }, [capsuleId, fetchMediaContent, selectedMedia]);
 
-  // Set up initial connection and load
   useEffect(() => {
-    // Initial load
     loadMedia();
-    
-    // Connect to WebSocket
     connectToCapsule(capsuleId);
     
-    // Set up a periodic check (every 10s) as backup
-    // This ensures we eventually get updates even if WebSocket fails
     checkIntervalRef.current = setInterval(() => {
       loadMedia();
     }, 10000);
@@ -92,30 +83,25 @@ const CapsuleContentGallery = ({ capsuleId }) => {
     };
   }, [capsuleId, connectToCapsule, disconnectFromCapsule, loadMedia]);
 
-  // Handle file upload
   const onFile = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     
     try {
       await uploadContent(capsuleId, file);
-      // Force refresh after upload
       loadMedia();
     } catch (err) {
       console.error("Upload failed:", err);
     }
   };
 
-  // Handle deletion
   const onDelete = async (id) => {
     try {
       await deleteContent(id);
       
-      // Update UI immediately
       setMediaContents(prev => {
         const newContents = prev.filter(item => item.id !== id);
         
-        // Update selected media if deleted
         if (selectedMedia?.id === id) {
           if (newContents.length > 0) {
             setSelectedMedia(newContents[0]);
@@ -129,18 +115,24 @@ const CapsuleContentGallery = ({ capsuleId }) => {
       
     } catch (err) {
       console.error("Delete failed:", err);
-      // Refresh to ensure we're in sync
       loadMedia();
     }
   };
 
-  // Get filename from content type and ID
   const getFileName = (item) => {
     const type = item.contentType?.split('/')[1] || 'unknown';
     return `File-${item.id}.${type}`;
   };
 
-  // Debug info display - can be removed in production
+  const openModal = (media) => {
+    setSelectedMedia(media);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
   const renderDebugInfo = () => (
     <div className="text-xs text-gray-500 mb-2">
       <div>Connection: {connectionStatus}</div>
@@ -160,7 +152,6 @@ const CapsuleContentGallery = ({ capsuleId }) => {
 
   return (
     <div className="space-y-6">
-      {/* Debug info - remove in production */}
       {renderDebugInfo()}
       
       {/* toolbar */}
@@ -188,20 +179,6 @@ const CapsuleContentGallery = ({ capsuleId }) => {
         </div>
       </div>
 
-      {/* preview */}
-      <div className="w-full h-64 bg-gray-100 rounded overflow-hidden">
-        {selectedMedia ? (
-          selectedMedia.contentType?.startsWith('image/') ? (
-            <ImageDisplay src={selectedMedia.url} className="w-full h-full object-contain" />
-          ) : (
-            <VideoPlayer src={selectedMedia.url} className="w-full h-full" />
-          )
-        ) : (
-          <div className="flex items-center justify-center h-full text-gray-500">
-            No media selected
-          </div>
-        )}
-      </div>
 
       {/* thumbnails */}
       <DragDropContext onDragEnd={({ source, destination }) => {
@@ -221,7 +198,7 @@ const CapsuleContentGallery = ({ capsuleId }) => {
                       ref={p.innerRef}
                       {...p.draggableProps}
                       {...p.dragHandleProps}
-                      onClick={() => setSelectedMedia(item)}
+                      onClick={() => openModal(item)}
                       className={`h-24 border rounded overflow-hidden cursor-pointer
                         ${selectedMedia?.id === item.id ? 'ring-2 ring-blue-500' : ''}`}
                     >
@@ -242,6 +219,38 @@ const CapsuleContentGallery = ({ capsuleId }) => {
         </Droppable>
       </DragDropContext>
 
+      {/* Fullscreen Modal */}
+      {isModalOpen && selectedMedia && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4">
+          <button 
+            onClick={closeModal}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+          >
+            <X size={32} />
+          </button>
+          
+          <div className="relative w-full h-full max-w-6xl max-h-[90vh] flex items-center justify-center">
+            {selectedMedia.contentType?.startsWith('image/') ? (
+              <ImageDisplay 
+                src={selectedMedia.url} 
+                className="max-w-full max-h-full object-contain"
+              />
+            ) : (
+              <VideoPlayer 
+                src={selectedMedia.url} 
+                className="w-full h-full"
+                controls
+                autoPlay
+              />
+            )}
+          </div>
+          
+          <div className="absolute bottom-4 left-0 right-0 text-center text-white text-sm">
+            {getFileName(selectedMedia)}
+          </div>
+        </div>
+      )}
+
       {/* file list */}
       <div>
         <h3>Files ({mediaContents.length})</h3>
@@ -253,9 +262,16 @@ const CapsuleContentGallery = ({ capsuleId }) => {
               <li key={item.id} className="flex items-center p-2 border rounded">
                 <div className="w-12 h-12 mr-3 overflow-hidden rounded">
                   {item.contentType?.startsWith('image/') ? (
-                    <ImageDisplay src={item.url} className="w-full h-full object-cover" />
+                    <ImageDisplay 
+                      src={item.url} 
+                      className="w-full h-full object-cover cursor-pointer"
+                      onClick={() => openModal(item)}
+                    />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-800">
+                    <div 
+                      className="w-full h-full flex items-center justify-center bg-gray-800 cursor-pointer"
+                      onClick={() => openModal(item)}
+                    >
                       <Play className="text-white" />
                     </div>
                   )}

@@ -48,7 +48,7 @@ const AppRoutes = () => {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/search" element={<SearchResult />} />
         <Route path="/profile/:userId" element={<ProfilePageOther />} />
-        <Route path="/countdown" element={<CountdownTimerPage />} />
+        <Route path="/locked-capsules" element={<CountdownTimerPage />} />
         
         <Route path="/create" element={<CreateCapsule />} />
         <Route 

@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import { FiLock, FiShare2, FiUsers, FiEye, FiPlus, FiArrowLeft } from 'react-icons/fi';
+import { FiLock, FiUnlock, FiShare2, FiUsers, FiEye, FiPlus, FiArrowLeft } from 'react-icons/fi';
 import { useTimeCapsule } from '../hooks/useTimeCapsule';
 import { useAuth } from '../components/AuthProvider';
 import CapsuleContentGallery from './MediaShower/CapsuleContentGallery';
 import { useThemeMode } from '../context/ThemeContext';
-import ShareModal from './modals/ShareModal'; // Import your ShareModal component
+import ShareModal from './modals/ShareModal';
+import LockDateModal from '../components/modals/LockDateModal';
 
 export default function CreateCapsule() {
   const { isDark } = useThemeMode();
@@ -18,9 +19,10 @@ export default function CreateCapsule() {
   const [capsuleData, setCapsuleData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showShareModal, setShowShareModal] = useState(false); // State for modal visibility
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showLockModal, setShowLockModal] = useState(false);
   
-  const { isAuthenticated, user } = useAuth(); // Destructure user from useAuth
+  const { isAuthenticated, user } = useAuth();
   const { getTimeCapsule, updateTimeCapsule } = useTimeCapsule();
 
   // Save changes automatically with debounce
@@ -66,6 +68,18 @@ export default function CreateCapsule() {
       setLoading(false);
     }
   }, [id, isAuthenticated]);
+
+  const handleLockSuccess = () => {
+    // Update capsule data to reflect locked status
+    if (capsuleData) {
+      setCapsuleData({
+        ...capsuleData,
+        isLocked: true
+      });
+    }
+    // Navigate to locked capsules page
+    navigate('/locked-capsules');
+  };
 
   if (loading) {
     return (
@@ -116,51 +130,65 @@ export default function CreateCapsule() {
                   }`}
                 >
                   <FiArrowLeft className="text-lg" />
-                  
                 </button>
                 <input
-                type="text"
-                placeholder="Capsule Title"
-                className={`w-full text-lg font-bold p-2 focus:outline-none ${
-                  isDark ? 'bg-gray-800 text-white placeholder-gray-500' : 'bg-gray-50 text-gray-900 placeholder-gray-400'
-                }`}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-              />
+                  type="text"
+                  placeholder="Capsule Title"
+                  className={`w-full text-lg font-bold p-2 focus:outline-none ${
+                    isDark ? 'bg-gray-800 text-white placeholder-gray-500' : 'bg-gray-50 text-gray-900 placeholder-gray-400'
+                  }`}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  disabled={capsuleData?.isLocked} // Disable if capsule is locked
+                />
                 
                 <div className="flex items-center space-x-3">
-                <div className={`flex items-center space-x-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
-                  <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
-                    isDark ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
-                    <FiUsers className="text-[#AF3535] text-sm" />
-                    <span>3</span>
+                  <div className={`flex items-center space-x-2 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
+                      isDark ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}>
+                      <FiUsers className="text-[#AF3535] text-sm" />
+                      <span>3</span>
+                    </div>
+                    
+                    <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
+                      isDark ? 'bg-gray-700' : 'bg-gray-100'
+                    }`}>
+                      <FiEye className="text-[#AF3535] text-sm" />
+                      <span>5</span>
+                    </div>
                   </div>
                   
-                  <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs ${
-                    isDark ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
-                    <FiEye className="text-[#AF3535] text-sm" />
-                    <span>5</span>
-                  </div>
+                  {!capsuleData?.isLocked ? (
+                    <button 
+                      onClick={() => setShowLockModal(true)}
+                      className={`p-1.5 rounded-full transition-colors ${
+                        isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
+                      }`}
+                      title="Lock this capsule"
+                    >
+                      <FiUnlock className="text-sm" />
+                    </button>
+                  ) : (
+                    <div 
+                      className={`p-1.5 rounded-full ${
+                        isDark ? 'text-gray-400' : 'text-gray-500'
+                      }`}
+                      title="Capsule is locked"
+                    >
+                      <FiLock className="text-sm" />
+                    </div>
+                  )}
+                  
+                  <button 
+                    onClick={() => setShowShareModal(true)}
+                    className="flex items-center space-x-1 bg-gradient-to-r from-[#AF3535] to-red-600 text-white px-3 py-1.5 rounded-md text-sm hover:from-[#AF3535] hover:to-red-700 transition-all shadow-sm"
+                    disabled={capsuleData?.isLocked} // Disable if capsule is locked
+                  >
+                    <FiShare2 className="text-xs" />
+                    <span>Share</span>
+                  </button>
                 </div>
-                
-                <button className={`p-1.5 rounded-full transition-colors ${
-                  isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-600'
-                }`}>
-                  <FiLock className="text-sm" />
-                </button>
-                
-                <button 
-                  onClick={() => setShowShareModal(true)}
-                  className="flex items-center space-x-1 bg-gradient-to-r from-[#AF3535] to-red-600 text-white px-3 py-1.5 rounded-md text-sm hover:from-[#AF3535] hover:to-red-700 transition-all shadow-sm"
-                >
-                  
-                  <FiShare2 className="text-xs" />
-                  <span>Share</span>
-                </button>
-              </div>
-              
               </div>
             </div>
           </div>
@@ -180,6 +208,7 @@ export default function CreateCapsule() {
                 }`}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                disabled={capsuleData?.isLocked} // Disable if capsule is locked
               />
             </div>
             
@@ -191,7 +220,7 @@ export default function CreateCapsule() {
                 </h2>
               </div>
               <div className="p-4">
-                <CapsuleContentGallery capsuleId={id} />
+                <CapsuleContentGallery capsuleId={id} isLocked={capsuleData?.isLocked} />
               </div>
             </div>
           </div>
@@ -201,10 +230,23 @@ export default function CreateCapsule() {
       {/* Share Modal */}
       {showShareModal && capsuleData && user && (
         <ShareModal 
-        title={capsuleData.title} 
-        onClose={() => setShowShareModal(false)} 
-        capsuleData={capsuleData}
+          title={capsuleData.title} 
+          onClose={() => setShowShareModal(false)} 
+          capsuleData={capsuleData}
         />
+      )}
+
+
+      {/* Lock Modal */}
+      {showLockModal && (
+        <LockDateModal
+          isOpen={showLockModal}
+          onClose={() => setShowLockModal(false)}
+          timeCapsuleId={id}
+          onSuccess={handleLockSuccess}
+          
+        />
+        
       )}
     </div>
   );

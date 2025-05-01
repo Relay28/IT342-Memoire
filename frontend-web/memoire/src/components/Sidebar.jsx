@@ -89,13 +89,13 @@ const Sidebar = () => {
           </Link>
 
           <Link 
-            to="/countdown" 
-            className={`flex items-center p-3.5 rounded-lg transition-all ${isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} ${isActive('/countdown') ? 'bg-[#AF3535]/10 border border-[#AF3535]/30' : ''}`}
+            to="/locked-capsules" 
+            className={`flex items-center p-3.5 rounded-lg transition-all ${isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-50'} ${isActive('/locked-capsules') ? 'bg-[#AF3535]/10 border border-[#AF3535]/30' : ''}`}
           >
-            <div className={`p-2 rounded-lg mr-3 ${isActive('/countdown') ? 'bg-[#AF3535] text-white' : isDark ? 'bg-gray-800 text-[#AF3535]' : 'bg-gray-100 text-[#AF3535]'}`}>
+            <div className={`p-2 rounded-lg mr-3 ${isActive('/locked-capsules') ? 'bg-[#AF3535] text-white' : isDark ? 'bg-gray-800 text-[#AF3535]' : 'bg-gray-100 text-[#AF3535]'}`}>
               <FaHourglassHalf size={16} />
             </div>
-            <span className={`font-medium ${isActive('/countdown') ? 'text-[#AF3535]' : isDark ? 'text-gray-200' : 'text-gray-800'}`}>Locked Capsules</span>
+            <span className={`font-medium ${isActive('/locked-capsules') ? 'text-[#AF3535]' : isDark ? 'text-gray-200' : 'text-gray-800'}`}>Locked Capsules</span>
           </Link>
         </nav>
         
