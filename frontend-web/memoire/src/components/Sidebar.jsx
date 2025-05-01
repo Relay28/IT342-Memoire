@@ -85,7 +85,7 @@ const Sidebar = () => {
             <div className={`p-2 rounded-lg mr-3 ${isActive('/archived_capsules') ? 'bg-[#AF3535] text-white' : isDark ? 'bg-gray-800 text-[#AF3535]' : 'bg-gray-100 text-[#AF3535]'}`}>
               <FaShareAlt size={16} />
             </div>
-            <span className={`font-medium ${isActive('/archived_capsules') ? 'text-[#AF3535]' : isDark ? 'text-gray-200' : 'text-gray-800'}`}>Archived</span>
+            <span className={`font-medium ${isActive('/archived_capsules') ? 'text-[#AF3535]' : isDark ? 'text-gray-200' : 'text-gray-800'}`}>Archived Capsules</span>
           </Link>
 
           <Link 
@@ -95,7 +95,7 @@ const Sidebar = () => {
             <div className={`p-2 rounded-lg mr-3 ${isActive('/countdown') ? 'bg-[#AF3535] text-white' : isDark ? 'bg-gray-800 text-[#AF3535]' : 'bg-gray-100 text-[#AF3535]'}`}>
               <FaHourglassHalf size={16} />
             </div>
-            <span className={`font-medium ${isActive('/countdown') ? 'text-[#AF3535]' : isDark ? 'text-gray-200' : 'text-gray-800'}`}>Countdown</span>
+            <span className={`font-medium ${isActive('/countdown') ? 'text-[#AF3535]' : isDark ? 'text-gray-200' : 'text-gray-800'}`}>Locked Capsules</span>
           </Link>
         </nav>
         

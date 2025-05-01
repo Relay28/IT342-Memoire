@@ -238,7 +238,7 @@ const Capsules = () => {
         <div className="flex flex-1 h-screen overflow-hidden">
           <Sidebar />
 
-          <section className={`flex-1 p-6 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+          <section className={`flex-1 p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
             <div className="max-w-6xl mx-auto">
               <div className="mb-8">
                 <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>My Time Capsules</h1>

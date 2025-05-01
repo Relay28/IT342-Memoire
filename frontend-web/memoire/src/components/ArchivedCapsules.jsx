@@ -125,10 +125,13 @@ const ArchivedCapsules = () => {
           <Sidebar />
   
           <section className={`flex-1 p-4 md:p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
-            <div className="max-w-4xl mx-auto">
-              <h1 className={`text-3xl font-bold mb-6 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                Archived Capsules
-              </h1>
+          <div className="max-w-6xl mx-auto">
+              <div className="mb-8">
+                <h1 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>Archived Capsules</h1>
+                <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                  {archivedCapsules.length} archived capsule{archivedCapsules.length !== 1 ? 's' : ''} 
+                </p>
+              </div>
   
               {unarchiveSuccess && (
                 <div className={`mb-4 p-4 rounded-lg border ${isDark ? 'bg-emerald-900/30 border-emerald-700 text-emerald-100' : 'bg-emerald-100 border-emerald-200 text-emerald-800'}`}>

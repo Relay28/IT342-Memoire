@@ -536,14 +536,29 @@ return (
             <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'border-gray-300' : 'border-gray-600'}`}></div>
           </div>
           ) : publishedCapsules.length === 0 ? (
-            <div className={`text-center py-12 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-center py-35 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
               <div className="inline-block p-6 rounded-full bg-gray-100 dark:bg-gray-700/50 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-12 w-12 text-gray-400 dark:text-gray-500" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={1.5} 
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                  />
                 </svg>
               </div>
-              <h3 className="text-xl font-medium mb-2">No published time capsules yet</h3>
-              <p className="max-w-md mx-auto">When time capsules reach their opening date, they'll appear here for you to explore.</p>
+              <h3 className="text-xl font-medium mb-2 text-center">
+                No published time capsules yet
+              </h3>
+              <p className="max-w-md mx-auto text-center">
+                When time capsules reach their opening date, they'll appear here for you to explore.
+              </p>
             </div>
           ) : (
             <div className="space-y-6 max-w-3xl mx-auto">
