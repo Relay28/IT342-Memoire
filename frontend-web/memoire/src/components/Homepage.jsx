@@ -494,8 +494,9 @@ const handleDeleteComment = async (capsuleId, commentId) => {
     setCommentLoading(false);
   }
 };
+
 return (
-  <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
+  <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
     <div className="flex flex-col h-screen">
       <Header 
         userData={userData} 
@@ -509,22 +510,22 @@ return (
           isAuthenticated={isAuthenticated}
         />
 
-        <main className={`flex-1 p-4 md:p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
+        <main className={`flex-1 p-4 md:p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
           {/* Status messages */}
           {reportSuccess && (
-            <div className={`mb-4 p-4 rounded-lg ${isDark ? 'bg-emerald-900 text-emerald-100' : 'bg-emerald-100 text-emerald-800'}`}>
+            <div className={`mb-4 p-4 rounded-lg border ${isDark ? 'bg-emerald-900/30 border-emerald-700 text-emerald-100' : 'bg-emerald-100 border-emerald-200 text-emerald-800'}`}>
               Report submitted successfully!
             </div>
           )}
           
           {archiveSuccess && (
-            <div className={`mb-4 p-4 rounded-lg ${isDark ? 'bg-emerald-900 text-emerald-100' : 'bg-emerald-100 text-emerald-800'}`}>
+            <div className={`mb-4 p-4 rounded-lg border ${isDark ? 'bg-emerald-900/30 border-emerald-700 text-emerald-100' : 'bg-emerald-100 border-emerald-200 text-emerald-800'}`}>
               Capsule archived successfully!
             </div>
           )}
 
           {error && (
-            <div className={`mb-4 p-4 rounded-lg ${isDark ? 'bg-rose-900 text-rose-100' : 'bg-rose-100 text-rose-800'}`}>
+            <div className={`mb-4 p-4 rounded-lg border ${isDark ? 'bg-rose-900/30 border-rose-700 text-rose-100' : 'bg-rose-100 border-rose-200 text-rose-800'}`}>
               {error}
             </div>
           )}
@@ -536,7 +537,7 @@ return (
             </div>
           ) : publishedCapsules.length === 0 ? (
             <div className={`text-center py-12 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              <div className="inline-block p-6 rounded-full bg-gray-100 dark:bg-gray-800 mb-4">
+              <div className="inline-block p-6 rounded-full bg-gray-100 dark:bg-gray-700/50 mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -553,31 +554,31 @@ return (
                 return (
                   <article 
                     key={capsule.id} 
-                    className={`rounded-xl shadow-sm overflow-hidden transition-all hover:shadow-md ${isDark ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-800'}`}
+                    className={`rounded-xl overflow-hidden transition-all ${isDark ? 'bg-gray-700/50 text-gray-100 border border-gray-600' : 'bg-white text-gray-800 border border-gray-200'}`}
                   >
                     {/* Capsule header with options */}
-                    <div className="p-6 pb-0 flex justify-between items-start">
+                    <div className="p-5 pb-0 flex justify-between items-start">
                       <div className="flex items-center space-x-3">
                         <img 
                           src={user?.profilePicture || ProfilePictureSample} 
                           alt="user" 
-                          className="h-10 w-10 rounded-full object-cover"
+                          className="h-10 w-10 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-sm"
                           onError={(e) => {
                             e.target.src = ProfilePictureSample;
                           }}
                         />
                         <div>
                           <h2 className="font-semibold">{user?.fullName || user?.username || 'Unknown User'}</h2>
-                          <time className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                              Opened on {new Date(capsule.openDate).toLocaleDateString()}
-                            </time>
+                          <time className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            Opened on {new Date(capsule.openDate).toLocaleDateString()}
+                          </time>
                         </div>
                       </div>
                       
                       {/* Options dropdown */}
                       <div className="relative">
                         <button 
-                          className={`p-1.5 rounded-lg ${isDark ? 'hover:bg-gray-700 text-gray-300 hover:text-rose-400' : 'hover:bg-gray-100 text-gray-500 hover:text-rose-500'}`}
+                          className={`p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${isDark ? 'text-gray-300 hover:text-rose-400' : 'text-gray-500 hover:text-rose-500'}`}
                           onClick={() => {
                             setIsReportDropdownOpen(prev => prev && currentReportCapsuleId === capsule.id ? false : true);
                             setCurrentReportCapsuleId(capsule.id);
@@ -592,7 +593,7 @@ return (
                         {isReportDropdownOpen && currentReportCapsuleId === capsule.id && (
                           <div 
                             ref={dropdownRef}
-                            className={`absolute right-0 mt-1 w-48 rounded-lg shadow-lg z-10 overflow-hidden ${isDark ? 'bg-gray-700 ring-1 ring-gray-600' : 'bg-white ring-1 ring-gray-200'}`}
+                            className={`absolute right-0 mt-1 w-48 rounded-lg shadow-lg z-10 overflow-hidden ${isDark ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'}`}
                           >
                             <div className="py-1">
                               <button
@@ -617,33 +618,29 @@ return (
                     </div>
 
                     {/* Capsule content */}
-                    <div className="p-6">
-                    <hr className={` ${isDark ? 'border-gray-600' : 'border-gray-200'}`} />
-                    <div className="my-4">
-                          <div className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                            {capsule.title || 'Untitled Capsule'}
-                          </div>
-                          <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                            Created on {new Date(capsule.createdAt).toLocaleDateString()}
-                          </div>
+                    <div className="p-5">
+                      <div className="mb-4">
+                        <div className={`text-xl font-bold mb-1 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                          {capsule.title || 'Untitled Capsule'}
                         </div>
-                        <p className={isDark ? 'text-gray-300' : 'text-gray-700'}>
-                          {capsule.description || 'No message content'}
-                        </p>
+                        <div className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                          Created on {new Date(capsule.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
                       
-                      
-                      
-                    
+                      <p className={`mb-4 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
+                        {capsule.description || 'No message content'}
+                      </p>
                       
                       {capsule.message && (
-                        <div className={`p-4 rounded-lg mb-4 ${isDark ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                        <div className={`p-4 rounded-lg mb-4 ${isDark ? 'bg-gray-600/30 border border-gray-600' : 'bg-gray-100 border border-gray-200'}`}>
                           <p className="italic">{capsule.message}</p>
                         </div>
                       )}
 
                       {/* Media gallery */}
                       {capsuleMedia.length > 0 && (
-                        <div className="mt-4 rounded-lg overflow-hidden">
+                        <div className="mt-4 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-600">
                           <MediaCarousel 
                             mediaItems={capsuleMedia} 
                             fallback={bgmemoire}
@@ -654,7 +651,7 @@ return (
                       {/* Comments section */}
                       <div className="mt-6">
                         <div 
-                          className={`flex items-center justify-between cursor-pointer p-3 rounded-lg ${isDark ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}
+                          className={`flex items-center justify-between cursor-pointer p-3 rounded-lg ${isDark ? 'hover:bg-gray-600/30' : 'hover:bg-gray-100'} transition-colors`}
                           onClick={() => toggleComments(capsule.id)}
                         >
                           <h4 className={`font-medium flex items-center ${isDark ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -683,7 +680,7 @@ return (
                             <img 
                               src={userData.profilePicture || ProfilePictureSample} 
                               alt="Your profile" 
-                              className="h-9 w-9 rounded-full mr-3 flex-shrink-0"
+                              className="h-9 w-9 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
                               onError={(e) => {
                                 e.target.src = ProfilePictureSample;
                               }}
@@ -694,12 +691,12 @@ return (
                                 placeholder="Share your thoughts..."
                                 value={newComment[capsule.id] || ''}
                                 onChange={(e) => handleCommentChange(capsule.id, e.target.value)}
-                                className={`w-full py-2 px-4 rounded-full text-sm ${
-                                  isDark ? 'bg-gray-700 text-white placeholder-gray-400 border-gray-600' 
-                                  : 'bg-gray-100 text-gray-800 placeholder-gray-500 border-gray-200'
-                                } border focus:outline-none focus:ring-2 ${
-                                  isDark ? 'focus:ring-[#AF3535]' : 'focus:ring-red-400'
-                                }`}
+                                className={`w-full py-2 px-4 rounded-full text-sm border ${
+                                  isDark ? 'bg-gray-700 text-white placeholder-gray-400 border-gray-600 focus:border-[#AF3535]' 
+                                  : 'bg-gray-100 text-gray-800 placeholder-gray-500 border-gray-300 focus:border-red-400'
+                                } focus:outline-none focus:ring-2 ${
+                                  isDark ? 'focus:ring-[#AF3535]/30' : 'focus:ring-red-400/30'
+                                } transition-colors`}
                                 onKeyPress={(e) => {
                                   if (e.key === 'Enter') {
                                     handleCommentSubmit(capsule.id);
@@ -711,7 +708,7 @@ return (
                                 onClick={() => handleCommentSubmit(capsule.id)}
                                 className={`absolute right-3 top-1/2 transform -translate-y-1/2 ${isDark ? 'text-red-500 hover:text-red-400' : 'text-[#AF3535] hover:text-red-600'} ${
                                   (!newComment[capsule.id]?.trim() || commentLoading) ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
+                                } transition-colors`}
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
@@ -732,7 +729,7 @@ return (
                                   <img
                                     src={user?.profilePicture || ProfilePictureSample}
                                     alt={user?.username || "User"}
-                                    className="h-8 w-8 rounded-full mr-3 flex-shrink-0"
+                                    className="h-8 w-8 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
                                     onError={(e) => {
                                       e.target.src = ProfilePictureSample;
                                     }}
@@ -740,7 +737,7 @@ return (
                                   
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline">
-                                      <span className={`font-semibold text-sm mr-2 ${isDark ? 'text-gray-100' : 'text-gray-900'}`}>
+                                      <span className={`font-semibold text-sm mr-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
                                         {user?.username || "Unknown User"}
                                       </span>
                                       <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -755,10 +752,12 @@ return (
                                           type="text"
                                           value={editCommentText}
                                           onChange={(e) => setEditCommentText(e.target.value)}
-                                          className={`w-full py-1 px-2 rounded text-sm ${
-                                            isDark ? 'bg-gray-700 text-white border-gray-600' 
-                                            : 'bg-gray-100 text-gray-800 border-gray-300'
-                                          } border focus:outline-none`}
+                                          className={`w-full py-1 px-2 rounded text-sm border ${
+                                            isDark ? 'bg-gray-700 text-white border-gray-600 focus:border-blue-500' 
+                                            : 'bg-gray-100 text-gray-800 border-gray-300 focus:border-blue-500'
+                                          } focus:outline-none focus:ring-2 ${
+                                            isDark ? 'focus:ring-blue-500/30' : 'focus:ring-blue-500/30'
+                                          } transition-colors`}
                                           onKeyPress={(e) => {
                                             if (e.key === 'Enter') {
                                               handleUpdateComment(capsule.id, comment.id);
@@ -769,8 +768,8 @@ return (
                                           <button
                                             onClick={handleCancelEdit}
                                             className={`text-xs px-2 py-1 rounded ${
-                                              isDark ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-200 hover:bg-gray-300'
-                                            }`}
+                                              isDark ? 'bg-gray-600 hover:bg-gray-500 text-gray-200' : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                                            } transition-colors`}
                                           >
                                             Cancel
                                           </button>
@@ -779,7 +778,7 @@ return (
                                             disabled={!editCommentText.trim() || commentLoading}
                                             className={`text-xs px-2 py-1 rounded bg-[#AF3535] hover:bg-red-600 text-white ${
                                               (!editCommentText.trim() || commentLoading) ? 'opacity-50 cursor-not-allowed' : ''
-                                            }`}
+                                            } transition-colors`}
                                           >
                                             {commentLoading ? 'Updating...' : 'Update'}
                                           </button>
@@ -799,50 +798,49 @@ return (
                                     )}
                                                                           
                                       
-                                     {/* In the comment rendering */}
-                                     {(user?.id) && (
-  <div className="flex space-x-3">
-    <button
-      onClick={() => handleStartEdit(comment.id, comment.text)}
-      className={`text-xs ${isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600'}`}
-    >
-      Edit
-    </button>
-    <button
-      onClick={() => handleDeleteComment(capsule.id, comment.id)}
-      className={`text-xs ${isDark ? 'text-gray-400 hover:text-rose-400' : 'text-gray-500 hover:text-rose-600'}`}
-    >
-      Delete
-    </button>
-  </div>
-)}
+                                    {(user?.id) && (
+                                      <div className="flex space-x-3">
+                                        <button
+                                          onClick={() => handleStartEdit(comment.id, comment.text)}
+                                          className={`text-xs ${isDark ? 'text-gray-400 hover:text-blue-400' : 'text-gray-500 hover:text-blue-600'} transition-colors`}
+                                        >
+                                          Edit
+                                        </button>
+                                        <button
+                                          onClick={() => handleDeleteComment(capsule.id, comment.id)}
+                                          className={`text-xs ${isDark ? 'text-gray-400 hover:text-rose-400' : 'text-gray-500 hover:text-rose-600'} transition-colors`}
+                                        >
+                                          Delete
+                                        </button>
+                                      </div>
+                                    )}
                                     </div>
                                   </div>
                                   
                                   <button 
-  onClick={() => handleReaction(capsule.id, comment.id, 'love')}
-  disabled={reactionLoading[`${comment.id}-love`]}
-  className={`ml-2 p-1 ${comment.reactions?.love?.includes(user.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
-  aria-label={comment.reactions?.love?.includes(user.id) ? "Unlike comment" : "Like comment"}
->
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    className={`h-5 w-5 ${comment.reactions?.love?.includes(user.id) ? 
-      'fill-rose-500 text-rose-500 hover:fill-rose-400 hover:text-rose-400' : 
-      (isDark ? 'text-gray-400 hover:text-rose-400' : 'text-gray-500 hover:text-rose-500')
-    } transition-colors`} 
-    viewBox="0 0 24 24" 
-    stroke={comment.reactions?.love?.includes(user.id) ? 'none' : 'currentColor'}
-    strokeWidth="2"
-    fill={comment.reactions?.love?.includes(user.id) ? 'currentColor' : 'none'}
-  >
-    <path 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
-    />
-  </svg>
-</button>
+                                    onClick={() => handleReaction(capsule.id, comment.id, 'love')}
+                                    disabled={reactionLoading[`${comment.id}-love`]}
+                                    className={`ml-2 p-1 ${comment.reactions?.love?.includes(user.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}
+                                    aria-label={comment.reactions?.love?.includes(user.id) ? "Unlike comment" : "Like comment"}
+                                  >
+                                    <svg 
+                                      xmlns="http://www.w3.org/2000/svg" 
+                                      className={`h-5 w-5 ${comment.reactions?.love?.includes(user.id) ? 
+                                        'fill-rose-500 text-rose-500 hover:fill-rose-400 hover:text-rose-400' : 
+                                        (isDark ? 'text-gray-400 hover:text-rose-400' : 'text-gray-500 hover:text-rose-500')
+                                      } transition-colors`} 
+                                      viewBox="0 0 24 24" 
+                                      stroke={comment.reactions?.love?.includes(user.id) ? 'none' : 'currentColor'}
+                                      strokeWidth="2"
+                                      fill={comment.reactions?.love?.includes(user.id) ? 'currentColor' : 'none'}
+                                    >
+                                      <path 
+                                        strokeLinecap="round" 
+                                        strokeLinejoin="round" 
+                                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" 
+                                      />
+                                    </svg>
+                                  </button>
                                 </div>
                               );
                             })}
@@ -869,10 +867,10 @@ return (
 
       {/* Report Modal */}
       {isReportModalOpen && (
-        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isDark ? 'bg-black/70' : 'bg-black/50'}`}>
+        <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${isDark ? 'bg-black/70' : 'bg-black/50'} backdrop-blur-sm`}>
           <div 
             ref={modalRef}
-            className={`w-full max-w-md rounded-xl shadow-xl overflow-hidden ${isDark ? 'bg-gray-800' : 'bg-white'}`}
+            className={`w-full max-w-md rounded-xl shadow-xl overflow-hidden ${isDark ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}
           >
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
@@ -881,7 +879,7 @@ return (
                 </h2>
                 <button
                   onClick={() => setIsReportModalOpen(false)}
-                  className={`p-1 rounded-lg ${isDark ? 'hover:bg-gray-700 text-gray-300' : 'hover:bg-gray-100 text-gray-500'}`}
+                  className={`p-1 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${isDark ? 'text-gray-300' : 'text-gray-500'}`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -896,9 +894,9 @@ return (
                   </label>
                   <select
                     className={`w-full p-3 rounded-lg border text-sm ${
-                      isDark ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-800'
-                    } focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                      isDark ? 'bg-gray-700 border-gray-600 text-white focus:border-[#AF3535] focus:ring-[#AF3535]/30' 
+                      : 'bg-white border-gray-300 text-gray-800 focus:border-[#AF3535] focus:ring-[#AF3535]/30'
+                    } focus:outline-none focus:ring-2 transition-colors`}
                     value={reportType}
                     onChange={(e) => setReportType(e.target.value)}
                     required
@@ -925,7 +923,7 @@ return (
                   </button>
                   <button
                     type="submit"
-                    className={`px-4 py-2 rounded-lg text-sm font-medium bg-rose-600 hover:bg-rose-700 text-white ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium bg-[#AF3535] hover:bg-red-700 text-white ${
                       reportCapsule.loading ? 'opacity-70 cursor-not-allowed' : ''
                     } transition-colors`}
                     disabled={reportCapsule.loading}
