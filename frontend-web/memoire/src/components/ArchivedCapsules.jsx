@@ -153,34 +153,44 @@ const ArchivedCapsules = () => {
                 <div className="space-y-6">
                   {archivedCapsules.map((capsule) => (
                     <div 
-                      key={capsule.id} 
-                      className={`rounded-xl overflow-hidden transition-all ${isDark ? 'bg-gray-700/50 text-gray-100 border border-gray-600' : 'bg-white text-gray-800 border border-gray-200'}`}
-                    >
-                      <div className="absolute top-4 right-4">
-                        <button 
-                          onClick={() => setActiveDropdown(activeDropdown === capsule.id ? null : capsule.id)}
-                          className={`p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${isDark ? 'text-gray-300 hover:text-rose-400' : 'text-gray-500 hover:text-rose-500'}`}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
-                          </svg>
-                        </button>
-                        
-                        {activeDropdown === capsule.id && (
-                          <div className={`absolute right-0 mt-1 w-48 rounded-lg shadow-lg z-10 overflow-hidden ${isDark ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'}`}>
-                            <div className="py-1">
-                              <button
-                                onClick={() => handleUnarchive(capsule.id)}
-                                className={`block w-full text-left px-4 py-2 text-sm ${
-                                  isDark ? 'text-amber-400 hover:bg-gray-600' : 'text-amber-600 hover:bg-gray-100'
-                                }`}
-                              >
-                                Unarchive Capsule
-                              </button>
-                            </div>
+                    key={capsule.id} 
+                    className={`relative rounded-xl overflow-hidden transition-all ${isDark ? 'bg-gray-700/50 text-gray-100 border border-gray-600' : 'bg-white text-gray-800 border border-gray-200'}`}
+                  >
+                    {/* Options dropdown */}
+                    <div className="absolute top-4 right-4">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveDropdown(activeDropdown === capsule.id ? null : capsule.id);
+                        }}
+                        className={`p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors ${isDark ? 'text-gray-300 hover:text-rose-400' : 'text-gray-500 hover:text-rose-500'}`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                        </svg>
+                      </button>
+                      
+                      {activeDropdown === capsule.id && (
+                        <div className={`absolute right-0 mt-1 w-48 rounded-lg shadow-xl z-50 overflow-hidden ${isDark ? 'bg-gray-700 border border-gray-600' : 'bg-white border border-gray-200'}`}>
+                          <div className="py-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUnarchive(capsule.id);
+                              }}
+                              className={`block w-full text-left px-4 py-2 text-sm flex items-center ${
+                                isDark ? 'text-amber-400 hover:bg-gray-600' : 'text-amber-600 hover:bg-gray-100'
+                              }`}
+                            >
+                              <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                              </svg>
+                              Unarchive Capsule
+                            </button>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
+                    </div>
   
                       <div className="p-5">
                         <div className="flex items-center mb-4">
