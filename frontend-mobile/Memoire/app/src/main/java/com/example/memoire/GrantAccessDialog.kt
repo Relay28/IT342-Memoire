@@ -1,15 +1,9 @@
 package com.example.memoire
 
-import android.app.AlertDialog
-import android.app.Dialog
 import android.content.Context
-import android.util.Log
-import android.view.LayoutInflater
+import android.os.Bundle
 import android.view.View
-import android.view.WindowManager
 import android.widget.Toast
-import androidx.core.content.ContextCompat
-import androidx.core.widget.doAfterTextChanged
 import androidx.core.widget.doOnTextChanged
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -17,12 +11,10 @@ import com.example.memoire.adapter.CapsuleAccessAdapter
 import com.example.memoire.adapter.UserSearchAdapter
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.databinding.DialogGrantAccessBinding
-import com.example.memoire.models.CapsuleAccessDTO
-import com.example.memoire.models.GrantAccessRequest
-import com.example.memoire.models.UpdateRoleRequest
-import com.example.memoire.models.UserSearchDTO
+import com.example.memoire.models.*
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -31,70 +23,68 @@ import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+
 class GrantAccessDialog(
     private val context: Context,
     private val capsuleId: Long,
     private val onAccessGranted: () -> Unit
-) : Dialog(context, com.google.android.material.R.style.ThemeOverlay_MaterialComponents_Dialog) {
+) : BottomSheetDialog(context) {
 
     private lateinit var binding: DialogGrantAccessBinding
     private lateinit var searchAdapter: UserSearchAdapter
     private lateinit var accessAdapter: CapsuleAccessAdapter
     private var searchJob: Job? = null
-    init {
-        setContentView(R.layout.dialog_grant_access)
-        window?.setLayout(
-            (context.resources.displayMetrics.widthPixels * 0.9).toInt(),
-            WindowManager.LayoutParams.WRAP_CONTENT
-        )
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        binding = DialogGrantAccessBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        // Configure bottom sheet behavior for better usability
+        behavior.apply {
+            state = BottomSheetBehavior.STATE_EXPANDED
+            skipCollapsed = true
+            peekHeight = context.resources.displayMetrics.heightPixels / 2
+            isDraggable = true
+        }
+
         setupViews()
+        loadCurrentAccess()
     }
 
     private fun setupViews() {
-        binding = DialogGrantAccessBinding.inflate(LayoutInflater.from(context))
-        setContentView(binding.root)
-
-        // Setup tabs
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText("Current Access"))
-        binding.tabLayout.addTab(binding.tabLayout.newTab().setText("Add Users"))
-
-        // Setup adapters
+        // Setup search adapter
         searchAdapter = UserSearchAdapter(emptyList()) { user ->
-            showRoleSelectionDialog(user)
+            grantAccess(user.id, "EDITOR") // Automatically grant editor access
         }
+
+        // Setup access adapter with optimized parameters
         accessAdapter = CapsuleAccessAdapter(
             mutableListOf(),
             onRoleChange = { accessId, newRole -> updateAccessRole(accessId, newRole) },
             onRemoveAccess = { accessId -> removeAccess(accessId) }
         )
 
+        // Configure recycler views with proper layout managers and decorations
         binding.recyclerViewUsers.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = searchAdapter
+            addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
+            isNestedScrollingEnabled = true
         }
 
         binding.accessList.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = accessAdapter
+            addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
+            isNestedScrollingEnabled = true
         }
 
-        // Tab selection listener
-        binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
-                when (tab.position) {
-                    0 -> showCurrentAccess()
-                    1 -> showSearchView()
-                }
-            }
-            override fun onTabUnselected(tab: TabLayout.Tab) {}
-            override fun onTabReselected(tab: TabLayout.Tab) {}
-        })
-
-        // Setup search
+        // Setup search with debounce
         binding.editTextSearch.doOnTextChanged { text, _, _, _ ->
             searchJob?.cancel()
             searchJob = CoroutineScope(Dispatchers.Main).launch {
-                delay(300)
+                delay(300) // Debounce delay
                 text?.toString()?.takeIf { it.isNotEmpty() }?.let { query ->
                     searchUsers(query)
                 } ?: run {
@@ -105,15 +95,9 @@ class GrantAccessDialog(
         }
 
         binding.buttonCancel.setOnClickListener { dismiss() }
-
-        // Load current access by default
-        showCurrentAccess()
     }
 
-    private fun showCurrentAccess() {
-        binding.accessList.visibility = View.VISIBLE
-        binding.searchView.visibility = View.GONE
-
+    private fun loadCurrentAccess() {
         RetrofitClient.instance.getCapsuleAccesses(capsuleId).enqueue(
             object : Callback<List<CapsuleAccessDTO>> {
                 override fun onResponse(call: Call<List<CapsuleAccessDTO>>, response: Response<List<CapsuleAccessDTO>>) {
@@ -128,12 +112,6 @@ class GrantAccessDialog(
                 }
             }
         )
-    }
-
-    private fun showSearchView() {
-        binding.accessList.visibility = View.GONE
-        binding.searchView.visibility = View.VISIBLE
-        binding.editTextSearch.requestFocus()
     }
 
     private fun searchUsers(query: String) {
@@ -188,16 +166,6 @@ class GrantAccessDialog(
         )
     }
 
-    private fun showRoleSelectionDialog(user: UserSearchDTO) {
-        MaterialAlertDialogBuilder(context)
-            .setTitle("Grant access to ${user.username}")
-            .setItems(arrayOf("Editor - Can edit content", "Viewer - Read only")) { _, which ->
-                grantAccess(user.id, if (which == 0) "EDITOR" else "VIEWER")
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
-    }
-
     private fun grantAccess(userId: Long, role: String) {
         val request = GrantAccessRequest(capsuleId, userId, role)
 
@@ -205,9 +173,11 @@ class GrantAccessDialog(
             object : Callback<CapsuleAccessDTO> {
                 override fun onResponse(call: Call<CapsuleAccessDTO>, response: Response<CapsuleAccessDTO>) {
                     if (response.isSuccessful) {
-                        Toast.makeText(context, "Access granted", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Editor access granted", Toast.LENGTH_SHORT).show()
                         onAccessGranted()
-                        showCurrentAccess() // Refresh the list
+                        loadCurrentAccess() // Refresh the list
+                        binding.editTextSearch.text?.clear()
+                        searchAdapter.updateData(emptyList())
                     }
                 }
                 override fun onFailure(call: Call<CapsuleAccessDTO>, t: Throwable) {
@@ -225,7 +195,7 @@ class GrantAccessDialog(
                 override fun onResponse(call: Call<CapsuleAccessDTO>, response: Response<CapsuleAccessDTO>) {
                     if (response.isSuccessful) {
                         Toast.makeText(context, "Role updated", Toast.LENGTH_SHORT).show()
-                        showCurrentAccess() // Refresh
+                        loadCurrentAccess() // Refresh
                     }
                 }
                 override fun onFailure(call: Call<CapsuleAccessDTO>, t: Throwable) {
@@ -236,7 +206,7 @@ class GrantAccessDialog(
     }
 
     private fun removeAccess(accessId: Long) {
-        AlertDialog.Builder(context)
+        MaterialAlertDialogBuilder(context)
             .setTitle("Remove Access")
             .setMessage("Are you sure you want to remove this access?")
             .setPositiveButton("Remove") { _, _ ->
@@ -245,7 +215,7 @@ class GrantAccessDialog(
                         override fun onResponse(call: Call<Void>, response: Response<Void>) {
                             if (response.isSuccessful) {
                                 Toast.makeText(context, "Access removed", Toast.LENGTH_SHORT).show()
-                                showCurrentAccess() // Refresh
+                                loadCurrentAccess() // Refresh
                             }
                         }
                         override fun onFailure(call: Call<Void>, t: Throwable) {
