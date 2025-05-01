@@ -2,7 +2,7 @@
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 
-const BASE_URL = 'https://memoire-it342.as.r.appspot.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const CONNECTION_TIMEOUT = 15000; // 15 seconds timeout
 
 class WebSocketService {
@@ -23,7 +23,7 @@ class WebSocketService {
       return Promise.reject(new Error("Endpoint must be specified"));
     }
 
-    const fullEndpoint = `${BASE_URL}${endpoint}`;
+    const fullEndpoint = `${API_BASE_URL}${endpoint}`;
     
     // Initialize connection entry if it doesn't exist
     if (!this.connections.has(endpoint)) {

@@ -1,6 +1,8 @@
 import { requestForToken } from "../components/Firebase/FirebaseIntializer";
 import { useEffect } from "react";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export const useFCMToken = (userId, jwtToken) => {
     useEffect(() => {
         console.log("TESTTT"+userId+jwtToken)
@@ -16,7 +18,7 @@ export const useFCMToken = (userId, jwtToken) => {
             params.append("userId", Number(userId).toString()); // Ensures userId is sent as a numeric string
             params.append("fcmToken", String(fcmToken));          // Ensures fcmToken is sent as a string
 
-            const response = await fetch(`https://memoire-it342.as.r.appspot.com/api/fcm/update-token?${params.toString()}`, {
+            const response = await fetch(`${API_BASE_URL}/api/fcm/update-token?${params.toString()}`, {
                 method: "POST",
                 headers: { 
                 "Authorization": `Bearer ${jwtToken}`  // JWT token header remains as before

@@ -31,6 +31,9 @@ import {
   Flag
 } from '@mui/icons-material';
 
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 const ReportDetailsPage = () => {
   const { reportId } = useParams();
   const navigate = useNavigate();
@@ -60,7 +63,7 @@ const ReportDetailsPage = () => {
     setError(null);
     
     try {
-      const response = await fetch(`https://memoire-it342.as.r.appspot.com/api/reports/${reportId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/reports/${reportId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${authToken}`,
@@ -124,7 +127,7 @@ const ReportDetailsPage = () => {
       switch (confirmAction) {
         case 'report-approve':
           // Use the new report resolution endpoint with 'GOOD' resolution
-          response = await fetch(`https://memoire-it342.as.r.appspot.com/api/admin/reports/${reportId}/resolve`, {
+          response = await fetch(`${API_BASE_URL}/api/admin/reports/${reportId}/resolve`, {
             method: 'PUT',
             headers: {
               'Authorization': `Bearer ${authToken}`,
@@ -140,7 +143,7 @@ const ReportDetailsPage = () => {
         case 'report-reject':
           // Use the new report resolution endpoint with 'BAD' resolution
           try {
-            response = await fetch(`https://memoire-it342.as.r.appspot.com/api/admin/reports/${reportId}/resolve`, {
+            response = await fetch(`${API_BASE_URL}/api/admin/reports/${reportId}/resolve`, {
               method: 'PUT',
               headers: {
                 'Authorization': `Bearer ${authToken}`,
@@ -169,7 +172,7 @@ const ReportDetailsPage = () => {
           break;
         
         case 'report-delete':
-          response = await fetch(`https://memoire-it342.as.r.appspot.com/api/reports/${reportId}`, {
+          response = await fetch(`${API_BASE_URL}/api/reports/${reportId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${authToken}`

@@ -1,6 +1,8 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 // Create the auth context
 export const AuthContext = createContext();
 
@@ -58,7 +60,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        "https://memoire-it342.as.r.appspot.com/api/auth/login",
+        `${API_BASE_URL}/api/auth/login`,
         credentials,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -95,7 +97,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        "https://memoire-it342.as.r.appspot.com/api/auth/admin/login",
+        `${API_BASE_URL}/api/auth/admin/login`,
         credentials,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -133,7 +135,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await fetch(
-        `https://memoire-it342.as.r.appspot.com/api/auth/verify-token?idToken=${credential}`,
+        `${API_BASE_URL}/api/auth/verify-token?idToken=${credential}`,
         { method: "POST", credentials: "include" }
       );
       
@@ -170,7 +172,7 @@ export const AuthProvider = ({ children }) => {
     
     try {
       const response = await axios.post(
-        "https://memoire-it342.as.r.appspot.com/api/auth/register",
+        `${API_BASE_URL}/api/auth/register`,
         userData,
         { headers: { "Content-Type": "application/json" } }
       );
@@ -209,7 +211,7 @@ export const AuthProvider = ({ children }) => {
     try {
       // Use PUT without user ID in the URL, as the backend gets the user from the authentication context
       const response = await axios.put(
-        "https://memoire-it342.as.r.appspot.com/api/users",
+        `${API_BASE_URL}/api/users`,
         updatedData,
         {
           headers: {
@@ -248,7 +250,7 @@ export const AuthProvider = ({ children }) => {
       formData.append('profileImg', imageFile);
       
       const response = await axios.put(
-        "https://memoire-it342.as.r.appspot.com/api/users/profile-picture",
+        `${API_BASE_URL}/api/users/profile-picture`,
         formData,
         {
           headers: {

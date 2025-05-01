@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://memoire-it342.as.r.appspot.com/api/users';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const BASE_URL = `${API_BASE_URL}/api/users`;
 
 // Helper function to get auth headers
 const getAuthHeaders = (contentType = 'application/json') => {
@@ -31,7 +32,7 @@ export const profileService = {
   async getCurrentUser() {
     try {
       const response = await axios.get(
-        API_BASE_URL,
+        BASE_URL,
         getAuthHeaders()
       );
       return response.data;
@@ -45,7 +46,7 @@ export const profileService = {
   async updateProfile(userData) {
       try {
         const response = await axios.put(
-          API_BASE_URL,
+          BASE_URL,
           userData,
           {
             headers: {
@@ -68,7 +69,7 @@ export const profileService = {
       formData.append("profileImg", imageFile);
   
       const response = await axios.put(
-        `${API_BASE_URL}/profile-picture`,
+        `${BASE_URL}/profile-picture`,
         formData,
         {
           headers: {
@@ -88,7 +89,7 @@ export const profileService = {
 async changePassword(currentPassword, newPassword) {
   try {
     const response = await axios.post(
-      `${API_BASE_URL}/change-password`,
+      `${BASE_URL}/change-password`,
       {
         currentPassword,
         newPassword
@@ -119,7 +120,7 @@ async changePassword(currentPassword, newPassword) {
       }
 
       const response = await axios.patch(
-        `${API_BASE_URL}/disable`,
+        `${BASE_URL}/disable`,
         {}, // Empty body
         {
           headers: {
@@ -158,7 +159,7 @@ async changePassword(currentPassword, newPassword) {
 async getProfilePicture() {
   try {
     const response = await axios.get(
-      `${API_BASE_URL}/profile-picture?t=${Date.now()}`,
+      `${BASE_URL}/profile-picture?t=${Date.now()}`,
       getImageConfig()
     );
 
