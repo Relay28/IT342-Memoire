@@ -133,14 +133,14 @@ const CapsuleContentGallery = ({ capsuleId }) => {
     setIsModalOpen(false);
   };
 
-  const renderDebugInfo = () => (
-    <div className="text-xs text-gray-500 mb-2">
-      <div>Connection: {connectionStatus}</div>
-      <div>Media count: {mediaContents.length}</div>
-      <div>Selected: {selectedMedia?.id || 'none'}</div>
-      <div>WS content count: {getCapsuleContents(capsuleId)?.length || 0}</div>
-    </div>
-  );
+  // const renderDebugInfo = () => (
+  //   <div className="text-xs text-gray-500 mb-2">
+  //     <div>Connection: {connectionStatus}</div>
+  //     <div>Media count: {mediaContents.length}</div>
+  //     <div>Selected: {selectedMedia?.id || 'none'}</div>
+  //     <div>WS content count: {getCapsuleContents(capsuleId)?.length || 0}</div>
+  //   </div>
+  // );
 
   if (loading && !isRefreshing && mediaContents.length === 0) {
     return <div>Loading…</div>;
@@ -152,7 +152,7 @@ const CapsuleContentGallery = ({ capsuleId }) => {
 
   return (
     <div className="space-y-6">
-      {renderDebugInfo()}
+      
       
       {/* toolbar */}
       <div className="flex justify-between">
