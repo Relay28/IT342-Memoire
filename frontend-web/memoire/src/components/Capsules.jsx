@@ -8,7 +8,7 @@ import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { format } from 'date-fns';
 import { useThemeMode } from '../context/ThemeContext';
 import LockDateModal from '../components/modals/LockDateModal';
-
+import TimeCapsuleService from '../services/TimeCapsuleService';
 
 const Capsules = () => {
   const { isDark } = useThemeMode();
@@ -22,7 +22,8 @@ const Capsules = () => {
     getArchivedTimeCapsules,
     deleteTimeCapsule,
     getClosedTimeCapsules,
-    archiveTimeCapsule
+    archiveTimeCapsule,
+    unlockTimeCapsule
   } = useTimeCapsule();
   
   const [loadingCapsules, setLoadingCapsules] = useState(true);
@@ -59,11 +60,21 @@ const Capsules = () => {
   const handleUnarchive = async (e, id) => {
     e.stopPropagation();
     try {
-      await unlockTimeCapsule(id);
-      fetchCapsulesByFilter(activeFilter);
+      // Use the publishTimeCapsule service method instead of unlockTimeCapsule
+      await TimeCapsuleService.publishTimeCapsule(id, authToken);
+      
+      // Update the local state immediately for better UX
+      setCapsules(prevCapsules => 
+        prevCapsules.map(capsule => 
+          capsule.id === id ? { ...capsule, status: 'PUBLISHED' } : capsule
+        )
+      );
+      
       setOpenMenuId(null);
     } catch (err) {
       console.error('Failed to unarchive time capsule:', err);
+      // If the API call fails, refetch to ensure state is correct
+      fetchCapsulesByFilter(activeFilter);
     }
   };
 
