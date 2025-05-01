@@ -70,14 +70,14 @@ class GrantAccessDialog(
             layoutManager = LinearLayoutManager(context)
             adapter = searchAdapter
             addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
-            isNestedScrollingEnabled = true
+            isNestedScrollingEnabled = false
         }
 
         binding.accessList.apply {
             layoutManager = LinearLayoutManager(context)
             adapter = accessAdapter
             addItemDecoration(DividerItemDecoration(context, LinearLayoutManager.VERTICAL))
-            isNestedScrollingEnabled = true
+            isNestedScrollingEnabled = false
         }
 
         // Setup search with debounce
