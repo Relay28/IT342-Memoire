@@ -83,6 +83,7 @@ class ProfileActivity : AppCompatActivity() {
 
         // First get the current user details
         RetrofitClient.instance.getCurrentUser("Bearer $token").enqueue(object : Callback<UserEntity> {
+
             override fun onResponse(call: Call<UserEntity>, response: Response<UserEntity>) {
                 if (response.isSuccessful) {
                     val user = response.body()

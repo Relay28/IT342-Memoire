@@ -43,10 +43,7 @@ public class AuthenticationController {
         this.authService = authService;
         this.jwtService = jwtService;
     }
-    @GetMapping
-    public String verifyBackend() {
-    return "Hello There welcome to memoire";
-    }
+
     @PostMapping("/verify-token")
     public ResponseEntity<AuthenticationResponse> verifyToken(@RequestParam String idToken) {
         logger.info("Attempting to verify Google OAuth token");

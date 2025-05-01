@@ -1,18 +1,14 @@
 package cit.edu.mmr.service;
 
-import cit.edu.mmr.controller.websocket.CommentWebSocketController;
-import cit.edu.mmr.dto.CommentRequest;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+
+
 import cit.edu.mmr.dto.websocket.CommentUpdateDTO;
-import cit.edu.mmr.entity.CommentEntity;
-import cit.edu.mmr.entity.NotificationEntity;
-import cit.edu.mmr.entity.TimeCapsuleEntity;
-import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.exception.exceptions.AuthenticationException;
 import cit.edu.mmr.exception.exceptions.DatabaseOperationException;
-import cit.edu.mmr.repository.CommentRepository;
-import cit.edu.mmr.repository.TimeCapsuleRepository;
-import cit.edu.mmr.repository.UserRepository;
-import cit.edu.mmr.service.serviceInterfaces.CommentService;
+import cit.edu.mmr.util.CommentMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,13 +21,21 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import cit.edu.mmr.controller.websocket.CommentWebSocketController;
+import cit.edu.mmr.dto.CommentDTO;
+import cit.edu.mmr.dto.CommentRequest;
+import cit.edu.mmr.entity.CommentEntity;
+import cit.edu.mmr.entity.NotificationEntity;
+import cit.edu.mmr.entity.TimeCapsuleEntity;
+import cit.edu.mmr.entity.UserEntity;
+import cit.edu.mmr.repository.CommentRepository;
+import cit.edu.mmr.repository.TimeCapsuleRepository;
+import cit.edu.mmr.repository.UserRepository;
 
 @Service
-public class CommentServiceImpl implements CommentService {
+public class CommentServiceImpl implements cit.edu.mmr.service.CommentService {
     private static final Logger logger = LoggerFactory.getLogger(CommentServiceImpl.class);
 
     private final CommentRepository commentRepository;
@@ -40,29 +44,32 @@ public class CommentServiceImpl implements CommentService {
     private final NotificationService notificationService;
     private final CommentWebSocketController webSocketController;
     private final SimpMessagingTemplate messagingTemplate;
+    private final CommentMapper commentMapper;
 
     @Autowired
     public CommentServiceImpl(CommentRepository commentRepository,
                               TimeCapsuleRepository timeCapsuleRepository,
                               UserRepository userRepository,
-                              NotificationService notificationService, CommentWebSocketController webSocketController,
-                              SimpMessagingTemplate messagingTemplate) {
+                              NotificationService notificationService,
+                              CommentWebSocketController webSocketController,
+                              SimpMessagingTemplate messagingTemplate,
+                              CommentMapper commentMapper) {
         this.commentRepository = commentRepository;
         this.timeCapsuleRepository = timeCapsuleRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.webSocketController = webSocketController;
         this.messagingTemplate = messagingTemplate;
+        this.commentMapper = commentMapper;
     }
 
-
-
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(value = "contentMetadata", key = "'comments_capsule_' + #capsuleId"),
             @CacheEvict(value = "contentMetadata", key = "'comment_' + #result.id", condition = "#result != null")
     })
-    public CommentEntity createComment(Long capsuleId, Authentication auth, String text) {
+    public CommentDTO createComment(Long capsuleId, Authentication auth, String text) {
         logger.info("Creating comment for capsule ID: {} with text length: {}", capsuleId,
                 text != null ? text.length() : 0);
 
@@ -104,6 +111,9 @@ public class CommentServiceImpl implements CommentService {
             CommentEntity savedComment = commentRepository.save(comment);
             logger.info("Successfully created comment with ID: {} for capsule ID: {}", savedComment.getId(), capsuleId);
 
+            // Create DTO for return
+            CommentDTO commentDTO = commentMapper.toDto(savedComment);
+
             if (!timeCapsule.getCreatedBy().equals(user)) {
                 // Only send notification if the commenter is not the owner
                 NotificationEntity notification = new NotificationEntity();
@@ -119,13 +129,12 @@ public class CommentServiceImpl implements CommentService {
             try {
                 webSocketController.broadcastCommentUpdate(savedComment, "CREATE");
                 logger.debug("Broadcast comment creation event for comment ID: {}", savedComment.getId());
-                return savedComment;
             } catch (Exception e) {
                 // Don't fail the operation if broadcast fails, just log it
                 logger.warn("Failed to broadcast comment creation: {}", e.getMessage(), e);
             }
 
-            return savedComment;
+            return commentDTO;
         } catch (Exception e) {
             logger.error("Error saving comment: {}", e.getMessage(), e);
             throw new DatabaseOperationException("Error saving comment", e);
@@ -133,11 +142,12 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(value = "contentMetadata", key = "'comment_' + #commentId"),
-            @CacheEvict(value = "contentMetadata", key = "'comments_capsule_' + #result.timeCapsule.id", condition = "#result != null")
+            @CacheEvict(value = "contentMetadata", key = "'comments_capsule_' + #result.capsuleId", condition = "#result != null")
     })
-    public CommentEntity updateComment(Long commentId, CommentRequest commentRequest, Authentication auth) {
+    public CommentDTO updateComment(Long commentId, CommentRequest commentRequest, Authentication auth) {
         logger.info("Updating comment ID: {}", commentId);
 
         // Validate inputs
@@ -184,6 +194,9 @@ public class CommentServiceImpl implements CommentService {
             CommentEntity updatedComment = commentRepository.save(existingComment);
             logger.info("Successfully updated comment ID: {}", commentId);
 
+            // Create DTO for return
+            CommentDTO commentDTO = commentMapper.toDto(updatedComment);
+
             // Broadcast the updated comment
             try {
                 webSocketController.broadcastCommentUpdate(updatedComment, "UPDATE");
@@ -193,7 +206,7 @@ public class CommentServiceImpl implements CommentService {
                 logger.warn("Failed to broadcast comment update: {}", e.getMessage(), e);
             }
 
-            return updatedComment;
+            return commentDTO;
         } catch (Exception e) {
             logger.error("Error updating comment: {}", e.getMessage(), e);
             throw new DatabaseOperationException("Error updating comment", e);
@@ -201,6 +214,7 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional
     @Caching(evict = {
             @CacheEvict(value = "contentMetadata", key = "'comment_' + #id"),
             @CacheEvict(value = "contentMetadata", key = "'comments_capsule_' + #existingComment.timeCapsule.id")
@@ -267,8 +281,9 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = "contentMetadata", key = "'comment_' + #id")
-    public Optional<CommentEntity> getCommentById(Long id, Authentication auth) {
+    public Optional<CommentDTO> getCommentById(Long id, Authentication auth) {
         logger.info("Retrieving comment ID: {}", id);
 
         // Validate input
@@ -288,13 +303,15 @@ public class CommentServiceImpl implements CommentService {
 
         // Retrieve comment
         try {
-            Optional<CommentEntity> comment = commentRepository.findById(id);
-            if (comment.isPresent()) {
+            Optional<CommentEntity> commentEntity = commentRepository.findById(id);
+
+            if (commentEntity.isPresent()) {
                 logger.info("Successfully retrieved comment ID: {}", id);
+                return Optional.of(commentMapper.toDto(commentEntity.get()));
             } else {
                 logger.debug("Comment not found with ID: {}", id);
+                return Optional.empty();
             }
-            return comment;
         } catch (Exception e) {
             logger.error("Error retrieving comment with ID {}: {}", id, e.getMessage());
             throw new DatabaseOperationException("Error retrieving comment", e);
@@ -302,8 +319,15 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Optional<CommentEntity> getCommentEntityById(Long id) {
+        return commentRepository.findById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = "contentMetadata", key = "'comments_capsule_' + #capsuleId")
-    public List<CommentEntity> getCommentsByTimeCapsuleId(Long capsuleId) {
+    public List<CommentDTO> getCommentsByTimeCapsuleId(Long capsuleId) {
         logger.info("Retrieving comments for capsule ID: {}", capsuleId);
 
         // Validate input
@@ -328,9 +352,11 @@ public class CommentServiceImpl implements CommentService {
 
         // Retrieve comments
         try {
-            List<CommentEntity> comments = commentRepository.findByTimeCapsuleId(capsuleId);
-            logger.info("Retrieved {} comments for capsule ID: {}", comments.size(), capsuleId);
-            return comments;
+            List<CommentEntity> commentEntities = commentRepository.findByTimeCapsuleId(capsuleId);
+            List<CommentDTO> commentDTOs = commentMapper.toDtoList(commentEntities);
+
+            logger.info("Retrieved {} comments for capsule ID: {}", commentDTOs.size(), capsuleId);
+            return commentDTOs;
         } catch (Exception e) {
             logger.error("Error retrieving comments for capsule ID {}: {}", capsuleId, e.getMessage());
             throw new DatabaseOperationException("Error retrieving capsule comments", e);

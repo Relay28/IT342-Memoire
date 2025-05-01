@@ -1,9 +1,9 @@
 package cit.edu.mmr.controller;
 
+import cit.edu.mmr.dto.CommentDTO;
 import cit.edu.mmr.dto.CommentRequest;
-import cit.edu.mmr.entity.CommentEntity;
 import cit.edu.mmr.exception.exceptions.DatabaseOperationException;
-import cit.edu.mmr.service.serviceInterfaces.CommentService;
+import cit.edu.mmr.service.CommentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
@@ -34,7 +34,7 @@ public class CommentController {
 
     // Create a new comment with a request body for long text
     @PostMapping("/capsule/{capsuleId}")
-    public ResponseEntity<CommentEntity> createComment(
+    public ResponseEntity<CommentDTO> createComment(
             @PathVariable Long capsuleId,
             @Valid @RequestBody CommentRequest commentRequest,
             Authentication auth) {
@@ -52,7 +52,7 @@ public class CommentController {
                 throw new IllegalArgumentException("Comment text cannot be empty");
             }
 
-            CommentEntity created = commentService.createComment(capsuleId, auth, commentRequest.getText());
+            CommentDTO created = commentService.createComment(capsuleId, auth, commentRequest.getText());
             logger.info("Successfully created comment ID: {} for capsule ID: {}", created.getId(), capsuleId);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -73,7 +73,7 @@ public class CommentController {
 
     // Update an existing comment
     @PutMapping("/{commentId}")
-    public ResponseEntity<CommentEntity> updateComment(
+    public ResponseEntity<CommentDTO> updateComment(
             @PathVariable Long commentId,
             @Valid @RequestBody CommentRequest commentRequest,
             Authentication auth) {
@@ -91,7 +91,7 @@ public class CommentController {
                 throw new IllegalArgumentException("Comment text cannot be empty");
             }
 
-            CommentEntity updated = commentService.updateComment(commentId, commentRequest, auth);
+            CommentDTO updated = commentService.updateComment(commentId, commentRequest, auth);
             logger.info("Successfully updated comment ID: {}", commentId);
 
             return ResponseEntity.ok(updated);
@@ -142,7 +142,7 @@ public class CommentController {
 
     // Retrieve a single comment by its id
     @GetMapping("/{commentId}")
-    public ResponseEntity<CommentEntity> getCommentById(@PathVariable Long commentId, Authentication auth) {
+    public ResponseEntity<CommentDTO> getCommentById(@PathVariable Long commentId, Authentication auth) {
         logger.info("Received request to get comment ID: {}", commentId);
 
         try {
@@ -151,7 +151,7 @@ public class CommentController {
                 throw new IllegalArgumentException("Comment ID must not be null");
             }
 
-            Optional<CommentEntity> commentOpt = commentService.getCommentById(commentId, auth);
+            Optional<CommentDTO> commentOpt = commentService.getCommentById(commentId, auth);
 
             if (commentOpt.isPresent()) {
                 logger.info("Successfully retrieved comment ID: {}", commentId);
@@ -174,7 +174,7 @@ public class CommentController {
 
     // Retrieve all comments associated with a particular Time Capsule
     @GetMapping("/capsule/{capsuleId}")
-    public ResponseEntity<List<CommentEntity>> getCommentsByCapsule(@PathVariable Long capsuleId) {
+    public ResponseEntity<List<CommentDTO>> getCommentsByCapsule(@PathVariable Long capsuleId) {
         logger.info("Received request to get comments for capsule ID: {}", capsuleId);
 
         try {
@@ -183,7 +183,7 @@ public class CommentController {
                 throw new IllegalArgumentException("Capsule ID must not be null");
             }
 
-            List<CommentEntity> comments = commentService.getCommentsByTimeCapsuleId(capsuleId);
+            List<CommentDTO> comments = commentService.getCommentsByTimeCapsuleId(capsuleId);
             logger.info("Retrieved {} comments for capsule ID: {}", comments.size(), capsuleId);
 
             return ResponseEntity.ok(comments);
@@ -198,6 +198,4 @@ public class CommentController {
             throw new DatabaseOperationException("Error retrieving capsule comments", ex);
         }
     }
-
-    // We can remove the local exception handler as it's handled by GlobalExceptionHandler
 }

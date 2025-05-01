@@ -4,81 +4,97 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@color/white"
     android:padding="16dp">
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayout"
+    <TextView
+        android:id="@+id/titleText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:tabBackground="@color/white"
-        app:tabIndicatorColor="@color/MemoireRed"
-        app:tabSelectedTextColor="@color/MemoireRed"
-        app:tabTextColor="@color/gray"/>
+        android:text="Manage Access"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="12dp"/>
 
-    <FrameLayout
-        android:id="@+id/contentFrame"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/searchLayout"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginTop="8dp">
+        android:layout_height="wrap_content"
+        android:hint="Search users to add..."
+        app:endIconMode="clear_text"
+        app:endIconDrawable="@drawable/ic_search"
+        app:endIconTint="@color/MemoireRed"
+        android:layout_marginBottom="12dp">
 
-        <!-- Current Access View -->
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/accessList"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextSearch"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone"/>
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="textCapWords|textAutoComplete"
+            android:maxLines="1"
+            android:textSize="14sp"/>
+    </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Search View -->
-        <LinearLayout
-            android:id="@+id/searchView"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:orientation="vertical">
+    <TextView
+        android:id="@+id/tvNoResults"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="No users found"
+        android:visibility="gone"
+        android:textAlignment="center"
+        android:textSize="13sp"
+        android:textColor="?attr/colorOnSurface"/>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/searchLayout"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Search users..."
-                app:endIconMode="clear_text"
-                app:endIconDrawable="@drawable/ic_search"
-                app:endIconTint="@color/MemoireRed">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Search Results"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp"/>
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextSearch"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:imeOptions="actionSearch"
-                    android:inputType="textCapWords|textAutoComplete"
-                    android:maxLines="1"/>
-            </com.google.android.material.textfield.TextInputLayout>
 
-            <TextView
-                android:id="@+id/tvNoResults"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="No users found"
-                android:visibility="gone"
-                android:textAlignment="center"
-                android:textColor="?attr/colorOnSurface"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewUsers"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:nestedScrollingEnabled="false"
+        android:maxHeight="200dp"/>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerViewUsers"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_marginTop="8dp"/>
-        </LinearLayout>
-    </FrameLayout>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="12dp"
+        android:background="?attr/colorOutline"/>
+
+    <TextView
+        android:id="@+id/currentAccessTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Current Access"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="4dp"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/accessList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:nestedScrollingEnabled="false"
+        android:maxHeight="300dp"/>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonCancel"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="12dp"
         android:text="Close"
+        android:textSize="14sp"
         app:strokeColor="@color/MemoireRed"/>
 </LinearLayout>

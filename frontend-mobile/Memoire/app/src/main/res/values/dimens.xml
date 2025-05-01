@@ -8,4 +8,8 @@
     <dimen name="fab_margin_bottom">24dp</dimen>
     <dimen name="profile_card_margin">16dp</dimen>
     <dimen name="fab_margin">16dp</dimen>
+
+        <!-- Other dimensions -->
+        <dimen name="list_item_min_height">72dp</dimen>
+
 </resources>

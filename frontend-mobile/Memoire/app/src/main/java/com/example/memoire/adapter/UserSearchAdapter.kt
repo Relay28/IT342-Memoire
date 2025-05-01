@@ -1,14 +1,14 @@
 package com.example.memoire.adapter
 
-import android.util.Log
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.memoire.R
 import com.example.memoire.databinding.ItemUserSearchBinding
 import com.example.memoire.models.UserSearchDTO
+import com.example.memoire.extensions.dpToPx
+
 class UserSearchAdapter(
     private var users: List<UserSearchDTO>,
     private val onUserSelected: (UserSearchDTO) -> Unit
@@ -31,17 +31,19 @@ class UserSearchAdapter(
         with(holder.binding) {
             textUsername.text = user.username
             textEmail.text = user.email
-            // Hide name field since we're not using it
-           // textName.visibility = View.GONE
 
             // Load profile picture if available
-            user.profilePicture?.let { url ->
+            user.profilePicture?.let { byteArray ->
                 Glide.with(root.context)
-                    .load(url)
+                    .load(byteArray)
                     .circleCrop()
+                    .placeholder(R.drawable.ic_placeholder)
                     .into(imageProfile)
+            } ?: run {
+                imageProfile.setImageResource(R.drawable.ic_placeholder)
             }
-
+            // Set a reasonable min height but let the constraints handle the actual layout
+            root.minimumHeight = 56.dpToPx(root.context)
             root.setOnClickListener { onUserSelected(user) }
         }
     }

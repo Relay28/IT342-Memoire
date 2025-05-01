@@ -99,7 +99,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/topborder"
-        app:itemIconSize="24dp"
+        app:itemIconSize="22dp"
         app:itemIconTint="@color/MemoireRed"
         app:labelVisibilityMode="unlabeled"
         app:layout_constraintBottom_toBottomOf="parent"

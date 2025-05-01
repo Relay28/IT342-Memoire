@@ -72,17 +72,15 @@ class CapsuleAccessAdapter(
                 textUsername.text = user.username
 
                 // Load profile picture with proper URL handling
-                val profilePictureUrl = user.profilePicture?.let {
-                    "${RetrofitClient.BASE_URL}uploads/$it"
+                user.profilePicture?.let { byteArray ->
+                    Glide.with(root.context)
+                        .load(byteArray)
+                        .circleCrop()
+                        .placeholder(com.example.memoire.R.drawable.ic_placeholder)
+                        .into(imageProfile)
+                } ?: run {
+                    imageProfile.setImageResource(com.example.memoire.R.drawable.ic_placeholder)
                 }
-
-                Glide.with(root.context)
-                    .load("${RetrofitClient.BASE_URL}uploads/${user.profilePicture}")
-                    .placeholder((com.example.memoire.R.drawable.default_profile)) // Your placeholder drawable
-                    .error(R.drawable.picture_frame) // Fallback if error occurs
-                    .circleCrop()
-                    .transition(DrawableTransitionOptions.withCrossFade())
-                    .into(imageProfile)
             }
 
             spinnerRole.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
