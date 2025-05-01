@@ -532,9 +532,9 @@ return (
 
           {/* Content */}
           {loadingCapsules ? (
-            <div className="flex justify-center items-center h-64">
-              <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'border-gray-300' : 'border-gray-600'}`}></div>
-            </div>
+            <div className="flex justify-center items-center h-full w-full"> {/* Changed h-64 to h-full and added w-full */}
+            <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'border-gray-300' : 'border-gray-600'}`}></div>
+          </div>
           ) : publishedCapsules.length === 0 ? (
             <div className={`text-center py-12 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
               <div className="inline-block p-6 rounded-full bg-gray-100 dark:bg-gray-700/50 mb-4">

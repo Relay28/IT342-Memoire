@@ -1,6 +1,6 @@
 // components/Header.jsx
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { FaSearch, FaMoon, FaBell, FaSun } from 'react-icons/fa';
+import { FaSearch, FaMoon, FaBell, FaSun, FaUser, FaSignOutAlt } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import mmrlogo from '../assets/mmrlogo.png';
 import logolight from '../assets/logolight.png';

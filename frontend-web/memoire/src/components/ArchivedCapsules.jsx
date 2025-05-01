@@ -83,19 +83,13 @@ const ArchivedCapsules = () => {
 
   if (loading) {
     return (
-      <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-100'}`}>
-        <div className="flex flex-col h-screen">
-          <Header />
-          <div className="flex flex-1 h-screen overflow-hidden">
-            <Sidebar />
-            <section className={`flex-1 p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
-              <div className="max-w-4xl mx-auto">
-                <h1 className={`text-3xl font-bold mb-8 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  Loading archived capsules...
-                </h1>
-              </div>
-            </section>
-          </div>
+      <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <Header />
+        <div className="flex flex-1 h-[calc(100vh-4rem)] overflow-hidden"> {/* Adjust height to account for header */}
+          <Sidebar />
+          <main className={`flex-1 overflow-y-auto flex items-center justify-center ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+            <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'border-gray-300' : 'border-gray-600'}`}></div>
+          </main>
         </div>
       </div>
     );

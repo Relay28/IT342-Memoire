@@ -10,7 +10,7 @@ import { format, parseISO, isValid } from 'date-fns';
 const CountdownTimerPage = () => {
   const { isDark } = useThemeMode();
   const { authToken } = useAuth();
-  const { getClosedTimeCapsules, getTimeCapsule, unlockTimeCapsule } = useTimeCapsule();
+  const { getClosedTimeCapsules, getTimeCapsule, unlockTimeCapsule} = useTimeCapsule();
   const [closedCapsules, setClosedCapsules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -98,6 +98,35 @@ const CountdownTimerPage = () => {
   };
 
   // ... (keep the existing loading and error states the same)
+  if (loading) {
+    return (
+      <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <Header />
+        <div className="flex flex-1 h-[calc(100vh-4rem)] overflow-hidden"> {/* Adjust height to account for header */}
+          <Sidebar />
+          <main className={`flex-1 overflow-y-auto flex items-center justify-center ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+            <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'border-gray-300' : 'border-gray-600'}`}></div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <Header />
+        <div className="flex flex-1 h-screen overflow-hidden">
+          <Sidebar />
+          <section className={`flex-1 p-8 overflow-y-auto flex items-center justify-center ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+            <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-700 text-red-400' : 'bg-white text-red-600'} shadow-md`}>
+              Error: {error}
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>

@@ -25,6 +25,7 @@ const Capsules = () => {
     archiveTimeCapsule
   } = useTimeCapsule();
   
+  const [loadingCapsules, setLoadingCapsules] = useState(true);
   const [capsules, setCapsules] = useState([]);
   const [activeFilter, setActiveFilter] = useState('all');
   const [openMenuId, setOpenMenuId] = useState(null);
@@ -86,6 +87,7 @@ const Capsules = () => {
   const fetchCapsulesByFilter = async (filter) => {
     if (!authToken) return;
     
+    setLoadingCapsules(true); // Start loading
     try {
       let data;
       switch (filter) {
@@ -109,6 +111,8 @@ const Capsules = () => {
       setCapsules(data);
     } catch (err) {
       console.error(`Failed to fetch ${filter} capsules:`, err);
+    } finally {
+      setLoadingCapsules(false); // End loading regardless of success/error
     }
   };
 
@@ -196,25 +200,15 @@ const Capsules = () => {
   ];
   
 
-  if (loading) {
+  if (loading || loadingCapsules) {
     return (
       <div className={`min-h-screen ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <Header />
-        <div className="flex flex-1 h-screen overflow-hidden">
+        <div className="flex flex-1 h-[calc(100vh-4rem)] overflow-hidden"> {/* Adjust height to account for header */}
           <Sidebar />
-          <section className={`flex-1 p-8 overflow-y-auto flex items-center justify-center ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
-            <div className={`text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-              <div className="animate-pulse flex space-x-4">
-                <div className="flex-1 space-y-4 py-1">
-                  <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mx-auto"></div>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded"></div>
-                    <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-5/6"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
+          <main className={`flex-1 overflow-y-auto flex items-center justify-center ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+            <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'border-gray-300' : 'border-gray-600'}`}></div>
+          </main>
         </div>
       </div>
     );
@@ -265,6 +259,7 @@ const Capsules = () => {
                           ? `${isDark ? 'bg-gray-600 text-white shadow' : 'bg-white text-gray-900 shadow-sm'}`
                           : `${isDark ? 'text-gray-300 hover:bg-gray-600' : 'text-gray-600 hover:bg-gray-200'}`
                       }`}
+                      disabled={loadingCapsules}
                     >
                       {tab.label}
                     </button>
@@ -274,7 +269,7 @@ const Capsules = () => {
 
               {/* Capsules List */}
               <div className={`rounded-xl ${isDark ? 'bg-gray-700' : 'bg-white'} shadow-sm border ${isDark ? 'border-gray-600' : 'border-gray-200'}`}>
-                {/* Header Row */}
+                {/* Header Row - Always visible */}
                 <div className={`grid grid-cols-12 items-center gap-4 p-4 border-b ${isDark ? 'border-gray-600 bg-gray-700' : 'border-gray-200 bg-gray-50'} font-medium text-xs uppercase tracking-wider ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="col-span-5">Name</div>
                   <div className="col-span-2 text-center">Owner</div>
@@ -283,7 +278,12 @@ const Capsules = () => {
                   <div className="col-span-1"></div>
                 </div>
 
-                {capsules.length === 0 ? (
+                {/* Loading State */}
+                {loadingCapsules ? (
+                  <div className="flex justify-center items-center h-64">
+                    <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'border-gray-300' : 'border-gray-600'}`}></div>
+                  </div>
+                ) : capsules.length === 0 ? (
                   <div className={`p-8 text-center ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
                     <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -450,6 +450,7 @@ const Capsules = () => {
               </div>
             </div>
           </section>
+
         </div>
       </div>
       <LockDateModal
