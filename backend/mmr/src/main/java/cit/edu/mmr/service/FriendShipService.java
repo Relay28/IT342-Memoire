@@ -1,5 +1,6 @@
 package cit.edu.mmr.service;
 
+import cit.edu.mmr.dto.FriendshipDTO;
 import cit.edu.mmr.dto.FriendshipRequest;
 import cit.edu.mmr.entity.FriendShipEntity;
 import cit.edu.mmr.entity.NotificationEntity;
@@ -19,6 +20,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class FriendShipService {
@@ -48,15 +50,15 @@ public class FriendShipService {
             @CacheEvict(value = "userAuthentication", key = "'friends_' + #request.friendId"),
             @CacheEvict(value = "contentMetadata", key = "'friendship_' + #result.id", condition = "#result != null")
     })
-    public FriendShipEntity createFriendship(FriendshipRequest request, Authentication auth) {
+    @Transactional
+    public FriendshipDTO createFriendship(FriendshipRequest request, Authentication auth) {
         logger.info("Creating friendship for friendId: {}", request.getFriendId());
         UserEntity user = getAuthenticatedUser(auth);
-        UserEntity friend = userRepository.findById(request.getFriendId()).orElse(null);
-
-        if (friend == null) {
-            logger.warn("Friend user not found with ID: {}", request.getFriendId());
-            throw new UsernameNotFoundException("User not found");
-        }
+        UserEntity friend = userRepository.findById(request.getFriendId())
+                .orElseThrow(() -> {
+                    logger.warn("Friend user not found with ID: {}", request.getFriendId());
+                    return new UsernameNotFoundException("User not found");
+                });
 
         FriendShipEntity friendship = new FriendShipEntity();
         friendship.setUser(user);
@@ -64,10 +66,8 @@ public class FriendShipService {
         friendship.setStatus("Pending");
         friendship.setCreatedAt(new Date());
 
-        user.getFriendshipsAsUser().add(friendship);
-        friend.getFriendshipsAsFriend().add(friendship);
-
-
+        // We don't need to explicitly manage the collections here
+        // Just save the friendship entity
         logger.info("Saving new friendship between {} and {}", user.getUsername(), friend.getUsername());
         FriendShipEntity savedFriendship = friendShipRepository.save(friendship);
 
@@ -79,10 +79,12 @@ public class FriendShipService {
 
         notificationService.sendNotificationToUser(friend.getId(), notification);
 
-        return friendship;
-
+        // Convert to DTO before returning
+        return convertToDTO(savedFriendship);
     }
-    public List<FriendShipEntity> getReceivedFriendRequests(Authentication auth) {
+
+    @Transactional
+    public List<FriendshipDTO> getReceivedFriendRequests(Authentication auth) {
         logger.info("Retrieving received friend requests for user: {}", auth.getName());
         UserEntity user = getAuthenticatedUser(auth);
 
@@ -91,9 +93,12 @@ public class FriendShipService {
         List<FriendShipEntity> receivedRequests = friendShipRepository.findByFriendAndStatusCustom(user, "Pending");
 
         logger.debug("Found {} received friend requests for user {}", receivedRequests.size(), user.getUsername());
-        return receivedRequests;
+        return receivedRequests.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
+    @Transactional
     public List<UserEntity> getFriendsList(Authentication auth) {
         logger.info("Retrieving friends list for user: {}", auth.getName());
         UserEntity user = getAuthenticatedUser(auth);
@@ -121,26 +126,35 @@ public class FriendShipService {
     }
 
     @Cacheable(value = "contentMetadata", key = "'friendship_' + #id")
-    public Optional<FriendShipEntity> getFriendshipById(Long id) {
+    @Transactional
+    public Optional<FriendshipDTO> getFriendshipById(Long id) {
         logger.debug("Retrieving friendship by ID: {}", id);
-        return friendShipRepository.findById(id);
+        return friendShipRepository.findById(id)
+                .map(this::convertToDTO);
     }
 
     @Cacheable(value = "userAuthentication", key = "'friendOf_' + #friend.id")
-    public List<FriendShipEntity> getFriendshipsByUser(UserEntity user) {
+    @Transactional
+    public List<FriendshipDTO> getFriendshipsByUser(UserEntity user) {
         logger.debug("Fetching friendships initiated by user: {}", user.getUsername());
-        return friendShipRepository.findByUser(user);
+        return friendShipRepository.findByUser(user).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Cacheable(value = "userAuthentication", key = "'friendOf_' + #friend.id")
-    public List<FriendShipEntity> getFriendshipsByFriend(UserEntity friend) {
+    @Transactional
+    public List<FriendshipDTO> getFriendshipsByFriend(UserEntity friend) {
         logger.debug("Fetching friendships where user is friend: {}", friend.getUsername());
-        return friendShipRepository.findByFriend(friend);
+        return friendShipRepository.findByFriend(friend).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
     @Cacheable(value = "userAuthentication",
             key = "'areFriends_' + #auth.name + '_' + #friendId",
             condition = "#friendId != null")
+    @Transactional
     public boolean areFriends(long friendId, Authentication auth) {
         logger.info("Checking friendship status with friendId: {}", friendId);
         UserEntity user = getAuthenticatedUser(auth);
@@ -167,6 +181,7 @@ public class FriendShipService {
             @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().friend.id"),
             @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().friend.username + '_' + #auth.name")
     })
+    @Transactional
     public void deleteFriendship(Long id, Authentication auth) {
         logger.info("Attempting to delete friendship with ID: {}", id);
         UserEntity user = getAuthenticatedUser(auth);
@@ -188,7 +203,7 @@ public class FriendShipService {
 
         friendShipRepository.deleteById(id);
         logger.info("Deleted friendship with ID: {}", id);
-        
+
     }
 
     @Caching(evict = {
@@ -198,7 +213,8 @@ public class FriendShipService {
             @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().friend.id"),
             @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().friend.username + '_' + #auth.name")
     })
-    public Optional<FriendShipEntity> acceptFriendship(Long friendshipId, Authentication auth) {
+    @Transactional
+    public Optional<FriendshipDTO> acceptFriendship(Long friendshipId, Authentication auth) {
         logger.info("Accepting friendship request with ID: {}", friendshipId);
         UserEntity user = getAuthenticatedUser(auth);
         Optional<FriendShipEntity> optionalFriendship = friendShipRepository.findById(friendshipId);
@@ -223,13 +239,14 @@ public class FriendShipService {
             notificationService.sendNotificationToUser(friendship.getUser().getId(), notification);
 
             logger.info("Friendship with ID {} accepted", friendshipId);
-            return Optional.of(friendship);
+            return Optional.of(convertToDTO(friendship));
         } else {
             logger.warn("Friendship with ID {} not found for acceptance", friendshipId);
             return Optional.empty();
         }
     }
 
+    @Transactional
     public boolean hasPendingRequest(long friendId, Authentication auth) {
         logger.info("Checking pending request status with friendId: {}", friendId);
         UserEntity user = getAuthenticatedUser(auth);
@@ -251,8 +268,6 @@ public class FriendShipService {
         return friendshipOpt.isPresent() && "Pending".equalsIgnoreCase(friendshipOpt.get().getStatus());
     }
 
-
-
     @Transactional
     public void cancelRequest(long friendId, Authentication auth) {
         UserEntity user = getAuthenticatedUser(auth);
@@ -269,6 +284,7 @@ public class FriendShipService {
         friendShipRepository.deleteAll(pendingRequests);
     }
 
+    @Transactional
     public boolean isReceiver(Long friendId, Authentication auth) {
         logger.info("Checking if user is receiver of friend request from: {}", friendId);
         UserEntity user = getAuthenticatedUser(auth);
@@ -278,12 +294,27 @@ public class FriendShipService {
         return friendShipRepository.isReceiverOfPendingRequest(user.getId(), friend.getId());
     }
 
-    public Optional<FriendShipEntity> findByUsers(Long friendId, Authentication auth) {
+    @Transactional
+    public Optional<FriendshipDTO> findByUsers(Long friendId, Authentication auth) {
         logger.info("Finding friendship between users: {}", friendId);
         UserEntity user = getAuthenticatedUser(auth);
         UserEntity friend = userRepository.findById(friendId)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        return friendShipRepository.findBetweenUsers(user.getId(), friend.getId());
+        return friendShipRepository.findBetweenUsers(user.getId(), friend.getId())
+                .map(this::convertToDTO);
+    }
+
+    // Helper method to convert entity to DTO
+    private FriendshipDTO convertToDTO(FriendShipEntity entity) {
+        FriendshipDTO dto = new FriendshipDTO();
+        dto.setId(entity.getId());
+        dto.setUserId(entity.getUser().getId());
+        dto.setUsername(entity.getUser().getUsername());
+        dto.setFriendId(entity.getFriend().getId());
+        dto.setFriendUsername(entity.getFriend().getUsername());
+        dto.setStatus(entity.getStatus());
+        dto.setCreatedAt(entity.getCreatedAt());
+        return dto;
     }
 }

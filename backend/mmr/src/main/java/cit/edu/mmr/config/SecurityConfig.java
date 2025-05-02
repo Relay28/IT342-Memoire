@@ -104,7 +104,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/app/**", "/topic/**", "/queue/**", "/user/**").authenticated()
-                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**", "/ws-**/**").permitAll()
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/**", "/ws-**/**","/").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated()
                 )

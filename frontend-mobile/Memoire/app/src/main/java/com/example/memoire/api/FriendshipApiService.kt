@@ -17,6 +17,9 @@ data class FriendshipRequest(
 )
 
 interface FriendshipApiService {
+
+    @PUT("/api/friendships/{id}/accept")
+    suspend fun acceptFriendship(@Path("id") id: Long): Response<FriendshipEntity>
     @GET("/api/friendships/friends")
     suspend fun getFriendsList(): Response<List<UserEntity>>
 
@@ -29,8 +32,7 @@ interface FriendshipApiService {
     @GET("/api/friendships/{id}")
     suspend fun getFriendshipById(@Path("id") id: Long): Response<FriendshipEntity>
 
-    @PUT("/api/friendships/{id}/accept")
-    suspend fun acceptFriendship(@Path("id") id: Long): Response<FriendshipEntity>
+
 
     @DELETE("/api/friendships/{id}")
     suspend fun deleteFriendship(@Path("id") id: Long): Response<Void>

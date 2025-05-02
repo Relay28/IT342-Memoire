@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class TestController {
-    @GetMapping
+    @GetMapping("/")  // maps to root "/"
     public String verifyBackend() {
         return "Hello There welcome to memoire";
     }

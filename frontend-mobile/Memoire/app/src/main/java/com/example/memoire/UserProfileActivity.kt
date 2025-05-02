@@ -144,21 +144,24 @@ class UserProfileActivity : AppCompatActivity() {
         tvOwnedCount.text = "0" // This would be updated from actual data
         tvFriendsCount.text = "0" // This would be updated from actual data
         tvSharedCount.text = "0" // This would be updated from actual data
-
-        // Load profile picture
-        val profileImageBytes = Base64.decode(profile.profilePicture, Base64.DEFAULT)
-        // Create a bitmap from the byte array
-        val bitmap = BitmapFactory.decodeByteArray(profileImageBytes, 0, profileImageBytes.size)
-        // Load the bitmap with Glide
-        if (bitmap != null) {
-            Glide.with(this)
-                .load(bitmap)  // Load the bitmap directly
-                .circleCrop()
-                .placeholder(R.drawable.ic_placeholder)
-                .into(imgProfilePicture)
-        } else {
-            imgProfilePicture.setImageResource(R.drawable.ic_placeholder)
-        }
+      if(profile.profilePicture!=null) {
+          // Load profile picture
+          val profileImageBytes = Base64.decode(profile.profilePicture, Base64.DEFAULT)
+          // Create a bitmap from the byte array
+          val bitmap = BitmapFactory.decodeByteArray(profileImageBytes, 0, profileImageBytes.size)
+          // Load the bitmap with Glide
+          if (bitmap != null) {
+              Glide.with(this)
+                  .load(bitmap)  // Load the bitmap directly
+                  .circleCrop()
+                  .placeholder(R.drawable.ic_placeholder)
+                  .into(imgProfilePicture)
+          } else {
+              imgProfilePicture.setImageResource(R.drawable.ic_placeholder)
+          }
+      }else{
+          imgProfilePicture.setImageResource(R.drawable.ic_placeholder)
+      }
     }
 
     private fun checkFriendshipStatus() {
