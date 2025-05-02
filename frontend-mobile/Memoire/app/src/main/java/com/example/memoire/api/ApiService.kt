@@ -13,6 +13,7 @@ import com.example.memoire.models.RegisterRequest
 import com.example.memoire.models.SearchResponse
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.models.UpdateRoleRequest
+import com.example.memoire.models.UserDTO
 import com.example.memoire.models.UserEntity
 import okhttp3.MultipartBody
 import okhttp3.ResponseBody
@@ -24,7 +25,7 @@ interface ApiService {
 
     // Current user profile endpoint
     @GET("api/users")
-    fun getCurrentUser(@Header("Authorization") authToken: String): Call<UserEntity>
+    fun getCurrentUser(): Call<UserDTO>
 
     // Get profile image endpoint
     @GET("api/users/profile-picture/{userId}")

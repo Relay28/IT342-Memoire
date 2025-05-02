@@ -39,7 +39,7 @@ class CommentsAdapter(
             commentDate.text = formattedDate
 
             // If we have a profile picture, load it with Glide or similar library
-            comment.user?.profilePicture?.let { profilePic ->
+            comment.user?.profilePictureData?.let { profilePic ->
                 if (profilePic.isNotEmpty()) {
                     // Example with Glide (you would need to add the Glide dependency)
                     // Glide.with(itemView.context)

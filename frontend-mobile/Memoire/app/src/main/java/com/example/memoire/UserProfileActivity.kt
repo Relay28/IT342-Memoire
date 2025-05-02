@@ -1,6 +1,8 @@
 package com.example.memoire.activities
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.util.Base64
 import android.view.View
 import android.widget.Button
 import android.widget.ImageButton
@@ -144,14 +146,18 @@ class UserProfileActivity : AppCompatActivity() {
         tvSharedCount.text = "0" // This would be updated from actual data
 
         // Load profile picture
-        if (!profile.profilePicture.isNullOrEmpty()) {
+        val profileImageBytes = Base64.decode(profile.profilePicture, Base64.DEFAULT)
+        // Create a bitmap from the byte array
+        val bitmap = BitmapFactory.decodeByteArray(profileImageBytes, 0, profileImageBytes.size)
+        // Load the bitmap with Glide
+        if (bitmap != null) {
             Glide.with(this)
-                .load(profile.profilePicture)
-                .placeholder(R.drawable.default_profile)
-                .error(R.drawable.default_profile)
+                .load(bitmap)  // Load the bitmap directly
+                .circleCrop()
+                .placeholder(R.drawable.ic_placeholder)
                 .into(imgProfilePicture)
         } else {
-            imgProfilePicture.setImageResource(R.drawable.default_profile)
+            imgProfilePicture.setImageResource(R.drawable.ic_placeholder)
         }
     }
 

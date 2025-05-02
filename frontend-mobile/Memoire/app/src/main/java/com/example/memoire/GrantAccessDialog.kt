@@ -126,13 +126,15 @@ class GrantAccessDialog(
                             binding.tvNoResults.visibility = View.VISIBLE
                         } else {
                             val users = results.mapNotNull { result ->
+
                                 UserSearchDTO(
                                     id = (result["userId"] as? Number)?.toLong() ?: 0L,
                                     username = result["username"] as? String ?: "",
                                     name = result["name"] as? String ?: "",
                                     email = result["email"] as? String ?: "",
-                                    profilePicture = result["profilePicture"] as? String
+                                    profilePicture = result["profilePictureData"] as? String
                                 )
+
                             }
                             filterAlreadyGrantedUsers(users)
                         }

@@ -55,7 +55,7 @@ class FriendsAdapter(
             tvName.text = friend.name ?: "No name"
 
             // Show profile picture if available
-            friend.profilePicture?.let {
+            friend.profilePictureData?.let {
                 try {
                     val imageBytes = Base64.decode(it, Base64.DEFAULT)
                     val bitmap = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)

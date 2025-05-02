@@ -16,6 +16,7 @@ import androidx.appcompat.widget.AppCompatButton
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.memoire.api.RetrofitClient
+import com.example.memoire.models.UserDTO
 
 import com.example.memoire.models.UserEntity
 import com.example.memoire.utils.SessionManager
@@ -78,19 +79,23 @@ class ProfileActivity : AppCompatActivity() {
     private fun fetchUserProfile() {
         val sessionManager = SessionManager(this)
         val token = sessionManager.getUserSession()["token"].toString()
-
+       // Toast.makeText(this@ProfileActivity, token, Toast.LENGTH_SHORT).show()
+        val s = sessionManager.getUserSession()["userId"]
         showLoading(true)
 
         // First get the current user details
-        RetrofitClient.instance.getCurrentUser("Bearer $token").enqueue(object : Callback<UserEntity> {
+        RetrofitClient.instance.getCurrentUser().enqueue(object : Callback<UserDTO> {
 
-            override fun onResponse(call: Call<UserEntity>, response: Response<UserEntity>) {
+            override fun onResponse(call: Call<UserDTO>, response: Response<UserDTO>) {
                 if (response.isSuccessful) {
                     val user = response.body()
+
+
                     if (user != null) {
-                        val id = sessionManager.getUserSession()["userId"] as Long
+
+
                         displayUserData(user)
-                        loadProfileImage(token,id)
+                        loadProfileImage(user)
                     }
                 } else {
                     showLoading(false)
@@ -99,7 +104,7 @@ class ProfileActivity : AppCompatActivity() {
 
             }
 
-            override fun onFailure(call: Call<UserEntity>, t: Throwable) {
+            override fun onFailure(call: Call<UserDTO>, t: Throwable) {
                 showLoading(false)
                 Log.e(TAG, "Network error", t)
                 Toast.makeText(this@ProfileActivity, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
@@ -151,7 +156,7 @@ class ProfileActivity : AppCompatActivity() {
         })
     }
 
-    private fun displayUserData(user: UserEntity) {
+    private fun displayUserData(user: UserDTO) {
         tvName.text = user.name?: user.username
         Username.text = user.username
         tvFullName.text = user.username
@@ -159,63 +164,22 @@ class ProfileActivity : AppCompatActivity() {
         showLoading(false)
     }
 
-    private fun loadProfileImage(token: String, userId: Long) {
-        try {
-            RetrofitClient.instance.getProfilePicture(userId).enqueue(object : Callback<ResponseBody> {
-                override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
-                    if (response.isSuccessful) {
-                        try {
-                            val inputStream = response.body()?.byteStream()
-                            Log.d(TAG, "Content-Type: ${response.headers()["Content-Type"]}")
+    private fun loadProfileImage(user: UserDTO) {
+        val profilePictureBytes = user.getProfilePictureBytes()
 
-                            if (inputStream != null) {
-                                val bitmap = BitmapFactory.decodeStream(inputStream)
+        if (profilePictureBytes != null) {
+                // Convert ByteArray to Bitmap
+                val bitmap = BitmapFactory.decodeByteArray(profilePictureBytes, 0, profilePictureBytes.size)
 
-                                if (bitmap != null) {
-                                    runOnUiThread {
-                                        ivProfile.setImageBitmap(bitmap)
-                                    }
-                                } else {
-                                    Log.e(TAG, "Failed to decode image from server")
-                                    loadDefaultImage()
-                                }
-                            } else {
-                                Log.e(TAG, "Empty response body")
-                                loadDefaultImage()
-                            }
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error processing image data: ${e.message}")
-                            loadDefaultImage()
-                        }
-                    } else {
-                        Log.e(TAG, "Server error: ${response.code()} - ${response.message()}")
-                        try {
-                            val errorBody = response.errorBody()?.string()
-                            Log.e(TAG, "Error body: $errorBody")
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Couldn't read error body: ${e.message}")
-                        }
-                        loadDefaultImage()
-                    }
-                }
+                // Set the bitmap to your CircleImageView
+                ivProfile.setImageBitmap(bitmap)
+        } else {
+            // Set a default image or placeholder when no image data is available
+            ivProfile.setImageResource(R.drawable.ic_placeholder)
+          }
 
-                override fun onFailure(call: Call<ResponseBody>, t: Throwable) {
-                    Log.e(TAG, "Network error: ${t.message}", t)
-                    loadDefaultImage()
-                }
-            })
-        } catch (e: Exception) {
-            Log.e(TAG, "Exception in loadProfileImage: ${e.message}", e)
-            loadDefaultImage()
-        }
     }
 
-
-    private fun loadDefaultImage() {
-        runOnUiThread {
-            ivProfile.setImageResource(R.drawable.default_profile)
-        }
-    }
 
     private fun showLoading(isLoading: Boolean) {
         progressIndicator.visibility = if (isLoading) View.VISIBLE else View.GONE
