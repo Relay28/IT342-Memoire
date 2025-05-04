@@ -9,6 +9,8 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { useThemeMode } from '../context/ThemeContext';
 import ChangePasswordModal from './ChangePasswordModal';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 
 const ProfilePage = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -33,6 +35,19 @@ const ProfilePage = () => {
   const { isDark } = useThemeMode();
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
 
   // Fetch user data and profile picture on component mount
   useEffect(() => {
@@ -64,7 +79,7 @@ const ProfilePage = () => {
         }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
-        alert('Failed to load profile data. Please try again.');
+        showSnackbar('Failed to load profile data. Please try again.', 'error');
       } finally {
         setIsLoading(false);
       }
@@ -142,14 +157,14 @@ const ProfilePage = () => {
         setProfileImage(null);
         setOriginalData(formData);
         setIsEditMode(false);
-        alert('Profile updated successfully!');
+        showSnackbar('Profile updated successfully!');
       }
     } catch (error) {
       console.error('Failed to update profile:', {
         error: error,
         response: error.response?.data
       });
-      alert(`Failed to update profile: ${error.response?.data?.message || error.message}`);
+      showSnackbar(`Failed to update profile: ${error.response?.data?.message || error.message}`, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -164,7 +179,7 @@ const ProfilePage = () => {
         navigate('/login');
       } catch (error) {
         console.error('Failed to deactivate account:', error);
-        alert('Failed to deactivate account. Please try again.');
+        showSnackbar('Failed to deactivate account. Please try again.', 'error');
       } finally {
         setIsLoading(false);
       }
@@ -184,7 +199,7 @@ const ProfilePage = () => {
     try {
       const result = await profileService.changePassword(currentPassword, newPassword);
       console.log('Change password result:', result);
-      alert('Password changed successfully!');
+      showSnackbar('Password changed successfully!');
       setIsPasswordModalOpen(false);
       
       // Immediately test the new password
@@ -202,6 +217,7 @@ const ProfilePage = () => {
       throw error;
     }
   };
+
   const userData = user || {
     username: "",
     email: "",
@@ -471,6 +487,21 @@ const ProfilePage = () => {
         onClose={() => setIsPasswordModalOpen(false)}
         onChangePassword={handlePasswordChangeSubmit}
       />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={2000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

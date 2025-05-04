@@ -7,6 +7,8 @@ import { useFCMToken } from "../hooks/useFCMToken";
 import { useAuth } from '../components/AuthProvider';
 import mmrlogo from "../assets/mmrlogo.png";
 import sunsetGif from "../assets/sunset.gif";
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,10 +20,23 @@ const Login = () => {
     username: "",
     password: "",
   });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
   
   const navigate = useNavigate();
   const { login, googleLogin, loading, error, user, authToken } = useAuth();
   
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar(prev => ({ ...prev, open: false }));
+  };
+
   useFCMToken(user?.id, authToken);
   
   useEffect(() => {
@@ -84,12 +99,16 @@ const Login = () => {
   };
 
   const handleGoogleLoginSuccess = async (response) => {
-    await googleLogin(response.credential);
+    try {
+      await googleLogin(response.credential);
+    } catch (error) {
+      showSnackbar("Google login failed. Please try again.", "error");
+    }
   };
 
   const handleGoogleLoginError = () => {
     console.error("Google Login Failed");
-    alert("Google login failed. Please try again.");
+    showSnackbar("Google login failed. Please try again.", "error");
   };
 
   const togglePasswordVisibility = () => {
@@ -223,6 +242,21 @@ const Login = () => {
           </p>
         </div>
       </div>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={2000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
