@@ -64,8 +64,24 @@ const Header = () => {
       const fetchProfilePicture = async () => {
         try {
           setIsLoading(true);
-          const picture = await profileService.getProfilePicture();
-          setProfilePicture(picture);
+            const userData = await profileService.getCurrentUser();
+          const picture = userData.profilePicture;;;
+  
+
+          if (userData.profilePicture) {
+            let imageUrl;
+            if (typeof userData.profilePicture === 'string') {
+              imageUrl = userData.profilePicture.startsWith('data:image') 
+                ? userData.profilePicture 
+                : `data:image/jpeg;base64,${userData.profilePicture}`;
+            } else if (Array.isArray(userData.profilePicture)) {
+              const binaryString = String.fromCharCode.apply(null, userData.profilePicture);
+              imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+            }
+            if (imageUrl)
+              setProfilePicture(imageUrl);
+          }
+         
         } catch (error) {
           console.error('Error fetching profile picture:', error);
         } finally {

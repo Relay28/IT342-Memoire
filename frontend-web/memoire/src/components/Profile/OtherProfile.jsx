@@ -251,15 +251,25 @@ const ProfilePageOther = () => {
             <div className="px-6 pb-6 relative">
               <div className="flex justify-between items-start">
                 <div className="flex items-end -mt-16 space-x-4">
-                  <img 
-                    src={profile.profilePicture || ProfilePictureSample} 
-                    alt={profile.username}
-                    className="w-32 h-32 rounded-full border-4 border-white object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = ProfilePictureSample;
-                    }}
-                  />
+                <img 
+                  src={
+                    profile.profilePicture
+                      ? typeof profile.profilePicture === 'string'
+                        ? profile.profilePicture.startsWith('data:image')
+                          ? profile.profilePicture
+                          : `data:image/jpeg;base64,${profile.profilePicture}`
+                        : Array.isArray(profile.profilePicture)
+                        ? `data:image/jpeg;base64,${btoa(String.fromCharCode.apply(null, profile.profilePicture))}`
+                        : ProfilePictureSample
+                      : ProfilePictureSample
+                  }
+                  alt={profile.username}
+                  className="w-32 h-32 rounded-full border-4 border-white object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = ProfilePictureSample;
+                  }}
+                />
                   <div>
                     <h1 className={`text-2xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{profile.username}</h1>
                     {profile.name && <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>{profile.name}</p>}

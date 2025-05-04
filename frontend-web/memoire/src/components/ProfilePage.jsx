@@ -70,21 +70,14 @@ const ProfilePage = () => {
           username: userData.username || ''
         });
         alert(userData.profilePicture)
-        if (userData.profilePicture) {
-          let imageUrl;
-          if (typeof user.profilePicture === 'string') {
-            imageUrl = user.profilePicture.startsWith('data:image') 
-              ? user.profilePicture 
-              : `data:image/jpeg;base64,${user.profilePicture}`;
-          } else if (Array.isArray(user.profilePicture)) {
-            const binaryString = String.fromCharCode.apply(null, user.profilePicture);
-            imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
-          }
-          
-          if (imageUrl) {
-            setPreviewImage(imageUrl);
-          }
+       
+      if (userData.profilePicture) {
+    
+        if (imageUrl) {
+          setPreviewImage(user.profilePicture);
         }
+      }
+        
       } catch (error) {
         console.error('Failed to fetch user data:', error);
         showSnackbar('Failed to load profile data. Please try again.', 'error');
@@ -110,18 +103,9 @@ const ProfilePage = () => {
       });
 
       if (user.profilePicture) {
-        let imageUrl;
-        if (typeof user.profilePicture === 'string') {
-          imageUrl = user.profilePicture.startsWith('data:image') 
-            ? user.profilePicture 
-            : `data:image/jpeg;base64,${user.profilePicture}`;
-        } else if (Array.isArray(user.profilePicture)) {
-          const binaryString = String.fromCharCode.apply(null, user.profilePicture);
-          imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
-        }
-        
+    
         if (imageUrl) {
-          setPreviewImage(imageUrl);
+          setPreviewImage(user.profilePicture);
         }
       }
       if (!previewImage || previewImage === ProfilePictureSample & user.profilePicture!=null) {
@@ -280,16 +264,26 @@ const ProfilePage = () => {
                   <div className="flex items-center space-x-4">
                     <div className="relative">
                     <img 
-      src={previewImage} 
-      alt="Profile" 
-      className={`h-24 w-24 rounded-full object-cover border-2 ${
-        isDark ? 'border-[#AF3535]' : 'border-[#AF3535]'
-      }`}
-      onError={(e) => {
-        e.target.onerror = null;
-        e.target.src = ProfilePictureSample;
-      }}
-    />
+  src={
+    previewImage
+      ? typeof previewImage === 'string'
+        ?  previewImage.startsWith('data:image')
+          ?  previewImage
+          : `data:image/jpeg;base64,${previewImage}`
+        : Array.isArray(previewImage)
+        ? `data:image/jpeg;base64,${btoa(String.fromCharCode.apply(null, previewImage))}`
+        : ProfilePictureSample
+      : ProfilePictureSample
+  }
+  alt="Profile"
+  className={`h-24 w-24 rounded-full object-cover border-2 ${
+    isDark ? 'border-[#AF3535]' : 'border-[#AF3535]'
+  }`}
+  onError={(e) => {
+    e.target.onerror = null;
+    e.target.src = ProfilePictureSample;
+  }}
+/>
                       {isEditMode && (
                         <button 
                           className={`absolute bottom-0 right-0 ${
