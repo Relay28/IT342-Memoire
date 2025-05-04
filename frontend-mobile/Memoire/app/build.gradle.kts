@@ -67,12 +67,22 @@ dependencies {
     annotationProcessor("com.github.bumptech.glide:compiler:4.15.1")
     implementation("com.github.bumptech.glide:okhttp3-integration:4.15.0")
     implementation("com.squareup.okhttp3:okhttp:4.9.3")
+
     implementation("org.java-websocket:Java-WebSocket:1.5.3")
 
     // Tyrus WebSocket Client (org.glassfish.tyrus)
+    // WebSocket & STOMP (verified versions)
     implementation("com.github.NaikSoftware:StompProtocolAndroid:1.6.6")
 
-    implementation("javax.websocket:javax.websocket-api:1.1")
+
+    // OkHttp (single version)
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // RxJava
+    implementation("io.reactivex.rxjava2:rxjava:2.2.21")
+    implementation("io.reactivex.rxjava2:rxandroid:2.1.1")
+
+   // implementation("javax.websocket:javax.websocket-api:1.1")
 
     // OkHttp WebSocket
     implementation("com.squareup.okhttp3:okhttp:4.10.0")

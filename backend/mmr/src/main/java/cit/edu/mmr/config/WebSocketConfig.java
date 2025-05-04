@@ -1,6 +1,7 @@
 package cit.edu.mmr.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
@@ -25,39 +26,32 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Autowired
     private AuthTokenHandshakeInterceptor authTokenHandshakeInterceptor;
 
+    @Value("${cors.allowed-origins:https://it-342-memoire.vercel.app,http://localhost:5173}")
+    private String[] allowedOrigins;
+
     @Bean
     public TaskScheduler messageBrokerTaskScheduler() {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        scheduler.setPoolSize(1);
+        scheduler.setPoolSize(2);  // Increased for App Engine
         scheduler.setThreadNamePrefix("wss-heartbeat-thread-");
         scheduler.setDaemon(true);
         return scheduler;
-    }
-
-    @Bean
-    public WebSocketTransportRegistration webSocketTransportRegistration() {
-        return new WebSocketTransportRegistration()
-                .setMessageSizeLimit(128 * 1024)
-                .setSendTimeLimit(20 * 1000)
-                .setSendBufferSizeLimit(512 * 1024)
-                .setTimeToFirstMessage(60000);
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry config) {
         config.enableSimpleBroker("/topic", "/queue")
                 .setHeartbeatValue(new long[]{25000, 25000})
-                .setTaskScheduler(messageBrokerTaskScheduler()); // Add the task scheduler here
+                .setTaskScheduler(messageBrokerTaskScheduler());
         config.setApplicationDestinationPrefixes("/app");
         config.setUserDestinationPrefix("/user");
     }
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Replace wildcard with specific origins for GAE compatibility
         // General notifications endpoint
         registry.addEndpoint("/ws-notifications")
-                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
+                .setAllowedOrigins(allowedOrigins)
                 .addInterceptors(authTokenHandshakeInterceptor)
                 .withSockJS()
                 .setWebSocketEnabled(true)
@@ -66,7 +60,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         // Specific endpoint for capsule content real-time updates
         registry.addEndpoint("/ws-capsule-content")
-                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
+                .setAllowedOrigins(allowedOrigins)
                 .addInterceptors(authTokenHandshakeInterceptor)
                 .withSockJS()
                 .setWebSocketEnabled(true)
@@ -78,21 +72,21 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         // Keep existing comments endpoint
         registry.addEndpoint("/ws-comments")
-                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
+                .setAllowedOrigins(allowedOrigins)
                 .withSockJS()
                 .setWebSocketEnabled(true);
 
         // Add raw WebSocket endpoints (no SockJS) as fallback
-        registry.addEndpoint("/ws-capsule-content")
-                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
+        registry.addEndpoint("/ws-capsule-content-raw")
+                .setAllowedOrigins(allowedOrigins)
                 .addInterceptors(authTokenHandshakeInterceptor);
 
-        registry.addEndpoint("/ws-notifications")
-                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173")
+        registry.addEndpoint("/ws-notifications-raw")
+                .setAllowedOrigins(allowedOrigins)
                 .addInterceptors(authTokenHandshakeInterceptor);
 
-        registry.addEndpoint("/ws-comments")
-                .setAllowedOrigins("https://it-342-memoire.vercel.app", "http://localhost:5173");
+        registry.addEndpoint("/ws-comments-raw")
+                .setAllowedOrigins(allowedOrigins);
     }
 
     @Override

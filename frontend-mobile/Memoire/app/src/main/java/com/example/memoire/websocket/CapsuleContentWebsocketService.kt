@@ -8,6 +8,7 @@ import com.google.gson.reflect.TypeToken
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
+import okhttp3.OkHttpClient
 import org.json.JSONObject
 import ua.naiksoftware.stomp.Stomp
 import ua.naiksoftware.stomp.StompClient
@@ -44,20 +45,34 @@ class CapsuleContentStompService(
         val headers = ArrayList<StompHeader>().apply {
             add(StompHeader("Authorization", "Bearer $token"))
             add(StompHeader("Capsule-ID", capsuleId.toString()))
-            add(StompHeader("Origin", "https://memoire-it342.as.r.appspot.com"))
-            add(StompHeader("Accept-Encoding", "gzip, deflate, br"))
+            StompHeader("Origin", "https://memoire-it342.as.r.appspot.com")
         }
 
-        // Initialize STOMP client - try both SockJS and raw WebSocket
-        val connectionUrl = "https://memoire-it342.as.r.appspot.com/ws-capsule-content"
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("Authorization", "Bearer $token")
+                    .addHeader("Capsule-ID", capsuleId.toString())
+                    .addHeader("Sec-WebSocket-Protocol", "v11.stomp") // Use v11 instead of v12
+                    .addHeader("Origin", "https://memoire-it342.as.r.appspot.com") // Must match server allowed origins
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
+
+// Change connection URL to:
+        val connectionUrl = "wss://memoire-it342.as.r.appspot.com/ws-capsule-content"
 
         stompClient = Stomp.over(
             Stomp.ConnectionProvider.OKHTTP,
-            connectionUrl
+            connectionUrl,
+            mapOf("User-Agent" to "AndroidApp/1.0"), // Add user agent
+            okHttpClient
         ).apply {
             withClientHeartbeat(15000)
             withServerHeartbeat(15000)
         }
+
 
         stompClient?.let { client ->
             // Track connection state

@@ -1,10 +1,13 @@
 package com.example.memoire.models
 
+import com.google.gson.annotations.SerializedName
+
 data class UserSearchDTO(
     val id: Long,
     val username: String,
     val name: String,
     val email: String,
+    @SerializedName("profilePicture")
     val profilePicture: String?
 )
 

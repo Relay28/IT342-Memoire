@@ -1,6 +1,7 @@
 package cit.edu.mmr.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -50,38 +51,38 @@ public class UserEntity implements UserDetails {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-friendships")
-    private List<FriendShipEntity> friendshipsAsUser;
-
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private List<FriendShipEntity> friendshipsAsUser = new ArrayList<>();
     @OneToMany(mappedBy = "friend", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("friend-friendships")
-    private List<FriendShipEntity> friendshipsAsFriend;
+    private List<FriendShipEntity> friendshipsAsFriend =new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-comments")
-    private List<CommentEntity> comments;
+    private List<CommentEntity> comments  =new ArrayList<>();
 
     // Notifications (One-to-Many)
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-notif")
-    private List<NotificationEntity> notifications;
+    private List<NotificationEntity> notifications  =new ArrayList<>();
 
     @OneToMany(mappedBy="reporter",cascade = CascadeType.ALL,orphanRemoval = true)
     @JsonManagedReference("user-report")
-    private List<ReportEntity> reports;
+    private List<ReportEntity> reports  =new ArrayList<>();
 
 
     // Capsule Access (One-to-Many)
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-capsuleAccess")
-    private List<CapsuleAccessEntity> capsuleAccesses;
+    private List<CapsuleAccessEntity> capsuleAccesses  =new ArrayList<>();
 
     @OneToMany(mappedBy = "uploadedBy", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-capsuleOwnership")
-    private List<CapsuleAccessEntity> uploadedCapsules;
+    private List<CapsuleAccessEntity> uploadedCapsules  =new ArrayList<>();
 
     @OneToMany(mappedBy = "contentUploadedBy" ,cascade=CascadeType.ALL,orphanRemoval = true)
     @JsonManagedReference("user-capsuleContent")
-    private List<CapsuleContentEntity> content;
+    private List<CapsuleContentEntity> content  =new ArrayList<>();
 
     @OneToMany(mappedBy="createdBy",cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference("user-capsules")

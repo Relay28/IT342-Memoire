@@ -354,6 +354,8 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
         lifecycleScope.launch {
             try {
                 val response = apiService.getContentsByCapsule(capsuleId.toLong())
+                Toast.makeText(this@CapsuleDetailActivity,
+                    response.toString(), Toast.LENGTH_SHORT).show()
                 if (response.isSuccessful) {
                     contentList.clear()
                     response.body()?.let { contentList.addAll(it) }

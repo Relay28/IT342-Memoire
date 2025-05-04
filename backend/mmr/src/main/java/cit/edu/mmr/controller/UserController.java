@@ -49,6 +49,7 @@ public class UserController {
     }
 
     // Get current authenticated user
+    // Get current authenticated user
     @GetMapping
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         try {
@@ -56,7 +57,21 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
             }
             UserEntity currentUser = getAuthenticatedUser(authentication);
-            return ResponseEntity.ok(currentUser);
+
+            // Convert to DTO to avoid exposing sensitive information
+            UserDTO userDTO = new UserDTO(
+                    currentUser.getId(),
+                    currentUser.getUsername(),
+                    currentUser.getEmail(),
+                    currentUser.getProfilePictureData(),
+                    currentUser.getRole(),
+                    currentUser.getBiography(),
+                    currentUser.isActive(),
+                    currentUser.isOauthUser(),
+                    currentUser.getCreatedAt()
+            );
+
+            return ResponseEntity.ok(userDTO);
         } catch (Exception e) {
             logger.error("Error retrieving current user: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

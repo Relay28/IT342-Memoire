@@ -1,6 +1,9 @@
 package com.example.memoire.adapters
 
 import android.content.Intent
+import android.graphics.BitmapFactory
+import android.util.Base64
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,24 +30,40 @@ class UserAdapter(private var userList: List<ProfileDTO2>) :
         return UserViewHolder(view)
     }
 
+
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         val user = userList[position]
         holder.txtUserName.text = user.username
 
-        val profileUrl = user.profilePicture
-        if (!profileUrl.isNullOrEmpty()) {
-            Glide.with(holder.itemView.context)
-                .load(profileUrl)
-                .placeholder(R.drawable.ic_placeholder)
-                .error(R.drawable.ic_placeholder)
-                .circleCrop()
-                .into(holder.imgUser)
-        } else {
-            holder.imgUser.setImageResource(R.drawable.ic_placeholder)
+        // Use the itemView's context for Glide
+        val context = holder.itemView.context
+
+        // Set default image first, in case of any issues
+        holder.imgUser.setImageResource(R.drawable.ic_placeholder)
+
+        try {
+            // Only proceed if profilePicture is not null and not empty
+            if (user.profilePicture != null && user.profilePicture.isNotEmpty()) {
+                val profileImageBytes = Base64.decode(user.profilePicture, Base64.DEFAULT)
+
+                // Create a bitmap from the byte array
+                val bitmap = BitmapFactory.decodeByteArray(profileImageBytes, 0, profileImageBytes.size)
+
+                // Load the bitmap with Glide only if bitmap is not null
+                if (bitmap != null) {
+                    Glide.with(context)
+                        .load(bitmap)
+                        .circleCrop()
+                        .placeholder(R.drawable.ic_placeholder)
+                        .into(holder.imgUser)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("UserAdapter", "Error loading profile image for user ${user.username}: ${e.message}", e)
+            // Image remains as default placeholder set earlier
         }
 
         holder.itemView.setOnClickListener {
-            val context = holder.itemView.context
             val intent = Intent(context, UserProfileActivity::class.java)
             intent.putExtra("userId", user.userId)
             context.startActivity(intent)

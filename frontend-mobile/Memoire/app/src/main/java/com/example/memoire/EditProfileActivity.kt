@@ -28,6 +28,7 @@ import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.ProfileDTO
+import com.example.memoire.models.UserDTO
 import com.example.memoire.models.UserEntity
 import com.example.memoire.utils.SessionManager
 import com.google.android.material.progressindicator.CircularProgressIndicator
@@ -48,7 +49,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 class EditProfileActivity : AppCompatActivity() {
-    private lateinit var currentUser: UserEntity
+    private lateinit var currentUser: UserDTO
     private lateinit var profileImageView: ImageView
     private var selectedImageUri: Uri? = null
     private lateinit var usernameField: TextInputEditText
@@ -169,8 +170,8 @@ class EditProfileActivity : AppCompatActivity() {
 
         showLoading(true)
 
-        RetrofitClient.instance.getCurrentUser("Bearer $token").enqueue(object : Callback<UserEntity> {
-            override fun onResponse(call: Call<UserEntity>, response: Response<UserEntity>) {
+        RetrofitClient.instance.getCurrentUser().enqueue(object : Callback<UserDTO> {
+            override fun onResponse(call: Call<UserDTO>, response: Response<UserDTO>) {
                 showLoading(false)
                 if (response.isSuccessful) {
                     response.body()?.let { user ->
@@ -182,7 +183,7 @@ class EditProfileActivity : AppCompatActivity() {
                 }
             }
 
-            override fun onFailure(call: Call<UserEntity>, t: Throwable) {
+            override fun onFailure(call: Call<UserDTO>, t: Throwable) {
                 showLoading(false)
                 Log.e(TAG, "Network error", t)
                 Toast.makeText(this@EditProfileActivity, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
@@ -190,7 +191,7 @@ class EditProfileActivity : AppCompatActivity() {
         })
     }
 
-    private fun populateUserData(user: UserEntity) {
+    private fun populateUserData(user: UserDTO) {
         usernameField.setText(user.username)
         usernameField.isEnabled = false
         usernameField.setTextColor(getColor(R.color.gray))

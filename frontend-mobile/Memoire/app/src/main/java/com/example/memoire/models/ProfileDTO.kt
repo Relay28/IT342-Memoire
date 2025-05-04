@@ -1,5 +1,6 @@
 package com.example.memoire.models
 
+import com.google.gson.annotations.SerializedName
 import java.util.Date
 
 
@@ -20,6 +21,7 @@ data class ProfileDTO2(
     val name: String? = null,
     val email: String? = null,
     val biography: String? = null,
+    @SerializedName("profilePicture")
     val profilePicture: String? = null,
     val isActive: Boolean = true
 )

@@ -1,27 +1,28 @@
 runtime: java
 env: flex
-
 runtime_config:
-  operating_system: "ubuntu22"
-  runtime_version: "21"
+  operating_system: ubuntu22
+  runtime_version: 21
 
-entrypoint: java -jar mmr-0.0.1-SNAPSHOT.jar
-# Instance configuration
-instance_class: F4
-
-# Automatic scaling configuration
+# Configure automatic scaling
 automatic_scaling:
   min_num_instances: 1
-  max_num_instances: 3
-  cool_down_period_sec: 300
+  max_num_instances: 5
+  cpu_utilization:
+    target_utilization: 0.7
 
-# Network configuration
+# Configure resources
+resources:
+  cpu: 2
+  memory_gb: 4
+  disk_size_gb: 20
+
+# Enable WebSocket support
 network:
-  session_affinity: true
-
+  session_affinity: true  # Enable session affinity for WebSockets
 
 # Environment variables
 env_variables:
-  SPRING_PROFILES_ACTIVE: "prod"
-  JAVA_OPTS: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75 -Xms1G -Xmx2G"
-  CORS_ALLOWED_ORIGINS: "https://it-342-memoire.vercel.app,http://localhost:5173"
+  SPRING_PROFILES_ACTIVE: prod
+  ALLOWED_ORIGINS: "*"
+

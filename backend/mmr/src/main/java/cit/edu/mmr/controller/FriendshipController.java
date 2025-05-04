@@ -1,7 +1,9 @@
 package cit.edu.mmr.controller;
 
 import cit.edu.mmr.dto.ErrorResponse;
+import cit.edu.mmr.dto.FriendshipDTO;
 import cit.edu.mmr.dto.FriendshipRequest;
+import cit.edu.mmr.dto.UserDTO;
 import cit.edu.mmr.entity.FriendShipEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
@@ -38,7 +40,7 @@ public class FriendshipController {
     public ResponseEntity<?> createFriendship(@RequestBody FriendshipRequest request, Authentication auth) {
         try {
             logger.info("Received request to create friendship");
-            FriendShipEntity friendship = friendShipService.createFriendship(request, auth);
+            FriendshipDTO friendship = friendShipService.createFriendship(request, auth);
             return new ResponseEntity<>(friendship, HttpStatus.CREATED);
         } catch (Exception e) {
             logger.error("Error creating friendship: {}", e.getMessage(), e);
@@ -60,7 +62,7 @@ public class FriendshipController {
     @GetMapping("/friends")
     public ResponseEntity<?> getFriendsList(Authentication auth) {
         try {
-            List<UserEntity> friends = friendShipService.getFriendsList(auth);
+            List<UserDTO> friends = friendShipService.getFriendsList(auth);
             return new ResponseEntity<>(friends, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error retrieving friends list: {}", e.getMessage(), e);
@@ -125,7 +127,7 @@ public class FriendshipController {
             return new ResponseEntity<>(HttpStatus.OK);
         } catch (NoSuchElementException e) {
             logger.warn("Cancel request failed: {}", e.getMessage());
-            return new ResponseEntity<>(new ErrorResponse(NOT_FOUND.value(), e.getMessage()), NOT_FOUND);
+            return new ResponseEntity<>(new ErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage()), HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             logger.error("Error canceling friend request: {}", e.getMessage(), e);
             return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
@@ -146,7 +148,7 @@ public class FriendshipController {
     @GetMapping("/requests/received")
     public ResponseEntity<?> getReceivedFriendRequests(Authentication auth) {
         try {
-            List<FriendShipEntity> pendingRequests = friendShipService.getReceivedFriendRequests(auth);
+            List<FriendshipDTO> pendingRequests = friendShipService.getReceivedFriendRequests(auth);
             return new ResponseEntity<>(pendingRequests, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error retrieving received friend requests: {}", e.getMessage(), e);

@@ -31,6 +31,7 @@ class LockCapsuleDialogFragment(
     private lateinit var binding: DialogLockCapsuleBinding
     private var selectedCalendar: Calendar = Calendar.getInstance()
     private var friendsList: List<UserEntity> = emptyList()
+    private val currentCalendar: Calendar = Calendar.getInstance()
 
     sealed class AccessType {
         object Private : AccessType()
@@ -92,30 +93,91 @@ class LockCapsuleDialogFragment(
             selectedCalendar.get(Calendar.MONTH),
             selectedCalendar.get(Calendar.DAY_OF_MONTH)
         )
-        // Set minimum date to tomorrow (can't lock for past dates)
-        val minCalendar = Calendar.getInstance()
-        datePicker.datePicker.minDate = minCalendar.timeInMillis
+        // Set minimum date to today (can't lock for past dates)
+        val today = Calendar.getInstance()
+        datePicker.datePicker.minDate = today.timeInMillis
         datePicker.show()
     }
 
     private fun showTimePicker() {
-        TimePickerDialog(
+        // Get current time to compare
+        val now = Calendar.getInstance()
+
+        // Initialize with current selection or current time if needed
+        val initialHour = selectedCalendar.get(Calendar.HOUR_OF_DAY)
+        val initialMinute = selectedCalendar.get(Calendar.MINUTE)
+
+        val timePickerDialog = TimePickerDialog(
             requireContext(),
             this,
-            selectedCalendar.get(Calendar.HOUR_OF_DAY),
-            selectedCalendar.get(Calendar.MINUTE),
+            initialHour,
+            initialMinute,
             false
-        ).show()
+        )
+
+        // If selected date is today, we need to validate the time
+        if (isSameDay(selectedCalendar, now)) {
+            timePickerDialog.setOnShowListener {
+                // We'll validate the time selection when the user confirms
+            }
+        }
+
+        timePickerDialog.show()
+    }
+
+    private fun isSameDay(cal1: Calendar, cal2: Calendar): Boolean {
+        return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+                cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH) &&
+                cal1.get(Calendar.DAY_OF_MONTH) == cal2.get(Calendar.DAY_OF_MONTH)
     }
 
     override fun onDateSet(view: DatePicker?, year: Int, month: Int, day: Int) {
+        // Store the selected date
         selectedCalendar.set(year, month, day)
+
+        // If user selected today, ensure the time is valid
+        val now = Calendar.getInstance()
+        if (isSameDay(selectedCalendar, now)) {
+            // If selected date is today but time is in the past, update time to current time
+            if (selectedCalendar.get(Calendar.HOUR_OF_DAY) < now.get(Calendar.HOUR_OF_DAY) ||
+                (selectedCalendar.get(Calendar.HOUR_OF_DAY) == now.get(Calendar.HOUR_OF_DAY) &&
+                        selectedCalendar.get(Calendar.MINUTE) < now.get(Calendar.MINUTE))) {
+
+                selectedCalendar.set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
+                selectedCalendar.set(Calendar.MINUTE, now.get(Calendar.MINUTE))
+                // Add a minute to ensure it's in the future
+                selectedCalendar.add(Calendar.MINUTE, 1)
+            }
+        }
+
         updateDateTimeDisplay()
     }
 
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
-        selectedCalendar.set(Calendar.HOUR_OF_DAY, hour)
-        selectedCalendar.set(Calendar.MINUTE, minute)
+        // Store the selected time
+        val tempCalendar = Calendar.getInstance()
+        tempCalendar.set(
+            selectedCalendar.get(Calendar.YEAR),
+            selectedCalendar.get(Calendar.MONTH),
+            selectedCalendar.get(Calendar.DAY_OF_MONTH),
+            hour,
+            minute
+        )
+
+        // Check if the selected time is valid (not in the past)
+        val now = Calendar.getInstance()
+        if (tempCalendar.timeInMillis <= now.timeInMillis) {
+            // If time is in the past, show a message and set to current time + 1 minute
+            Toast.makeText(context, "Cannot select a time in the past", Toast.LENGTH_SHORT).show()
+            selectedCalendar.set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
+            selectedCalendar.set(Calendar.MINUTE, now.get(Calendar.MINUTE))
+            selectedCalendar.add(Calendar.MINUTE, 1)
+        } else {
+            // If time is valid, update the selection
+            selectedCalendar.set(Calendar.HOUR_OF_DAY, hour)
+            selectedCalendar.set(Calendar.MINUTE, minute)
+        }
+
         updateDateTimeDisplay()
     }
 
@@ -130,6 +192,10 @@ class LockCapsuleDialogFragment(
         // Enable confirm button only if date is in future
         val now = Calendar.getInstance()
         binding.btnConfirm.isEnabled = selectedCalendar.timeInMillis > now.timeInMillis
+
+        if (!binding.btnConfirm.isEnabled) {
+            Toast.makeText(context, "Please select a future date and time", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun loadFriends() {
