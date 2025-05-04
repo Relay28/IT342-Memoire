@@ -3,6 +3,7 @@ package cit.edu.mmr.controller;
 import cit.edu.mmr.dto.ErrorResponse;
 import cit.edu.mmr.dto.FriendshipDTO;
 import cit.edu.mmr.dto.FriendshipRequest;
+import cit.edu.mmr.dto.UserDTO;
 import cit.edu.mmr.entity.FriendShipEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
@@ -61,7 +62,7 @@ public class FriendshipController {
     @GetMapping("/friends")
     public ResponseEntity<?> getFriendsList(Authentication auth) {
         try {
-            List<UserEntity> friends = friendShipService.getFriendsList(auth);
+            List<UserDTO> friends = friendShipService.getFriendsList(auth);
             return new ResponseEntity<>(friends, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Error retrieving friends list: {}", e.getMessage(), e);

@@ -30,27 +30,9 @@
         <activity
             android:name=".MainContainerActivity"
             android:exported="false" />
-        <activity
-            android:name=".HostActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Memoire" />
-        <activity
-            android:name=".FriendListActivity"
-            android:exported="false" />
-        <activity
-            android:name=".CommentsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".activities.UserProfileActivity"
-            android:exported="false" />
-        <activity
-            android:name=".LockedCapsulesActivity"
-            android:exported="false" />
+
         <activity
             android:name=".CapsuleDetailActivity"
-            android:exported="false" />
-        <activity
-            android:name=".CapsuleListActivity"
             android:exported="false" />
         <activity
             android:name=".EditProfileActivity"
@@ -60,12 +42,6 @@
             android:exported="false" />
         <activity
             android:name=".RegisterActivity"
-            android:exported="false" />
-        <activity
-            android:name=".com.example.memoire.HomeActivity"
-            android:exported="false" />
-        <activity
-            android:name=".WastePeroHadlokIdeleteInkaso.NotificationActivity"
             android:exported="false" />
         <activity
             android:name=".activities.SearchActivity"

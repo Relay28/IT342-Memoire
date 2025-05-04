@@ -2,6 +2,7 @@ package cit.edu.mmr.service;
 
 import cit.edu.mmr.dto.FriendshipDTO;
 import cit.edu.mmr.dto.FriendshipRequest;
+import cit.edu.mmr.dto.UserDTO;
 import cit.edu.mmr.entity.FriendShipEntity;
 import cit.edu.mmr.entity.NotificationEntity;
 import cit.edu.mmr.entity.UserEntity;
@@ -98,31 +99,41 @@ public class FriendShipService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public List<UserEntity> getFriendsList(Authentication auth) {
+    public List<UserDTO> getFriendsList(Authentication auth) {
         logger.info("Retrieving friends list for user: {}", auth.getName());
         UserEntity user = getAuthenticatedUser(auth);
 
-        // Get friendships where the current user is either the sender or receiver
-        // and the status is "Friends"
         List<FriendShipEntity> friendshipsAsUser = friendShipRepository.findByUserAndStatusCustom(user, "Friends");
         List<FriendShipEntity> friendshipsAsFriend = friendShipRepository.findByFriendAndStatusCustom(user, "Friends");
 
-        // Extract the friend user entities from the friendships
-        List<UserEntity> friends = new ArrayList<>();
+        List<UserDTO> friends = new ArrayList<>();
 
         // Add friends where the current user is the sender
         for (FriendShipEntity friendship : friendshipsAsUser) {
-            friends.add(friendship.getFriend());
+            friends.add(convertToUserDTO(friendship.getFriend()));
         }
 
         // Add friends where the current user is the receiver
         for (FriendShipEntity friendship : friendshipsAsFriend) {
-            friends.add(friendship.getUser());
+            friends.add(convertToUserDTO(friendship.getUser()));
         }
 
         logger.debug("Found {} friends for user {}", friends.size(), user.getUsername());
         return friends;
+    }
+
+    private UserDTO convertToUserDTO(UserEntity user) {
+        return new UserDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getProfilePictureData(),
+                user.getRole(),
+                user.getBiography(),
+                user.isActive(),
+                user.isOauthUser(),
+                user.getCreatedAt()
+        );
     }
 
     @Cacheable(value = "contentMetadata", key = "'friendship_' + #id")

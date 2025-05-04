@@ -22,6 +22,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
+
 @Controller
 public class CapsuleContentWebSocketController {
     private static final Logger logger = LoggerFactory.getLogger(CapsuleContentWebSocketController.class);
