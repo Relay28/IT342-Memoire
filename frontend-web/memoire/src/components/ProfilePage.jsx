@@ -40,7 +40,7 @@ const ProfilePage = () => {
     message: '',
     severity: 'success'
   });
-
+  let profilePic=null;
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
@@ -69,13 +69,21 @@ const ProfilePage = () => {
           name: userData.name || '',
           username: userData.username || ''
         });
-
-        try {
-          const pictureUrl = await profileService.getProfilePicture();
-          setPreviewImage(pictureUrl);
-        } catch (pictureError) {
-          console.error('Failed to load profile picture:', pictureError);
-          setPreviewImage(ProfilePictureSample);
+        alert(userData.profilePicture)
+        if (userData.profilePicture) {
+          let imageUrl;
+          if (typeof user.profilePicture === 'string') {
+            imageUrl = user.profilePicture.startsWith('data:image') 
+              ? user.profilePicture 
+              : `data:image/jpeg;base64,${user.profilePicture}`;
+          } else if (Array.isArray(user.profilePicture)) {
+            const binaryString = String.fromCharCode.apply(null, user.profilePicture);
+            imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+          }
+          
+          if (imageUrl) {
+            setPreviewImage(imageUrl);
+          }
         }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -100,14 +108,31 @@ const ProfilePage = () => {
         name: user.name || '',
         username: user.username || ''
       });
-      
-      if (!previewImage || previewImage === ProfilePictureSample) {
-        profileService.getProfilePicture()
-          .then(pictureUrl => setPreviewImage(pictureUrl))
-          .catch(() => setPreviewImage(ProfilePictureSample));
+
+      if (user.profilePicture) {
+        let imageUrl;
+        if (typeof user.profilePicture === 'string') {
+          imageUrl = user.profilePicture.startsWith('data:image') 
+            ? user.profilePicture 
+            : `data:image/jpeg;base64,${user.profilePicture}`;
+        } else if (Array.isArray(user.profilePicture)) {
+          const binaryString = String.fromCharCode.apply(null, user.profilePicture);
+          imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+        }
+        
+        if (imageUrl) {
+          setPreviewImage(imageUrl);
+        }
+      }
+      if (!previewImage || previewImage === ProfilePictureSample & user.profilePicture!=null) {
+     
+        if (typeof user.profilePicture === 'string') {
+          profilePic = `data:image/jpeg;base64,${user.profilePicture}`;
+          setProfileImage(profilePic)
+        }  
       }
     }
-  }, [user]);
+  }, [user,originalData,profileImage]);
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
@@ -254,13 +279,17 @@ const ProfilePage = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="relative">
-                      <img 
-                        src={previewImage || user?.profilePicture || ProfilePictureSample} 
-                        alt="Profile" 
-                        className={`h-24 w-24 rounded-full object-cover border-2 ${
-                          isDark ? 'border-[#AF3535]' : 'border-[#AF3535]'
-                        }`}
-                      />
+                    <img 
+      src={previewImage} 
+      alt="Profile" 
+      className={`h-24 w-24 rounded-full object-cover border-2 ${
+        isDark ? 'border-[#AF3535]' : 'border-[#AF3535]'
+      }`}
+      onError={(e) => {
+        e.target.onerror = null;
+        e.target.src = ProfilePictureSample;
+      }}
+    />
                       {isEditMode && (
                         <button 
                           className={`absolute bottom-0 right-0 ${

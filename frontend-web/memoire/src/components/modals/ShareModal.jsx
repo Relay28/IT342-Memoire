@@ -51,19 +51,16 @@ const ShareModal = ({ title, onClose, capsuleId }) => {
             
             let profilePicture = null;
             if (userData.profilePicture) {
-              const byteArray = new Uint8Array(userData.profilePicture);
-              let binaryString = '';
-              byteArray.forEach(byte => {
-                binaryString += String.fromCharCode(byte);
-              });
-              profilePicture = `data:image/jpeg;base64,${btoa(binaryString)}`;
+              if (typeof userData.profilePicture === 'string') {
+                profilePicture = `data:image/jpeg;base64,${userData.profilePicture}`;
+              }  
             }
             
             collaboratorsData.push({
               id: userId,
               username: userData.username,
               name: userData.name,
-              profilePicture, // Correct property name
+              profilePicture,
               role: access.role,
               accessId: access.id,
               accessDate: access.createdAt,
