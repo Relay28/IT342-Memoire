@@ -233,6 +233,7 @@ export default function CreateCapsule() {
           title={capsuleData.title} 
           onClose={() => setShowShareModal(false)} 
           capsuleData={capsuleData}
+          capsuleId = {id}
         />
       )}
 
