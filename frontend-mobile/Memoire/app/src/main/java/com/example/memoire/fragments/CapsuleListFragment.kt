@@ -62,10 +62,12 @@ class CapsuleListFragment : Fragment() {
         val chipAll = requireView().findViewById<Chip>(R.id.chipAll)
         val chipPublished = requireView().findViewById<Chip>(R.id.chipPublished)
         val chipUnpublished = requireView().findViewById<Chip>(R.id.chipUnpublished)
+        val chipArchived = requireView().findViewById<Chip>(R.id.chipArchived)
 
         chipAll.setOnClickListener { loadUserTimeCapsules() }
         chipPublished.setOnClickListener { loadCapsulesByStatus("PUBLISHED") }
         chipUnpublished.setOnClickListener { loadCapsulesByStatus("UNPUBLISHED") }
+        chipArchived.setOnClickListener { loadCapsulesByStatus("ARCHIVED") }
     }
 
     private fun loadUserTimeCapsules() {
@@ -102,6 +104,7 @@ class CapsuleListFragment : Fragment() {
         val apiCall = when (status) {
             "PUBLISHED" -> RetrofitClient.instance.getPublishedTimeCapsules()
             "UNPUBLISHED" -> RetrofitClient.instance.getUnpublishedTimeCapsules()
+            "ARCHIVED" -> RetrofitClient.instance.getArchivedTimeCapsules()
             else -> RetrofitClient.instance.getUserTimeCapsules()
         }
 

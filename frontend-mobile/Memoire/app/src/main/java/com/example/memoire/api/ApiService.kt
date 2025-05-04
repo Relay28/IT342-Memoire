@@ -91,8 +91,6 @@ interface ApiService {
     @GET("api/timecapsules/status/published")
     fun getPublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
 
-
-
     @GET("api/timecapsules/status/unpublished")
     fun getUnpublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
 
