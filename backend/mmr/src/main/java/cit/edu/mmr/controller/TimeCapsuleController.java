@@ -19,7 +19,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/timecapsules")
-//@CrossOrigin(origins = "*")
 public class TimeCapsuleController {
 
     @Autowired
