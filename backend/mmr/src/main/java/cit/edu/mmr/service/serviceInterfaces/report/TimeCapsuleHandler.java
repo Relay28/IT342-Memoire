@@ -1,5 +1,6 @@
 package cit.edu.mmr.service.serviceInterfaces.report;
 
+import cit.edu.mmr.dto.TimeCapsuleDTO;
 import cit.edu.mmr.entity.TimeCapsuleEntity;
 import cit.edu.mmr.repository.TimeCapsuleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +30,20 @@ public class TimeCapsuleHandler implements ReportableEntity {
         // Validation logic specific to TimeCapsule
     }
 
-    public TimeCapsuleEntity getEntity(Long id) {
-        return timeCapsuleRepository.findById(id)
+    public TimeCapsuleDTO getEntity(Long id) {
+        TimeCapsuleEntity entity = timeCapsuleRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("TimeCapsule not found with id: " + id));
+
+        // Map TimeCapsuleEntity to TimeCapsuleDTO
+        return TimeCapsuleDTO.builder()
+                .id(entity.getId())
+                .title(entity.getTitle())
+                .description(entity.getDescription())
+                .createdAt(entity.getCreatedAt())
+                .openDate(entity.getOpenDate())
+                .isLocked(entity.isLocked())
+                .status(entity.getStatus())
+                .createdById(entity.getCreatedBy().getId())
+                .build();
     }
 }

@@ -1,5 +1,7 @@
 package cit.edu.mmr.service;
 
+import cit.edu.mmr.dto.CommentDTO;
+import cit.edu.mmr.dto.TimeCapsuleDTO;
 import cit.edu.mmr.entity.*;
 import cit.edu.mmr.repository.*;
 
@@ -170,19 +172,37 @@ public class ReportResolutionService {
     public ConfiscatedContentResponse getConfiscatedContent(Authentication auth) throws AccessDeniedException {
         UserEntity admin = getAuthenticatedAdmin(auth);
 
-        // Find all confiscated time capsules (where admin is the owner and status is CONFISCATED)
-        List<TimeCapsuleEntity> confiscatedCapsules = timeCapsuleRepository
-                .findByCreatedByAndStatus(admin, "CONFISCATED");
-
-        // Find all confiscated comments (where admin is the owner and text indicates confiscation)
-        List<CommentEntity> confiscatedComments = commentRepository
-                .findByUser(admin).stream()
-                .filter(comment -> comment.getText().contains("[Content removed due to policy violation]"))
+        // Find all confiscated time capsules
+        List<TimeCapsuleDTO> confiscatedCapsules = timeCapsuleRepository
+                .findByCreatedByAndStatus(admin, "CONFISCATED")
+                .stream()
+                .map(capsule -> TimeCapsuleDTO.builder()
+                        .id(capsule.getId())
+                        .title(capsule.getTitle())
+                        .description(capsule.getDescription())
+                        .createdAt(capsule.getCreatedAt())
+                        .openDate(capsule.getOpenDate())
+                        .isLocked(capsule.isLocked())
+                        .createdById(capsule.getCreatedBy().getId())
+                        .status(capsule.getStatus())
+                        .build())
                 .toList();
 
-        logger.info("Retrieved {} confiscated capsules and {} confiscated comments for admin {}",
-                confiscatedCapsules.size(), confiscatedComments.size(), admin.getUsername());
+        // Find all confiscated comments
+        List<CommentDTO> confiscatedComments = commentRepository
+                .findByUser(admin).stream()
+                .filter(comment -> comment.getText().contains("[Content removed due to policy violation]"))
+                .map(comment -> CommentDTO.builder()
+                        .id(comment.getId())
+                        .capsuleId(comment.getTimeCapsule().getId())
+                        .userId(comment.getUser().getId())
+                        .text(comment.getText())
+                        .createdAt(comment.getCreatedAt())
+                        .updatedAt(comment.getUpdatedAt())
+                        .build())
+                .toList();
 
+        // Create response
         ConfiscatedContentResponse response = new ConfiscatedContentResponse();
         response.setConfiscatedCapsules(confiscatedCapsules);
         response.setConfiscatedComments(confiscatedComments);
@@ -213,22 +233,22 @@ public class ReportResolutionService {
      * Response class to hold confiscated content
      */
     public static class ConfiscatedContentResponse {
-        private List<TimeCapsuleEntity> confiscatedCapsules = new ArrayList<>();
-        private List<CommentEntity> confiscatedComments = new ArrayList<>();
+        private List<TimeCapsuleDTO> confiscatedCapsules = new ArrayList<>();
+        private List<CommentDTO> confiscatedComments = new ArrayList<>();
 
-        public List<TimeCapsuleEntity> getConfiscatedCapsules() {
+        public List<TimeCapsuleDTO> getConfiscatedCapsules() {
             return confiscatedCapsules;
         }
 
-        public void setConfiscatedCapsules(List<TimeCapsuleEntity> confiscatedCapsules) {
+        public void setConfiscatedCapsules(List<TimeCapsuleDTO> confiscatedCapsules) {
             this.confiscatedCapsules = confiscatedCapsules;
         }
 
-        public List<CommentEntity> getConfiscatedComments() {
+        public List<CommentDTO> getConfiscatedComments() {
             return confiscatedComments;
         }
 
-        public void setConfiscatedComments(List<CommentEntity> confiscatedComments) {
+        public void setConfiscatedComments(List<CommentDTO> confiscatedComments) {
             this.confiscatedComments = confiscatedComments;
         }
     }

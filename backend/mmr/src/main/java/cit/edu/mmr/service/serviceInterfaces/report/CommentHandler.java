@@ -1,5 +1,6 @@
 package cit.edu.mmr.service.serviceInterfaces.report;
 
+import cit.edu.mmr.dto.CommentDTO;
 import cit.edu.mmr.entity.CommentEntity;
 import cit.edu.mmr.repository.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +30,18 @@ public class CommentHandler implements ReportableEntity {
         // Validation logic specific to Comment
     }
 
-    public CommentEntity getEntity(Long id) {
-        return commentRepository.findById(id)
+    public CommentDTO getEntity(Long id) {
+        CommentEntity entity = commentRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Comment not found with id: " + id));
+
+        // Map CommentEntity to CommentDTO
+        return CommentDTO.builder()
+                .id(entity.getId())
+                .capsuleId(entity.getTimeCapsule().getId())
+                .userId(entity.getUser().getId())
+                .text(entity.getText())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .build();
     }
 }

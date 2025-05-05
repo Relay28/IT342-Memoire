@@ -1,11 +1,18 @@
 package cit.edu.mmr.dto;
 
 import cit.edu.mmr.entity.CapsuleContentEntity;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class TimeCapsuleDTO {
 
     private Long id;
@@ -17,6 +24,7 @@ public class TimeCapsuleDTO {
     private Long createdById;
     private String status;
     private List<CapsuleContentDTO> contents = new ArrayList<>();  // Changed to use CapsuleContentDTO
+
 
     public List<CapsuleContentDTO> getContents() {  // Updated return type
         return contents;
