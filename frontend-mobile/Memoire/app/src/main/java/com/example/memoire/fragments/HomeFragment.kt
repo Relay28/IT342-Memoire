@@ -13,6 +13,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.CommentsDialog
+import com.example.memoire.FriendRequestsFragment
 import com.example.memoire.R
 import com.example.memoire.adapter.PublishedCapsulesAdapter
 import com.example.memoire.api.RetrofitClient
@@ -129,12 +130,25 @@ class HomeFragment : Fragment() {
     private fun handleNotificationIntent(intent: Intent?) {
         intent?.extras?.let { extras ->
             val type = extras.getString("type")
-            val itemId = extras.getString("itemId")
-            val itemType = extras.getString("itemType")
 
             when (type) {
-                // Handle notification types if needed
-                else -> {}
+                "FRIEND_REQUEST" -> {
+                    // Navigate to FriendRequestsFragment
+                    requireActivity().supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, FriendRequestsFragment())
+                        .addToBackStack(null)
+                        .commit()
+                }
+                "PUBLISHED_CAPSULE" -> {
+
+                    requireActivity().supportFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, HomeFragment())
+                        .addToBackStack(null)
+                        .commit()
+                }
+                else -> {
+                    // Handle other types if needed
+                }
             }
         }
     }

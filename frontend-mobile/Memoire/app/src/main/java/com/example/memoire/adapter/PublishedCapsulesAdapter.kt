@@ -1,7 +1,9 @@
 package com.example.memoire.adapter
 
 import CommentEntity
+import android.content.Intent
 import android.graphics.BitmapFactory
+import android.util.Base64
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,10 +15,14 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
+import com.example.memoire.ProfileActivity
 import com.example.memoire.R
+import com.example.memoire.activities.UserProfileActivity
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.CapsuleContentEntity
+import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.TimeCapsuleDTO
+import com.example.memoire.utils.SessionManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -47,35 +53,54 @@ class PublishedCapsulesAdapter(
             // Format dates
             val createdAt = capsule.createdAt?.let { dateFormat.format(it) } ?: "Unknown date"
             val openDate = capsule.openDate?.let { dateFormat.format(it) } ?: "Not specified"
-
             itemView.findViewById<TextView>(R.id.tvCreatedDate).text = "Created on: $createdAt"
             itemView.findViewById<TextView>(R.id.tvOpenedDate).text = "Opened on: $openDate"
 
-            // Setup carousel if there are contents
-            capsule.contents?.let { contents ->
-                if (contents.isNotEmpty()) {
-                    setupCarousel(contents)
-                } else {
-                    viewPager.visibility = View.GONE
-                    indicatorsLayout.visibility = View.GONE
-                }
-            } ?: run {
-                viewPager.visibility = View.GONE
-                indicatorsLayout.visibility = View.GONE
+            // Fetch and display owner profile
+            val ownerImageView = itemView.findViewById<ImageView>(R.id.ivOwnerProfilePicture)
+            val ownerNameTextView = itemView.findViewById<TextView>(R.id.tvOwnerName)
+
+            capsule.createdById?.let { ownerId ->
+                RetrofitClient.instance.getPublicProfile(ownerId).enqueue(object : Callback<ProfileDTO> {
+                    override fun onResponse(call: Call<ProfileDTO>, response: Response<ProfileDTO>) {
+                        if (response.isSuccessful) {
+                            val profile = response.body()
+                            if (profile != null) {
+                                ownerNameTextView.text = profile.username
+                                if (profile.profilePicture != null) {
+                                    val profileImageBytes = Base64.decode(profile.profilePicture, Base64.DEFAULT)
+                                    val bitmap = BitmapFactory.decodeByteArray(profileImageBytes, 0, profileImageBytes.size)
+                                    Glide.with(itemView.context)
+                                        .load(bitmap)
+                                        .circleCrop()
+                                        .placeholder(R.drawable.ic_placeholder)
+                                        .into(ownerImageView)
+                                } else {
+                                    ownerImageView.setImageResource(R.drawable.ic_placeholder)
+                                }
+                            }
+                        }
+                    }
+
+                    override fun onFailure(call: Call<ProfileDTO>, t: Throwable) {
+                        ownerNameTextView.text = "Unknown User"
+                        ownerImageView.setImageResource(R.drawable.ic_placeholder)
+                    }
+                })
             }
 
+            // Set up carousel for capsule contents
+            if (!capsule.contents.isNullOrEmpty()) {
+                setupCarousel(capsule.contents)
+            } else {
+                // Hide carousel if no contents
+                itemView.findViewById<ViewPager2>(R.id.viewPager).visibility = View.GONE
+                itemView.findViewById<LinearLayout>(R.id.layoutIndicators).visibility = View.GONE
+            }
+
+            // Fetch and display comment count
             fetchCommentCount(capsule.id!!, commentCount)
-
-            commentSection.setOnClickListener {
-                onCommentClick(capsule)
-            }
-
-            // Also make the whole item clickable for viewing the capsule details
-            itemView.setOnClickListener {
-                onItemClick(capsule)
-            }
         }
-
 
         private fun setupCarousel(contents: List<CapsuleContentEntity>) {
             viewPager.visibility = View.VISIBLE

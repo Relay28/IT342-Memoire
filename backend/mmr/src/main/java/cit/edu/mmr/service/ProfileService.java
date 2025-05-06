@@ -142,6 +142,7 @@ public class ProfileService {
         profileDTO.setProfilePicture(user.getProfilePictureData());
         profileDTO.setCreatedAt(user.getCreatedAt());
         profileDTO.setBiography(user.getBiography());
+        profileDTO.setName(user.getName());
 
         // Include private information only for the user's own profile
         if (includePrivateInfo) {

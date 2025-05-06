@@ -4,36 +4,68 @@
     android:orientation="vertical"
     android:padding="8dp">
 
-    <!-- Title and Description -->
+    <!-- Owner Section -->
+    <LinearLayout
+        android:id="@+id/ownerSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="4dp"
+        android:gravity="center_vertical">
+
+        <!-- Profile Picture with Red Border -->
+        <ImageView
+            android:id="@+id/ivOwnerProfilePicture"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@drawable/ic_placeholder"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="Owner Profile Picture"
+            android:scaleType="centerCrop"
+            android:background="@drawable/profile_picture_border" />
+
+        <!-- Owner Name -->
+        <TextView
+            android:id="@+id/tvOwnerName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Owner Name"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Title -->
     <TextView
         android:id="@+id/tvCapsuleTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="18sp"
-        android:textStyle="bold"/>
+        android:layout_marginTop="8dp"
+        android:textStyle="bold" />
 
+    <!-- Description -->
     <TextView
         android:id="@+id/tvCapsuleDescription"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="14sp"
-        android:layout_marginTop="4dp"/>
+        android:layout_marginTop="4dp" />
 
-    <!-- Carousel for images -->
+    <!-- Carousel for Images -->
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
         android:layout_width="match_parent"
         android:layout_height="300dp"
-        android:layout_marginTop="8dp"/>
+        android:layout_marginTop="8dp" />
 
-    <!-- Indicators for carousel -->
+    <!-- Indicators for Carousel -->
     <LinearLayout
         android:id="@+id/layoutIndicators"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
-        android:orientation="horizontal"/>
+        android:orientation="horizontal" />
 
     <!-- Dates -->
     <TextView
@@ -41,15 +73,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:textSize="12sp"/>
+        android:textSize="12sp" />
 
     <TextView
         android:id="@+id/tvOpenedDate"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="12sp"/>
+        android:textSize="12sp" />
 
-    <!-- Comment Section (Instagram-like) -->
+    <!-- Comment Section -->
     <LinearLayout
         android:id="@+id/commentSection"
         android:layout_width="match_parent"
@@ -63,7 +95,7 @@
             android:layout_width="24dp"
             android:layout_height="24dp"
             android:src="@drawable/ic_comment"
-            android:contentDescription="Comment"/>
+            android:contentDescription="Comment" />
 
         <TextView
             android:id="@+id/tvCommentCount"
@@ -71,7 +103,6 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="4dp"
             android:text="0 comments"
-            android:textSize="14sp"/>
+            android:textSize="14sp" />
     </LinearLayout>
-
 </LinearLayout>

@@ -177,7 +177,7 @@ public class TimeCapsuleController {
 
     // Lock a time capsule (requires authentication)
     @PatchMapping("/{id}/lock")
-    public ResponseEntity<Void> lockTimeCapsule(@PathVariable Long id, @RequestBody @Valid LockRequest request, Authentication authentication) {
+    public ResponseEntity<Void> lockTimeCapsule(@PathVariable Long id, @RequestBody LockRequest request, Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
         }

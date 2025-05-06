@@ -1,6 +1,7 @@
 package cit.edu.mmr.service;
 
 
+import cit.edu.mmr.dto.UserDTO;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.UserRepository;
 import org.apache.catalina.User;
@@ -127,30 +128,31 @@ public class UserService {
     }
 
     @CacheEvict(value = {"publicProfiles", "ownProfiles"}, key = "#userId")
-    public UserEntity updateUserDetails(long userId, UserEntity newUserDetails, MultipartFile profileImg) throws IOException {
+    public UserDTO updateUserDetails(long userId, UserEntity newUserDetails, MultipartFile profileImg) throws IOException {
         UserEntity existingUser = urepo.findById(userId)
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
         // Update only the fields that are provided in the request
-
         if (newUserDetails.getEmail() != null) {
             existingUser.setEmail(newUserDetails.getEmail());
         }
         if (newUserDetails.getBiography() != null) {
             existingUser.setBiography(newUserDetails.getBiography());
         }
-        if(newUserDetails.getName()!=null){
+        if (newUserDetails.getName() != null) {
             existingUser.setName(newUserDetails.getName());
         }
 
         // Handle profile image update
         if (profileImg != null && !profileImg.isEmpty()) {
-            saveProfileImage(profileImg,existingUser);
-
+            saveProfileImage(profileImg, existingUser);
         }
 
         // Save the updated user
-        return urepo.save(existingUser);
+        UserEntity updatedUser = urepo.save(existingUser);
+
+        // Convert to DTO and return
+        return convertToDTO(updatedUser);
     }
 
     /**
@@ -228,4 +230,17 @@ public class UserService {
         logger.info("Password successfully changed for user: {}", username);
     }
 
+    private UserDTO convertToDTO(UserEntity user) {
+        return new UserDTO(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getProfilePictureData(),
+                user.getRole(),
+                user.getBiography(),
+                user.isActive(),
+                user.isOauthUser(),
+                user.getCreatedAt()
+        );
+    }
 }

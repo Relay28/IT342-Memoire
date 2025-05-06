@@ -6,6 +6,15 @@ public class ProfileDTO {
     private long userId;
     private String username;
     private String email;
+    private String name;
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 
     public String getBiography() {
         return biography;

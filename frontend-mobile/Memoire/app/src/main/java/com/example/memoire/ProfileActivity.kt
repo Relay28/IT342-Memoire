@@ -134,7 +134,7 @@ class ProfileActivity : AppCompatActivity() {
         val sessionManager = SessionManager(this)
         val token = sessionManager.getUserSession()["token"].toString()
 
-        RetrofitClient.instance.logout("Bearer $token").enqueue(object : Callback<ResponseBody> {
+        RetrofitClient.instance.logout().enqueue(object : Callback<ResponseBody> {
             override fun onResponse(call: Call<ResponseBody>, response: Response<ResponseBody>) {
                 showLoading(false)
                 if (response.isSuccessful) {

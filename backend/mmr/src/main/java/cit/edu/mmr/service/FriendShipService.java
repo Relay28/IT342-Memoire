@@ -187,10 +187,8 @@ public class FriendShipService {
 
     @Caching(evict = {
             @CacheEvict(value = "userAuthentication", key = "'friends_' + #auth.name"),
-            @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().friend.id"),
-            @CacheEvict(value = "contentMetadata", key = "'friendship_' + #friendshipId"),
-            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().friend.id"),
-            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().friend.username + '_' + #auth.name")
+            @CacheEvict(value = "contentMetadata", key = "'friendship_' + #id"),
+            @CacheEvict(value = "userAuthentication", allEntries = true)
     })
     @Transactional
     public void deleteFriendship(Long id, Authentication auth) {
@@ -204,13 +202,14 @@ public class FriendShipService {
         }
 
         FriendShipEntity friendship = optionalFriendship.get();
+        // Get friend details before deletion
+        UserEntity friend = friendship.getUser().equals(user) ? friendship.getFriend() : friendship.getUser();
         if (!(friendship.getUser().equals(user) || friendship.getFriend().equals(user))) {
             logger.warn("Unauthorized attempt to delete friendship with ID: {}", id);
             throw new AccessDeniedException("You do not have access to delete this friendship");
         }
 
-        // Get friend details before deletion
-        UserEntity friend = friendship.getUser().equals(user) ? friendship.getFriend() : friendship.getUser();
+
 
         friendShipRepository.deleteById(id);
         logger.info("Deleted friendship with ID: {}", id);
@@ -219,10 +218,8 @@ public class FriendShipService {
 
     @Caching(evict = {
             @CacheEvict(value = "userAuthentication", key = "'friends_' + #auth.name"),
-            @CacheEvict(value = "userAuthentication", key = "'friends_' + #optionalFriendship.get().friend.id"),
             @CacheEvict(value = "contentMetadata", key = "'friendship_' + #friendshipId"),
-            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #auth.name + '_' + #optionalFriendship.get().friend.id"),
-            @CacheEvict(value = "userAuthentication", key = "'areFriends_' + #optionalFriendship.get().friend.username + '_' + #auth.name")
+            @CacheEvict(value = "userAuthentication", allEntries = true)
     })
     @Transactional
     public Optional<FriendshipDTO> acceptFriendship(Long friendshipId, Authentication auth) {

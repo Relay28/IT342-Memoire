@@ -19,16 +19,9 @@ object DateUtils {
 
     // This method converts local Philippines time to UTC for API consumption
     fun formatForApi(localDate: Date): String {
-        // Calculate the offset between local time and UTC
-        val philippinesTimeZone = TimeZone.getTimeZone("Asia/Manila")
-        val offsetMs = philippinesTimeZone.getOffset(localDate.time)
-
-        // Adjust time by removing the offset (converting to UTC)
-        val utcTime = Date(localDate.time - offsetMs)
-
+        val utcTime = Date(localDate.time)
         Log.d("DateUtils", "Local time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(localDate)}")
         Log.d("DateUtils", "UTC time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(utcTime)}")
-
         return apiDateFormat.format(utcTime)
     }
 

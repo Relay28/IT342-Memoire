@@ -28,7 +28,7 @@ import retrofit2.Callback
 import retrofit2.Response
 
 class UserProfileActivity : AppCompatActivity() {
-
+    private var isPendingRequest: Boolean = false
     private lateinit var imgBack: ImageButton
     private lateinit var imgProfilePicture: CircleImageView
     private lateinit var txtUsername: TextView
@@ -74,6 +74,16 @@ class UserProfileActivity : AppCompatActivity() {
             Toast.makeText(this, "User not found", Toast.LENGTH_SHORT).show()
             finish()
             return
+        }
+        isPendingRequest = intent.getBooleanExtra("isPendingRequest", false)
+        if (isPendingRequest) {
+            btnFriendAction.text = "Accept Request"
+            btnFriendAction.isEnabled = true
+        }
+
+        // Modify the handleFriendAction() to use the existing friendshipId for pending requests
+        btnFriendAction.setOnClickListener {
+            handleFriendAction()
         }
 
         // Set up back button
@@ -219,11 +229,37 @@ class UserProfileActivity : AppCompatActivity() {
 
     private fun handleFriendAction() {
         btnFriendAction.isEnabled = false
-        when (btnFriendAction.text.toString()) {
-            "Add Friend" -> sendFriendRequest()
-            "Remove Friend" -> removeFriend()
-            "Cancel Request" -> cancelFriendRequest()
-            "Accept Request" -> acceptFriendRequest()
+        when {
+            isPendingRequest -> acceptFriendRequest(friendshipId)
+            btnFriendAction.text.toString() == "Add Friend" -> sendFriendRequest()
+            btnFriendAction.text.toString() == "Remove Friend" -> removeFriend()
+            btnFriendAction.text.toString() == "Cancel Request" -> cancelFriendRequest()
+        }
+    }
+
+    private fun acceptFriendRequest(friendshipId: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.friendInstance.acceptFriendship(friendshipId)
+
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(this@UserProfileActivity, "Friend request accepted", Toast.LENGTH_SHORT).show()
+                        btnFriendAction.text = "Remove Friend"
+                        isFriend = true
+                        isPendingRequest = false
+                        this@UserProfileActivity.friendshipId = response.body()?.id ?: 0
+                    } else {
+                        Toast.makeText(this@UserProfileActivity, "Failed to accept request", Toast.LENGTH_SHORT).show()
+                    }
+                    btnFriendAction.isEnabled = true
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@UserProfileActivity, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                    btnFriendAction.isEnabled = true
+                }
+            }
         }
     }
 

@@ -61,17 +61,16 @@ class CapsuleContentStompService(
             .build()
 
 // Change connection URL to:
-        val connectionUrl = "wss://memoire-it342.as.r.appspot.com/ws-capsule-content"
+        val connectionUrl = "wss://memoire-it342.as.r.appspot.com/ws-capsule-content/websocket"
 
+
+
+
+        // Initialize STOMP client with SockJS
         stompClient = Stomp.over(
             Stomp.ConnectionProvider.OKHTTP,
-            connectionUrl,
-            mapOf("User-Agent" to "AndroidApp/1.0"), // Add user agent
-            okHttpClient
-        ).apply {
-            withClientHeartbeat(15000)
-            withServerHeartbeat(15000)
-        }
+            "wss://memoire-it342.as.r.appspot.com/ws-capsule-content/websocket" // SockJS endpoint for notifications
+        ).withClientHeartbeat(10000).withServerHeartbeat(10000)
 
 
         stompClient?.let { client ->

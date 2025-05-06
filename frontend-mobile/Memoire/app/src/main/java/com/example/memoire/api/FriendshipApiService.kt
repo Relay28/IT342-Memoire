@@ -8,6 +8,8 @@ data class FriendshipEntity(
     val id: Long,
     val user: UserEntity,
     val friend: UserEntity,
+    val friendId: Long,
+    val userId: Long,
     val status: String,
     val createdAt: String
 )

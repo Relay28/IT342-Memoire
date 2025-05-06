@@ -1,5 +1,6 @@
 package com.example.memoire.adapters
 
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.util.Base64
 import android.util.Log
@@ -12,9 +13,12 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.R
+import com.example.memoire.activities.UserProfileActivity
 import com.example.memoire.api.FriendshipEntity
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.ProfileDTO2
+import com.example.memoire.utils.FriendshipUtils
+import com.example.memoire.utils.SessionManager
 import com.google.android.material.button.MaterialButton
 import retrofit2.Call
 import retrofit2.Callback
@@ -22,6 +26,7 @@ import retrofit2.Response
 import kotlin.math.log
 
 class FriendRequestsAdapter(
+    private val sessionManager: SessionManager,
     private val onAccept: (FriendshipEntity) -> Unit,
     private val onDecline: (FriendshipEntity) -> Unit
 ) : RecyclerView.Adapter<FriendRequestsAdapter.RequestViewHolder>() {
@@ -41,7 +46,7 @@ class FriendRequestsAdapter(
 
     override fun onBindViewHolder(holder: RequestViewHolder, position: Int) {
         val request = requests[position]
-        holder.bind(request, onAccept, onDecline)
+        holder.bind(request,sessionManager, onAccept, onDecline)
     }
 
     override fun getItemCount(): Int = requests.size
@@ -57,6 +62,7 @@ class FriendRequestsAdapter(
 
         fun bind(
             request: FriendshipEntity,
+            sessionManager: SessionManager,
             onAccept: (FriendshipEntity) -> Unit,
             onDecline: (FriendshipEntity) -> Unit
         ) {
@@ -66,8 +72,29 @@ class FriendRequestsAdapter(
             ivProfilePic.setImageResource(R.drawable.ic_placeholder)
             Log.d("WHATS IN THE REQUEST" , request.toString())
             // Get the requester's ID from the friendship
-            val requesterId = request.id ?: request.id?: return
+            val requesterId = FriendshipUtils.getRequesterId(sessionManager, request)
 
+
+            fun getRequesterId(sessionManager: SessionManager, friendship: FriendshipEntity): Long {
+                val loggedInUserId = sessionManager.getUserSession()["userId"] as? Long ?: return -1
+
+                return if (loggedInUserId == friendship.friendId) {
+                    friendship.userId
+                } else if (loggedInUserId == friendship.userId) {
+                    friendship.friendId
+                } else {
+                    -1 // Return -1 if no match is found
+                }
+            }
+            itemView.setOnClickListener {
+                val context = itemView.context
+                val intent = Intent(context, UserProfileActivity::class.java).apply {
+                    putExtra("userId", requesterId) // Pass the requester's ID
+                    putExtra("friendshipId", request.id) // Pass the friendship ID
+                    putExtra("isPendingRequest", true) // Indicate this is a pending request
+                }
+                context.startActivity(intent)
+            }
             // Fetch the public profile
             RetrofitClient.instance.getPublicProfile2(requesterId).enqueue(object : Callback<ProfileDTO2> {
                 override fun onResponse(call: Call<ProfileDTO2>, response: Response<ProfileDTO2>) {

@@ -76,11 +76,12 @@ class FriendListViewModel : ViewModel() {
             try {
                 val response = friendshipService.acceptFriendship(friendshipId)
                 if (response.isSuccessful) {
-                    // Refresh both lists
-                    fetchFriendRequests()
-                    fetchFriends()
+                    _errorMessage.value = null // Clear error message immediately
+                    fetchFriendRequests() // Refresh friend requests
+                    fetchFriends() // Refresh the friends list
                 } else {
-                    _errorMessage.value = "Failed to accept request: ${response.message()}"
+                    val errorBody = response.errorBody()?.string()
+                    _errorMessage.value = "Failed to accept request: ${response.message()} - $errorBody"
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "Error: ${e.message}"
@@ -93,8 +94,9 @@ class FriendListViewModel : ViewModel() {
             try {
                 val response = friendshipService.deleteFriendship(friendshipId)
                 if (response.isSuccessful) {
-                    // Refresh friends list after deletion
-                    fetchFriends()
+                    _errorMessage.value = null // Clear error message immediately
+                    fetchFriendRequests() // Refresh friend requests
+                    fetchFriends() // Refresh the friends list
                 } else {
                     _errorMessage.value = "Failed to delete friendship: ${response.message()}"
                 }
@@ -105,7 +107,6 @@ class FriendListViewModel : ViewModel() {
             }
         }
     }
-
     fun sendFriendRequest(friendId: Long) {
         viewModelScope.launch {
             try {

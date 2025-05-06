@@ -94,6 +94,7 @@ public class AuthenticationController {
             AuthenticationResponse response = new AuthenticationResponse(
                     jwtToken,
                     userEntity.getId(),
+                    userEntity.getName(),
                     userEntity.getUsername(),
                     userEntity.getEmail(),
                     userEntity.getRole()
