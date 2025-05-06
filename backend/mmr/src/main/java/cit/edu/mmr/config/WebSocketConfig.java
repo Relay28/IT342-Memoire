@@ -77,11 +77,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setWebSocketEnabled(true);
 
         // Add raw WebSocket endpoints (no SockJS) as fallback
-        registry.addEndpoint("/ws-capsule-content-raw")
+        registry.addEndpoint("/ws-capsule-content")
                 .setAllowedOrigins(allowedOrigins)
                 .addInterceptors(authTokenHandshakeInterceptor);
 
-        registry.addEndpoint("/ws-notifications-raw")
+        registry.addEndpoint("/ws-notifications")
                 .setAllowedOrigins(allowedOrigins)
                 .addInterceptors(authTokenHandshakeInterceptor);
 

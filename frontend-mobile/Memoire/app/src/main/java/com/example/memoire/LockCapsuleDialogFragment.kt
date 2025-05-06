@@ -132,21 +132,14 @@ class LockCapsuleDialogFragment(
     }
 
     override fun onDateSet(view: DatePicker?, year: Int, month: Int, day: Int) {
-        // Store the selected date
         selectedCalendar.set(year, month, day)
 
-        // If user selected today, ensure the time is valid
         val now = Calendar.getInstance()
         if (isSameDay(selectedCalendar, now)) {
-            // If selected date is today but time is in the past, update time to current time
-            if (selectedCalendar.get(Calendar.HOUR_OF_DAY) < now.get(Calendar.HOUR_OF_DAY) ||
-                (selectedCalendar.get(Calendar.HOUR_OF_DAY) == now.get(Calendar.HOUR_OF_DAY) &&
-                        selectedCalendar.get(Calendar.MINUTE) < now.get(Calendar.MINUTE))) {
-
+            // Ensure the time is valid for today
+            if (selectedCalendar.timeInMillis <= now.timeInMillis) {
                 selectedCalendar.set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
-                selectedCalendar.set(Calendar.MINUTE, now.get(Calendar.MINUTE))
-                // Add a minute to ensure it's in the future
-                selectedCalendar.add(Calendar.MINUTE, 1)
+                selectedCalendar.set(Calendar.MINUTE, now.get(Calendar.MINUTE) + 1)
             }
         }
 
@@ -154,7 +147,6 @@ class LockCapsuleDialogFragment(
     }
 
     override fun onTimeSet(view: TimePicker?, hour: Int, minute: Int) {
-        // Store the selected time
         val tempCalendar = Calendar.getInstance()
         tempCalendar.set(
             selectedCalendar.get(Calendar.YEAR),
@@ -164,23 +156,18 @@ class LockCapsuleDialogFragment(
             minute
         )
 
-        // Check if the selected time is valid (not in the past)
         val now = Calendar.getInstance()
-        if (tempCalendar.timeInMillis <= now.timeInMillis) {
-            // If time is in the past, show a message and set to current time + 1 minute
-            Toast.makeText(context, "Cannot select a time in the past", Toast.LENGTH_SHORT).show()
+        if (isSameDay(tempCalendar, now) && tempCalendar.timeInMillis <= now.timeInMillis) {
+            Toast.makeText(context, "Cannot select a past time for today", Toast.LENGTH_SHORT).show()
             selectedCalendar.set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
-            selectedCalendar.set(Calendar.MINUTE, now.get(Calendar.MINUTE))
-            selectedCalendar.add(Calendar.MINUTE, 1)
+            selectedCalendar.set(Calendar.MINUTE, now.get(Calendar.MINUTE) + 1)
         } else {
-            // If time is valid, update the selection
             selectedCalendar.set(Calendar.HOUR_OF_DAY, hour)
             selectedCalendar.set(Calendar.MINUTE, minute)
         }
 
         updateDateTimeDisplay()
     }
-
     private fun updateDateTimeDisplay() {
         val dateText = android.text.format.DateFormat.format("MMM dd, yyyy", selectedCalendar.time).toString()
         binding.btnSelectDate.text = dateText
