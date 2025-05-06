@@ -114,6 +114,13 @@ public class TimeCapsuleService {
         }
     }
 
+    public List<TimeCapsuleDTO> getPublicPublishedTimeCapsules() {
+        List<TimeCapsuleEntity> publishedCapsules = tcRepo.findByStatus("PUBLISHED");
+        return publishedCapsules.stream()
+                .filter(TimeCapsuleEntity::isPublic) // Only include public capsules
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
     @Transactional // Ensure this annotation is present
     public TimeCapsuleDTO getTimeCapsule(Long id, Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);

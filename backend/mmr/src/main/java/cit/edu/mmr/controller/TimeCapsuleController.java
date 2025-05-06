@@ -224,6 +224,15 @@ public class TimeCapsuleController {
         }
     }
 
+    @GetMapping("/public/published")
+    public ResponseEntity<List<TimeCapsuleDTO>> getPublicPublishedTimeCapsules() {
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getPublicPublishedTimeCapsules());
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // Add this to your TimeCapsuleController.java
     @PatchMapping("/{id}/publish")
     public ResponseEntity<Void> publishTimeCapsule(
