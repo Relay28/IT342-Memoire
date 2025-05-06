@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.adapters.FriendRequestsAdapter
+import com.example.memoire.utils.SessionManager
 import com.example.memoire.viewmodels.FriendListViewModel
 
 class FriendRequestsFragment : Fragment() {
@@ -29,11 +30,13 @@ class FriendRequestsFragment : Fragment() {
         recyclerView = view.findViewById(R.id.rvFriendRequests)
         tvNoRequests = view.findViewById(R.id.tvNoRequests)
 
+        val sessionManager = SessionManager(requireContext())
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
         viewModel = ViewModelProvider(requireActivity())[FriendListViewModel::class.java]
 
         friendRequestsAdapter = FriendRequestsAdapter(
+            sessionManager = sessionManager,
             onAccept = { friendship ->
                 viewModel.acceptFriendship(friendship.id)
             },
