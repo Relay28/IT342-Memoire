@@ -34,10 +34,6 @@ class FriendsFragment : Fragment() {
         viewModel = ViewModelProvider(requireActivity())[FriendListViewModel::class.java]
 
         friendsAdapter = FriendsAdapter(
-            onProfileClick = { user ->
-                // Navigate to user profile
-                Toast.makeText(requireContext(), "View ${user.username}'s profile", Toast.LENGTH_SHORT).show()
-            },
             onRemoveFriend = { user ->
                 viewModel.findFriendshipById(user.id).observe(viewLifecycleOwner) { friendship ->
                     if (friendship != null) {

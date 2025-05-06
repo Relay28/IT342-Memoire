@@ -1,6 +1,6 @@
 package com.example.memoire.adapters
 
-import android.graphics.Bitmap
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.util.Base64
 import android.view.LayoutInflater
@@ -11,11 +11,11 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.R
+import com.example.memoire.activities.UserProfileActivity
 import com.example.memoire.models.UserEntity
 import com.google.android.material.button.MaterialButton
 
 class FriendsAdapter(
-    private val onProfileClick: (UserEntity) -> Unit,
     private val onRemoveFriend: (UserEntity) -> Unit
 ) : RecyclerView.Adapter<FriendsAdapter.FriendViewHolder>() {
 
@@ -34,7 +34,7 @@ class FriendsAdapter(
 
     override fun onBindViewHolder(holder: FriendViewHolder, position: Int) {
         val friend = friends[position]
-        holder.bind(friend, onProfileClick, onRemoveFriend)
+        holder.bind(friend, onRemoveFriend)
     }
 
     override fun getItemCount(): Int = friends.size
@@ -48,7 +48,6 @@ class FriendsAdapter(
 
         fun bind(
             friend: UserEntity,
-            onProfileClick: (UserEntity) -> Unit,
             onRemoveFriend: (UserEntity) -> Unit
         ) {
             tvUsername.text = friend.username
@@ -67,7 +66,12 @@ class FriendsAdapter(
 
             // Configure button
             btnPrimary.text = "View Profile"
-            btnPrimary.setOnClickListener { onProfileClick(friend) }
+            btnPrimary.setOnClickListener {
+                val intent = Intent(itemView.context, UserProfileActivity::class.java).apply {
+                    putExtra("userId", friend.id)
+                }
+                itemView.context.startActivity(intent)
+            }
 
             // Long press to show remove option
             itemView.setOnLongClickListener {
@@ -76,13 +80,21 @@ class FriendsAdapter(
                 true
             }
 
-            // Reset button text on regular click
+            // Regular click redirects to profile
             itemView.setOnClickListener {
                 if (btnPrimary.text == "Remove") {
                     btnPrimary.text = "View Profile"
-                    btnPrimary.setOnClickListener { onProfileClick(friend) }
+                    btnPrimary.setOnClickListener {
+                        val intent = Intent(itemView.context, UserProfileActivity::class.java).apply {
+                            putExtra("userId", friend.id)
+                        }
+                        itemView.context.startActivity(intent)
+                    }
                 } else {
-                    onProfileClick(friend)
+                    val intent = Intent(itemView.context, UserProfileActivity::class.java).apply {
+                        putExtra("userId", friend.id)
+                    }
+                    itemView.context.startActivity(intent)
                 }
             }
 

@@ -1,5 +1,6 @@
 package com.example.memoire.adapters
 
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.util.Base64
 import android.util.Log
@@ -12,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.R
+import com.example.memoire.activities.UserProfileActivity
 import com.example.memoire.api.FriendshipEntity
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.ProfileDTO2
@@ -83,6 +85,15 @@ class FriendRequestsAdapter(
                 } else {
                     -1 // Return -1 if no match is found
                 }
+            }
+            itemView.setOnClickListener {
+                val context = itemView.context
+                val intent = Intent(context, UserProfileActivity::class.java).apply {
+                    putExtra("userId", requesterId) // Pass the requester's ID
+                    putExtra("friendshipId", request.id) // Pass the friendship ID
+                    putExtra("isPendingRequest", true) // Indicate this is a pending request
+                }
+                context.startActivity(intent)
             }
             // Fetch the public profile
             RetrofitClient.instance.getPublicProfile2(requesterId).enqueue(object : Callback<ProfileDTO2> {
