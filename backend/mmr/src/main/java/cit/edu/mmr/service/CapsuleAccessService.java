@@ -28,7 +28,7 @@ import java.util.*;
 
 @Service
 @Transactional
-public class CapsuleAccessService {
+public class  CapsuleAccessService {
     private static final Logger logger = LoggerFactory.getLogger(CapsuleAccessService.class);
 
     private final CapsuleAccessRepository capsuleAccessRepository;
@@ -50,6 +50,37 @@ public class CapsuleAccessService {
         this.friendShipRepository = friendShipRepository;
     }
 
+
+    public void restrictAccessToOwner(Long capsuleId, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        TimeCapsuleEntity capsule = timeCapsuleRepository.findById(capsuleId)
+                .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
+
+        if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
+            throw new AccessDeniedException("You do not have permission to modify access for this capsule");
+        }
+
+        capsuleAccessRepository.deleteByCapsuleId(capsuleId); // Delete all access entries
+    }
+
+    public void grantPublicAccess(Long capsuleId, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+        TimeCapsuleEntity capsule = timeCapsuleRepository.findById(capsuleId)
+                .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
+
+        if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
+            throw new AccessDeniedException("You do not have permission to modify access for this capsule");
+        }
+
+        // Ensure the capsule is published
+        if (!"PUBLISHED".equals(capsule.getStatus())) {
+            throw new IllegalStateException("Only published capsules can be made public");
+        }
+
+        // Set the capsule as public
+        capsule.setPublic(true);
+        timeCapsuleRepository.save(capsule);
+    }
     private UserEntity getAuthenticatedUser(Authentication authentication) {
         String username = authentication.getName();
         logger.debug("Getting authenticated user: {}", username);

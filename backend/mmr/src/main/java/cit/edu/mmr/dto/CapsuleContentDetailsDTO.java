@@ -1,25 +1,22 @@
 package cit.edu.mmr.dto;
 
-
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.util.Date;
-@Data
-@Builder
-@AllArgsConstructor
-public class CapsuleContentDTO {
+
+public class CapsuleContentDetailsDTO {
     private long id;
-    private Long contentUploadedById;
     private String contentType;
     private Date uploadedAt;
+    private String uploadedBy;
 
     // Constructors
-    public CapsuleContentDTO() {}
+    public CapsuleContentDetailsDTO() {}
 
-
+    public CapsuleContentDetailsDTO(long id, String contentType, Date uploadedAt, String uploadedBy) {
+        this.id = id;
+        this.contentType = contentType;
+        this.uploadedAt = uploadedAt;
+        this.uploadedBy = uploadedBy;
+    }
 
     // Getters and setters
     public long getId() {
@@ -28,14 +25,6 @@ public class CapsuleContentDTO {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public Long getContentUploadedById() {
-        return contentUploadedById;
-    }
-
-    public void setContentUploadedById(Long contentUploadedById) {
-        this.contentUploadedById = contentUploadedById;
     }
 
     public String getContentType() {
@@ -52,5 +41,13 @@ public class CapsuleContentDTO {
 
     public void setUploadedAt(Date uploadedAt) {
         this.uploadedAt = uploadedAt;
+    }
+
+    public String getUploadedBy() {
+        return uploadedBy;
+    }
+
+    public void setUploadedBy(String uploadedBy) {
+        this.uploadedBy = uploadedBy;
     }
 }

@@ -17,7 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class CapsuleGridAdapter(
+class PublicCapsuleGridAdapter(
     private val context: Context,
     private var capsules: List<TimeCapsuleDTO>,
     private val onCapsuleClick: (TimeCapsuleDTO) -> Unit
@@ -75,7 +75,7 @@ class CapsuleGridAdapter(
             CoroutineScope(Dispatchers.IO).launch {
                 try {
                     // Use the downloadContent API to fetch the image as a Bitmap
-                    val response = RetrofitClient.capsuleContentInstance.downloadContent(content.id)
+                    val response = RetrofitClient.capsuleContentInstance.downloadPublicContent(content.id)
                     if (response.isSuccessful) {
 
                         val bitmap = BitmapFactory.decodeStream(response.body()?.byteStream())

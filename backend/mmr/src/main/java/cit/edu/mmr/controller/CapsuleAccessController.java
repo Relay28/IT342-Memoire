@@ -50,7 +50,29 @@ public class CapsuleAccessController {
         this.userRepository = userRepository;
     }
 
+    @DeleteMapping("/{capsuleId}/only-me")
+    public ResponseEntity<Void> restrictAccessToOwner(@PathVariable Long capsuleId, Authentication authentication) {
+        try {
+            capsuleAccessService.restrictAccessToOwner(capsuleId, authentication);
+            return ResponseEntity.noContent().build();
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+    }
 
+    @PostMapping("/{capsuleId}/public-access")
+    public ResponseEntity<Void> grantPublicAccess(@PathVariable Long capsuleId, Authentication authentication) {
+        try {
+            capsuleAccessService.grantPublicAccess(capsuleId, authentication);
+            return ResponseEntity.ok().build();
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+    }
     @PostMapping("/grant-to-friends/{capsuleId}")
     @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<List<CapsuleAccessDTO>> grantAccessToAllFriends(

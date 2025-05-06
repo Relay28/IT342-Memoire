@@ -32,7 +32,16 @@ interface CapsuleContentService {
         @Path("capsuleId") capsuleId: Long
     ): Response<List<CapsuleContentEntity>>
 
+    @GET("api/capsule-content/public/content/{id}/download")
+    suspend fun downloadPublicContent(
+        @Path("id") id: Long
+    ): Response<ResponseBody>
 
+    // Get all public contents for a specific capsule
+    @GET("api/capsule-content/public/{capsuleId}/contents")
+    suspend fun getPublicCapsuleContents(
+        @Path("capsuleId") capsuleId: Long
+    ): Response<List<CapsuleContentEntity>>
 
     @GET("api/capsule-content/renderable/{capsuleId}")
     suspend fun getRenderableContents(

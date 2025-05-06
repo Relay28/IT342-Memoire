@@ -33,6 +33,8 @@ public class TimeCapsuleEntity {
 
     private Date openDate;
 
+    private boolean isPublic=false;
+
     private boolean isLocked;
 
     @ManyToOne

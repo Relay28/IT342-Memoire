@@ -71,10 +71,10 @@
         app:indicatorColor="@color/MemoireRed" />
     <!-- Main content -->
     <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior">
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -249,21 +249,21 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/tv_bio" />
 
-            <!-- Grid of capsules/posts -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_capsules"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:contentDescription="@string/app"
-                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/btn_edit_profile"
-                app:spanCount="3"
-                tools:listitem="@layout/item_capsule" />
 
+
+            <GridView
+                android:id="@+id/gv_capsules"
+                android:layout_width="match_parent"
+                android:layout_height="500dp"
+                android:numColumns="3"
+                android:verticalSpacing="8dp"
+                app:layout_constraintTop_toBottomOf="@+id/btn_edit_profile"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:horizontalSpacing="8dp"
+                android:stretchMode="columnWidth"
+                android:gravity="center"
+                tools:listitem="@layout/item_capsule_grid" />
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>
 

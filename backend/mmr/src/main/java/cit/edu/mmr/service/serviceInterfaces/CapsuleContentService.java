@@ -1,11 +1,13 @@
 package cit.edu.mmr.service.serviceInterfaces;
 
+import cit.edu.mmr.dto.CapsuleContentDetailsDTO;
 import cit.edu.mmr.entity.CapsuleContentEntity;
+import cit.edu.mmr.service.CapsuleContentServiceImpl;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -22,9 +24,16 @@ public interface CapsuleContentService {
 
     Optional<CapsuleContentEntity> getContentById(Long id);
 
-    List<CapsuleContentEntity> getContentsByCapsuleId(Long capsuleId,Authentication authentication);
+    List<CapsuleContentEntity> getContentsByCapsuleId(Long capsuleId, Authentication authentication);
 
-    byte[] getFileContent(Long id,Authentication authentication) throws IOException;
+
+    List<CapsuleContentDetailsDTO> getContentsbyCaps(Long capsuleId, Authentication authentication);
+
+    List<CapsuleContentDetailsDTO> getPublicCapsuleContents(Long capsuleId);
+
+    byte[] getPublicFileContent(Long contentId) throws IOException;
+
+    byte[] getFileContent(Long id, Authentication authentication) throws IOException;
 
 
 

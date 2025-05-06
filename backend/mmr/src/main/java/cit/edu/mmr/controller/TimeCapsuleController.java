@@ -40,6 +40,8 @@ public class TimeCapsuleController {
         }
     }
 
+
+
     // Get a specific time capsule
     @GetMapping("/{id}")
     public ResponseEntity<TimeCapsuleDTO> getTimeCapsule(@PathVariable Long id, Authentication auth) {
@@ -221,6 +223,26 @@ public class TimeCapsuleController {
             return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         } catch (IllegalStateException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/public/published")
+    public ResponseEntity<List<TimeCapsuleDTO>> getPublicPublishedTimeCapsules() {
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getPublicPublishedTimeCapsules());
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    @GetMapping("/public/{id}")
+    public ResponseEntity<TimeCapsuleDTO> getPublicCapsuleById(@PathVariable Long id) {
+        try {
+            TimeCapsuleDTO capsule = timeCapsuleService.getPublicCapsuleById(id);
+            return ResponseEntity.ok(capsule);
+        } catch (EntityNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (AccessDeniedException e) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
         }
     }
 
