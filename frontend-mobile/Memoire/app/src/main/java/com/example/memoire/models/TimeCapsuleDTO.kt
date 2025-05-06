@@ -2,6 +2,7 @@ package com.example.memoire.models
 
 import java.util.Date
 
+
 data class TimeCapsuleDTO(
     val id: Long? = null,
     val title: String? = null,
@@ -14,5 +15,5 @@ data class TimeCapsuleDTO(
     val createdBy: UserEntity? = null,
     val status: String? = null,
 
-)
+    )
 

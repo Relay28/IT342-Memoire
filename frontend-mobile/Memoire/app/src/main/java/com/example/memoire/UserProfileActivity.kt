@@ -12,7 +12,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.memoire.R
-import com.example.memoire.adapters.CapsuleGridAdapter
 import com.example.memoire.api.FriendshipRequest
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.ProfileDTO
@@ -139,7 +138,7 @@ class UserProfileActivity : AppCompatActivity() {
     private fun loadUserCapsules() {
         // This is just a placeholder. You would implement actual capsule loading here.
         // For now, we'll just show an empty adapter
-        recyclerView.adapter = CapsuleGridAdapter(emptyList()) { /* Capsule click handler */ }
+        //recyclerView.adapter = CapsuleGridAdapter(emptyList()) { /* Capsule click handler */ }
         showLoading(false)
     }
 

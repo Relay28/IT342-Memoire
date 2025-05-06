@@ -141,7 +141,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
                     if (capsule != null &&
                         capsule.title == "Untitled" &&
                         (capsule.description.isNullOrEmpty() || capsule.description == "") &&
-                        (capsule.contents == null || capsule.contents.isEmpty())) {
+                        (capsule.contents == null || capsule.contents!!.isEmpty())) {
 
                         // Delete the empty capsule
                         try {
@@ -194,7 +194,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
                         // Check if the capsule should be deleted
                         if (capsule.title == "Untitled" &&
                             (capsule.description.isNullOrEmpty() || capsule.description == "") &&
-                            (capsule.contents == null || capsule.contents.isEmpty())) {
+                            (capsule.contents == null || capsule.contents!!.isEmpty())) {
 
                             // Delete the empty capsule
                             RetrofitClient.instance.deleteTimeCapsule(capsuleId.toLong()).execute()
