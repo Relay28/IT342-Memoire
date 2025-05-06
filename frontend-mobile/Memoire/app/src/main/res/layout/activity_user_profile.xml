@@ -250,18 +250,17 @@
                 app:layout_constraintTop_toBottomOf="@+id/txtBio" />
 
             <!-- Grid of capsules/posts -->
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_capsules"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/btnFriendAction"
-                app:spanCount="3"
-                tools:listitem="@layout/item_capsule" />
+            <GridView
+                android:id="@+id/gv_capsules"
+                android:layout_width="match_parent"
+                android:layout_height="500dp"
+                android:numColumns="3"
+                android:verticalSpacing="8dp"
+                android:horizontalSpacing="8dp"
+                android:stretchMode="columnWidth"
+                app:layout_constraintTop_toBottomOf="@id/btnFriendAction"
+                android:gravity="center"
+                tools:listitem="@layout/item_capsule_grid" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>

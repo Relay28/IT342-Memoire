@@ -1,17 +1,23 @@
 package com.example.memoire.activities
 
+import CapsuleGridAdapter
+import PublicCapsuleGridAdapter
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Base64
 import android.view.View
 import android.widget.Button
+import android.widget.GridView
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.example.memoire.PublicSinglePublishedCapsuleActivity
 import com.example.memoire.R
+import com.example.memoire.SinglePublishedCapsuleActivity
 import com.example.memoire.api.FriendshipRequest
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.ProfileDTO
@@ -65,7 +71,7 @@ class UserProfileActivity : AppCompatActivity() {
         tvOwnedCount = findViewById(R.id.tv_owned_count)
         tvFriendsCount = findViewById(R.id.tv_friends_count)
         tvSharedCount = findViewById(R.id.tv_shared_count)
-        recyclerView = findViewById(R.id.rv_capsules)
+
 
         // Get user ID from intent
         userId = intent.getLongExtra("userId", 0)
@@ -89,7 +95,7 @@ class UserProfileActivity : AppCompatActivity() {
         imgBack.setOnClickListener {
             finish()
         }
-
+        loadUserPublicCapsules()
         // Show loading indicator
         showLoading(true)
 
@@ -117,7 +123,6 @@ class UserProfileActivity : AppCompatActivity() {
                     val profile = response.body()
                     if (profile != null) {
                         updateUI(profile)
-                        loadUserCapsules()
                     } else {
                         showLoading(false)
                         Toast.makeText(this@UserProfileActivity, "Failed to load profile", Toast.LENGTH_SHORT).show()
@@ -135,13 +140,111 @@ class UserProfileActivity : AppCompatActivity() {
         })
     }
 
-    private fun loadUserCapsules() {
-        // This is just a placeholder. You would implement actual capsule loading here.
-        // For now, we'll just show an empty adapter
-        //recyclerView.adapter = CapsuleGridAdapter(emptyList()) { /* Capsule click handler */ }
-        showLoading(false)
+
+
+    private fun loadUserPublicCapsules() {
+        showLoading(true)
+        RetrofitClient.instance.getPublicPublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
+            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+                if (response.isSuccessful) {
+                    val capsules = response.body()?.filter { it.createdById == userId } ?: emptyList()
+                    setupCapsuleGrid()
+                } else {
+                    showLoading(false)
+                    Toast.makeText(this@UserProfileActivity, "Failed to load public capsules", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<List<TimeCapsuleDTO>>, t: Throwable) {
+                showLoading(false)
+                Toast.makeText(this@UserProfileActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
+    private fun fetchPublicCapsulesWithContents(onComplete: (List<TimeCapsuleDTO>) -> Unit) {
+        showLoading(true)
+        RetrofitClient.instance.getPublicPublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
+            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+                if (response.isSuccessful) {
+                    val capsules = response.body()?.filter { it.createdById == userId } ?: emptyList()
+                    fetchContentsForCapsules(capsules, onComplete)
+                } else {
+                    showLoading(false)
+                    Toast.makeText(this@UserProfileActivity, "Failed to load public capsules", Toast.LENGTH_SHORT).show()
+                    onComplete(emptyList())
+                }
+            }
+
+            override fun onFailure(call: Call<List<TimeCapsuleDTO>>, t: Throwable) {
+                showLoading(false)
+                Toast.makeText(this@UserProfileActivity, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
+                onComplete(emptyList())
+            }
+        })
+    }
+
+    private fun fetchContentsForCapsules(
+        capsules: List<TimeCapsuleDTO>,
+        onComplete: (List<TimeCapsuleDTO>) -> Unit
+    ) {
+        var completedRequests = 0
+        val totalCapsules = capsules.size
+        val capsulesWithContent = mutableListOf<TimeCapsuleDTO>()
+
+        if (capsules.isEmpty()) {
+            showLoading(false)
+            onComplete(emptyList())
+            return
+        }
+
+        for (capsule in capsules) {
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    capsule.id?.let { id ->
+                        val response = RetrofitClient.capsuleContentInstance.getPublicCapsuleContents(id)
+                        withContext(Dispatchers.Main) {
+                            completedRequests++
+                            if (response.isSuccessful) {
+                                val contents = response.body() ?: emptyList()
+                                val capsuleWithContent = capsule.copy(contents = contents)
+                                capsulesWithContent.add(capsuleWithContent)
+                            }
+
+                            if (completedRequests == totalCapsules) {
+                                showLoading(false)
+                                onComplete(capsulesWithContent)
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    withContext(Dispatchers.Main) {
+                        completedRequests++
+                        if (completedRequests == totalCapsules) {
+                            showLoading(false)
+                            onComplete(capsulesWithContent)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setupCapsuleGrid() {
+        val gridView: GridView = findViewById(R.id.gv_capsules)
+        fetchPublicCapsulesWithContents { capsulesWithContent ->
+            val capsuleAdapter = PublicCapsuleGridAdapter(this, capsulesWithContent) { capsule ->
+                val intent = Intent(this@UserProfileActivity, PublicSinglePublishedCapsuleActivity::class.java).apply {
+                    putExtra("capsuleId", capsule.id)
+                }
+                startActivity(intent)
+            }
+            gridView.adapter = capsuleAdapter
+            gridView.post {
+                gridView.requestLayout()
+            }
+        }
+    }
     private fun updateUI(profile: ProfileDTO) {
         txtUsername.text = "@${profile.username}"
         tvUsername.text = "@${profile.username}"

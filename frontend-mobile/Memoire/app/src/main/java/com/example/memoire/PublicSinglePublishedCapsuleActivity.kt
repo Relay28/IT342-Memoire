@@ -5,6 +5,7 @@ import android.widget.ImageButton
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.memoire.adapter.PublicPublishedCapsulesAdapter
 import com.example.memoire.adapter.PublishedCapsulesAdapter
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.TimeCapsuleDTO
@@ -12,9 +13,9 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class SinglePublishedCapsuleActivity : AppCompatActivity() {
+class PublicSinglePublishedCapsuleActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
-    private lateinit var publishedCapsulesAdapter: PublishedCapsulesAdapter
+    private lateinit var publishedCapsulesAdapter: PublicPublishedCapsulesAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +39,7 @@ class SinglePublishedCapsuleActivity : AppCompatActivity() {
             override fun onResponse(call: Call<TimeCapsuleDTO>, response: Response<TimeCapsuleDTO>) {
                 if (response.isSuccessful) {
                     response.body()?.let { capsule ->
-                        publishedCapsulesAdapter = PublishedCapsulesAdapter(
+                        publishedCapsulesAdapter = PublicPublishedCapsulesAdapter(
                             listOf(capsule),
                             onItemClick = {}, // No action needed
                             onCommentClick = {} // No action needed

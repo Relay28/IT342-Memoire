@@ -1,5 +1,6 @@
 package cit.edu.mmr.service;
 
+import cit.edu.mmr.dto.CapsuleContentDetailsDTO;
 import cit.edu.mmr.entity.CapsuleAccessEntity;
 import cit.edu.mmr.entity.CapsuleContentEntity;
 import cit.edu.mmr.entity.TimeCapsuleEntity;
@@ -24,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.security.access.AccessDeniedException;
@@ -257,6 +259,90 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
         }
     }
 
+    @Cacheable(value = CAPSULE_CONTENTS_CACHE, key = "#capsuleId")
+    @Override
+    public List<CapsuleContentDetailsDTO> getContentsbyCaps(Long capsuleId, Authentication authentication) {
+        try {
+            logger.debug("Fetching contents for capsule ID: {} from DB", capsuleId);
+            UserEntity user = getAuthenticatedUser(authentication);
+            TimeCapsuleEntity capsule = timeCapsuleRepository.findById(capsuleId)
+                    .orElseThrow(() -> {
+                        logger.warn("Capsule not found with ID: {}", capsuleId);
+                        return new EntityNotFoundException("Capsule not found with id " + capsuleId);
+                    });
+
+            if (!(capsule.getCreatedBy().getId() == user.getId())) {
+                Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
+                if (accessOpt.isEmpty()) {
+                    logger.warn("User {} attempted unauthorized access to capsule ID: {}", user.getUsername(), capsuleId);
+                    throw new AccessDeniedException("You do not have permission to view this content.");
+                }
+            }
+
+
+            // Fetch contents from the repository
+
+
+
+            List<CapsuleContentEntity> contents = capsuleContentRepository.findByCapsuleId(capsuleId);
+            logger.debug("Found {} contents for capsule ID: {}", contents.size(), capsuleId);
+
+            // Convert entities to DTOs
+            return contents.stream()
+                    .map(content -> new CapsuleContentDetailsDTO(
+                            content.getId(),
+                            content.getContentType(),
+                            content.getUploadedAt(),
+                            content.getContentUploadedBy().getUsername()
+                    ))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            logger.error("Error fetching contents for capsule ID: {}", capsuleId, e);
+            throw e;
+        }
+    }
+
+
+    @Override
+    public List<CapsuleContentDetailsDTO> getPublicCapsuleContents(Long capsuleId) {
+        // Find the capsule by ID
+        TimeCapsuleEntity capsule = timeCapsuleRepository.findById(capsuleId)
+                .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
+
+        // Ensure the capsule is public and published
+        if (!capsule.isPublic() || !"PUBLISHED".equals(capsule.getStatus())) {
+            throw new AccessDeniedException("This capsule is not publicly accessible");
+        }
+
+        // Fetch the contents of the capsule
+        List<CapsuleContentEntity> contents = capsuleContentRepository.findByCapsuleId(capsuleId);
+
+        // Convert the contents to DTOs
+        return contents.stream()
+                .map(content -> new CapsuleContentDetailsDTO(
+                        content.getId(),
+                        content.getContentType(),
+                        content.getUploadedAt(),
+                        content.getContentUploadedBy().getUsername()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public byte[] getPublicFileContent(Long contentId) throws IOException {
+        // Find the content by ID
+        CapsuleContentEntity content = capsuleContentRepository.findById(contentId)
+                .orElseThrow(() -> new EntityNotFoundException("Content not found"));
+
+        // Ensure the associated capsule is public and published
+        TimeCapsuleEntity capsule = content.getCapsule();
+        if (!capsule.isPublic() || !"PUBLISHED".equals(capsule.getStatus())) {
+            throw new AccessDeniedException("This content is not publicly accessible");
+        }
+
+        // Return the file data
+        return content.getFileData();
+    }
     @Override
     public byte[] getFileContent(Long id, Authentication authentication) throws IOException {
         try {

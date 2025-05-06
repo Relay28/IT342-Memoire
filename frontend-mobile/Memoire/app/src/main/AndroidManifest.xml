@@ -50,6 +50,9 @@
             android:name=".SinglePublishedCapsuleActivity"
             android:exported="false" />
         <activity
+            android:name=".PublicSinglePublishedCapsuleActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.SearchActivity"
             android:exported="false" />
         <activity

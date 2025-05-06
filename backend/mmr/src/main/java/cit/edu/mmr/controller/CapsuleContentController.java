@@ -1,5 +1,6 @@
 package cit.edu.mmr.controller;
 
+import cit.edu.mmr.dto.CapsuleContentDetailsDTO;
 import cit.edu.mmr.dto.ErrorResponse;
 import cit.edu.mmr.entity.CapsuleAccessEntity;
 import cit.edu.mmr.entity.CapsuleContentEntity;
@@ -134,7 +135,7 @@ public class CapsuleContentController {
     public ResponseEntity<?> getContentsByCapsule(@PathVariable Long capsuleId, Authentication authentication) {
         try {
             logger.info("Fetching contents for capsule ID: {}", capsuleId);
-            List<CapsuleContentEntity> contents = capsuleContentService.getContentsByCapsuleId(capsuleId, authentication);
+            List<CapsuleContentDetailsDTO> contents = capsuleContentService.getContentsbyCaps(capsuleId, authentication);
             logger.info("Successfully fetched {} contents for capsule ID: {}", contents.size(), capsuleId);
             return ResponseEntity.ok(contents);
         } catch (EntityNotFoundException e) {
@@ -182,6 +183,39 @@ public class CapsuleContentController {
             logger.error("Error fetching metadata for content ID: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error fetching content metadata"));
+        }
+
+    }
+
+    @GetMapping("/public/content/{id}/download")
+    public ResponseEntity<?> downloadPublicContent(@PathVariable Long id) {
+        try {
+            byte[] fileContent = capsuleContentService.getPublicFileContent(id);
+            CapsuleContentEntity content = capsuleContentService.getContentById(id)
+                    .orElseThrow(() -> new EntityNotFoundException("Content not found"));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(content.getContentType()));
+            headers.setContentDispositionFormData("attachment", "file");
+
+            return ResponseEntity.ok().headers(headers).body(fileContent);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+    @GetMapping("/public/{capsuleId}/contents")
+    public ResponseEntity<List<CapsuleContentDetailsDTO>> getPublicCapsuleContents(@PathVariable Long capsuleId) {
+        try {
+            List<CapsuleContentDetailsDTO> contents = capsuleContentService.getPublicCapsuleContents(capsuleId);
+            return ResponseEntity.ok(contents);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
     }
 

@@ -69,6 +69,19 @@ public class TimeCapsuleService {
 
         return convertToDTO(tcRepo.save(capsule));
     }
+    public TimeCapsuleDTO getPublicCapsuleById(Long id) {
+        // Find the capsule by ID
+        TimeCapsuleEntity capsule = tcRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
+
+        // Ensure the capsule is public and published
+        if (!capsule.isPublic() || !"PUBLISHED".equals(capsule.getStatus())) {
+            throw new AccessDeniedException("This capsule is not publicly accessible");
+        }
+
+        // Convert the entity to a DTO and return it
+        return convertToDTO(capsule);
+    }
 
     public TimeCapsuleDTO updateTimeCapsule(Long id, TimeCapsuleDTO dto, Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
