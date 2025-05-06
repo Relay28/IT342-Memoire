@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { useThemeMode } from '../context/ThemeContext';
 import FriendshipService from '../services/FriendshipService';
+import apiService from './Profile/apiService';
 
 const FriendsPage = () => {
   const { isDark } = useThemeMode();
@@ -32,12 +33,32 @@ const FriendsPage = () => {
     }
   }, [authToken]);
 
-  const handleRemoveFriend = async (friendId) => {
+  const handleUnfriend = async (friendId) => {
     try {
-      await FriendshipService.deleteFriendship(friendId, authToken);
-      setFriends(friends.filter(f => f.id !== friendId));
-    } catch (err) {
-      console.error('Error removing friend:', err);
+      setLoading(true);
+      // First find the friendship ID
+      const response = await apiService.get(`/api/friendships/findByUsers/${friendId}`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`
+        }
+      });
+      
+      if (response.data) {
+        // Delete the friendship
+        await apiService.delete(`/api/friendships/${response.data.id}`, {
+          headers: {
+            Authorization: `Bearer ${authToken}`
+          }
+        });
+        
+        // Update the friends list by removing the unfriended user
+        setFriends(prevFriends => prevFriends.filter(friend => friend.id !== friendId));
+      }
+    } catch (error) {
+      console.error('Error unfriending:', error);
+      // You might want to add error state handling here
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -151,20 +172,20 @@ const FriendsPage = () => {
             </Link>
             
             <button 
-              onClick={() => handleRemoveFriend(friend.id)}
-              className={`
-                ml-4 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-                ${isDark ? 
-                  'text-gray-300 hover:text-[#AF3535] hover:bg-gray-600' : 
-                  'text-gray-600 hover:text-[#AF3535] hover:bg-gray-100'
-                }
-                flex items-center gap-1.5
-              `}
-              aria-label="Remove friend"
-            >
-              <FiX className="w-4 h-4 text-[#AF3535]" />
-              <span className="hidden sm:inline text-[#AF3535]">Unfriend</span>
-            </button>
+  onClick={() => handleUnfriend(friend.id)}
+  className={`
+    ml-4 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
+    ${isDark ? 
+      'text-gray-300 hover:text-[#AF3535] hover:bg-gray-600' : 
+      'text-gray-600 hover:text-[#AF3535] hover:bg-gray-100'
+    }
+    flex items-center gap-1.5
+  `}
+  aria-label="Remove friend"
+>
+  <FiX className="w-4 h-4 text-[#AF3535]" />
+  <span className="hidden sm:inline text-[#AF3535]">Unfriend</span>
+</button>
           </div>
         ))}
       </div>
