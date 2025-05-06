@@ -397,29 +397,30 @@ const ProfilePage = () => {
                   </div>
 
                   <div>
-                    <label className={`block text-sm font-medium mb-1 ${
-                      isDark ? 'text-gray-300' : 'text-gray-700'
-                    }`}>Username</label>
-                    {isEditMode ? (
-                      <input
-                        type="text"
-                        name="username"
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
-                          isDark 
-                            ? 'bg-gray-700 border-gray-600 text-white focus:ring-red-500' 
-                            : 'border-gray-300 focus:ring-[#AF3535]'
-                        }`}
-                        value={formData.username}
-                        onChange={handleInputChange}
-                      />
-                    ) : (
-                      <div className={`px-3 py-2 rounded-md ${
-                        isDark ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-800'
-                      }`}>
-                        {formData.username}
-                      </div>
-                    )}
-                  </div>
+  <label className={`block text-sm font-medium mb-1 ${
+    isDark ? 'text-gray-300' : 'text-gray-700'
+  }`}>Username</label>
+  {isEditMode ? (
+    <input
+      type="text"
+      name="username"
+      className={`w-full px-3 py-2 border rounded-md focus:outline-none ${
+        isDark 
+          ? 'bg-gray-700 border-gray-600 text-gray-400' 
+          : 'border-gray-300 bg-gray-100 text-gray-500'
+      }`}
+      value={formData.username}
+      onChange={handleInputChange}
+      readOnly
+    />
+  ) : (
+    <div className={`px-3 py-2 rounded-md ${
+      isDark ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-800'
+    }`}>
+      {formData.username}
+    </div>
+  )}
+</div>
 
                   <div>
                     <label className={`block text-sm font-medium mb-1 ${
