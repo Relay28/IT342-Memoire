@@ -395,6 +395,7 @@ public class TimeCapsuleService {
             throw new AccessDeniedException("You do not have permission to publish this capsule");
         }
 
+
         // Only allow publishing of archived capsules
         if (!"ARCHIVED".equals(capsule.getStatus())) {
             throw new IllegalStateException("Only archived capsules can be published");
