@@ -14,6 +14,7 @@ const Sidebar = () => {
   const [isSecondModalOpen, setIsSecondModalOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [setloading, setIsLoading] = useState('');
   const [friends, setFriends] = useState([]);
   const [loadingFriends, setLoadingFriends] = useState(true);
   const navigate = useNavigate();

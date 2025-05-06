@@ -12,6 +12,7 @@ import { useCapsuleContent } from '../context/CapsuleWebContextProvider';
 import CommentServices from "../services/CommentServices";
 import CommentReactionService from "../services/CommentReactionService";
 import MediaCarousel from './MediaShower/MediaCarousel';
+import { profileService } from '../components/ProfileFunctionalities';
 
 const Homepage = () => {
   // Context and hooks
@@ -19,6 +20,8 @@ const Homepage = () => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated, authToken } = useAuth();
   const { fetchMediaContent } = useCapsuleContent();
+  const [profilePicture, setProfilePicture] = useState(ProfilePictureSample);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   
   // Refs
   const dropdownRef = useRef(null);
@@ -69,6 +72,41 @@ const Homepage = () => {
       [capsuleId]: !prev[capsuleId]
     }));
   };
+
+  useEffect(() => {
+    if (isAuthenticated && authToken) {
+      const fetchProfilePicture = async () => {
+        try {
+          setLoadingProfile(true);
+          const userData = await profileService.getCurrentUser();
+          const picture = userData.profilePicture;
+  
+          if (userData.profilePicture) {
+            let imageUrl;
+            if (typeof userData.profilePicture === 'string') {
+              imageUrl = userData.profilePicture.startsWith('data:image') 
+                ? userData.profilePicture 
+                : `data:image/jpeg;base64,${userData.profilePicture}`;
+            } else if (Array.isArray(userData.profilePicture)) {
+              const binaryString = String.fromCharCode.apply(null, userData.profilePicture);
+              imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+            }
+            if (imageUrl) {
+              setProfilePicture(imageUrl);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching profile picture:', error);
+        } finally {
+          setLoadingProfile(false);
+        }
+      };
+      
+      fetchProfilePicture();
+    } else {
+      setLoadingProfile(false);
+    }
+  }, [isAuthenticated, authToken]);
 
   // Fetch published capsules with media
 const fetchCapsules = useCallback(async () => {
@@ -374,18 +412,6 @@ const commentsWithReactions = await Promise.all(
     }
   };
 
-  const fetchCommentReactions = async (commentId) => {
-    try {
-      const reactions = await CommentReactionService.getReactionsByCommentId(commentId);
-      return {
-        love: reactions.filter(r => r.type === 'love').map(r => r.userId),
-        // Add other reaction types if needed
-      };
-    } catch (error) {
-      console.error(`Error fetching reactions for comment ${commentId}:`, error);
-      return { love: [] }; // Return empty as fallback
-    }
-  };
   // Open report modal
   const openReportModal = (capsuleId) => {
     setCurrentReportCapsuleId(capsuleId);
@@ -575,7 +601,7 @@ return (
                     <div className="p-5 pb-0 flex justify-between items-start">
                       <div className="flex items-center space-x-3">
                         <img 
-                          src={user?.profilePicture || ProfilePictureSample} 
+                          src={profilePicture} 
                           alt="user" 
                           className="h-10 w-10 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-sm"
                           onError={(e) => {
@@ -692,14 +718,14 @@ return (
                         {/* Comment input */}
                         {expandedComments[capsule.id] && (
                           <div className="flex mb-4 mt-3">
-                            <img 
-                              src={userData.profilePicture || ProfilePictureSample} 
-                              alt="Your profile" 
-                              className="h-9 w-9 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
-                              onError={(e) => {
-                                e.target.src = ProfilePictureSample;
-                              }}
-                            />
+                           <img 
+  src={profilePicture} 
+  alt="Your profile" 
+  className="h-8 w-8 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
+  onError={(e) => {
+    e.target.src = ProfilePictureSample;
+  }}
+/>
                             <div className="flex-1 relative">
                               <input
                                 type="text"
@@ -742,13 +768,13 @@ return (
                               return (
                                 <div key={comment.id} className="flex items-start group">
                                   <img
-                                    src={user?.profilePicture || ProfilePictureSample}
-                                    alt={user?.username || "User"}
-                                    className="h-8 w-8 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
-                                    onError={(e) => {
-                                      e.target.src = ProfilePictureSample;
-                                    }}
-                                  />
+  src={profilePicture}
+  alt={user?.username || "User"}
+  className="h-8 w-8 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
+  onError={(e) => {
+    e.target.src = ProfilePictureSample;
+  }}
+/>
                                   
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline">
