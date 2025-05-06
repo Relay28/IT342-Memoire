@@ -2,16 +2,18 @@ import { useState, useEffect, useRef } from 'react';
 import { FiX, FiSearch, FiUser, FiLock, FiPlus } from 'react-icons/fi';
 import { useAuth } from '../../components/AuthProvider';
 import apiService from '../Profile/apiService';
+import capsuleAccessService from '../../services/capsuleAccessService';
+import { useNavigate } from 'react-router-dom';
 
-const ShareModal = ({ title, onClose }) => {
+const ShareModal = ({ title, onClose, capsuleId }) => {
   const { user, authToken } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const searchRef = useRef(null);
-
   const [collaborators, setCollaborators] = useState([
     { 
       id: user.id, 
@@ -22,16 +24,58 @@ const ShareModal = ({ title, onClose }) => {
     }
   ]);
 
-  // Click outside handler
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setShowSearchResults(false);
+    if (!capsuleId) return;
+  
+    const fetchAccesses = async () => {
+      try {
+        const accesses = await capsuleAccessService.getAccesses(capsuleId, authToken);
+  
+        const collaboratorsData = [];
+  
+        // Add the owner (already included in initial state)
+        collaboratorsData.push({
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          profilePicture: user.profilePicture,
+          role: 'Owner',
+        });
+  
+        // Fetch user details for each access entry, excluding the owner (already included)
+        for (const access of accesses) {
+          const userId = access.userId;
+          if (userId !== user.id) { // Skip the owner
+            const userResponse = await apiService.get(`/api/profiles/view/${userId}`);
+            const userData = userResponse.data;
+            
+            let profilePicture = null;
+            if (userData.profilePicture) {
+              if (typeof userData.profilePicture === 'string') {
+                profilePicture = `data:image/jpeg;base64,${userData.profilePicture}`;
+              }  
+            }
+            
+            collaboratorsData.push({
+              id: userId,
+              username: userData.username,
+              name: userData.name,
+              profilePicture,
+              role: access.role,
+              accessId: access.id,
+              accessDate: access.createdAt,
+            });
+          }
+        }
+  
+        setCollaborators(collaboratorsData);
+      } catch (e) {
+        console.error('Failed to fetch accesses:', e);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  
+    fetchAccesses();
+  }, [capsuleId, authToken]);
 
   // Search users effect
   useEffect(() => {
@@ -62,25 +106,42 @@ const ShareModal = ({ title, onClose }) => {
     }
   }, [searchQuery]);
 
-  const addCollaborator = (user) => {
-    setCollaborators(prev => [
-      ...prev,
-      {
-        id: user.userId || user.id,
-        username: user.username,
-        name: user.name,
-        profilePicture: user.profilePicture,
-        role: 'Collaborator',
-        accessDate: new Date().toISOString()
-      }
-    ]);
-    setSearchQuery('');
-    setSearchResults([]);
-    setShowSearchResults(false);
+  const addCollaborator = async (user) => {
+    const userId = user.userId || user.id;
+    if (collaborators.some(c => c.id === userId)) {
+      return; // User already added
+    }
+
+    try {
+      const access = await capsuleAccessService.grantAccess({
+        capsuleId,
+        userId,
+        role: 'EDITOR'
+      }, authToken);
+      setCollaborators(prev => [...prev, {
+        id: access.user.id,
+        username: access.user.username,
+        name: access.user.name,
+        profilePicture: access.user.profilePicture,
+        role: access.role,
+      }]);
+      setSearchQuery('');
+      setSearchResults([]);
+      setShowSearchResults(false);
+    } catch (e) {
+      // handle error
+    }
   };
 
-  const removeCollaborator = (userId) => {
-    setCollaborators(prev => prev.filter(c => c.id !== userId));
+  const removeCollaborator = async (userId) => {
+    const collaborator = collaborators.find(c => c.id === userId);
+    if (!collaborator) return;
+    try {
+      await capsuleAccessService.removeAccess(collaborator.accessId, authToken);
+      setCollaborators(prev => prev.filter(c => c.id !== userId));
+    } catch (e) {
+      // handle error
+    }
   };
 
   const filteredResults = searchResults.filter(result => {
@@ -216,17 +277,17 @@ const ShareModal = ({ title, onClose }) => {
                       <FiLock className="mr-1" size={12} /> Owner
                     </span>
                   ) : (
-                    <>
-                      <span className="text-xs text-gray-400 hidden md:block">
-                        Added {new Date(person.accessDate).toLocaleDateString()}
-                      </span>
-                      <button 
-                        onClick={() => removeCollaborator(person.id)}
-                        className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-600 transition-colors"
-                      >
-                        <FiX size={16} />
-                      </button>
-                    </>
+                    <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-1 rounded-full flex items-center">
+                      {person.role === 'EDITOR' && 'Editor'}
+                    </span>
+                  )}
+                  {person.role !== 'Owner' && (
+                    <button 
+                      onClick={() => removeCollaborator(person.id)}
+                      className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 text-gray-400 hover:text-red-600 transition-colors"
+                    >
+                      <FiX size={16} />
+                    </button>
                   )}
                 </div>
               </li>
@@ -235,12 +296,12 @@ const ShareModal = ({ title, onClose }) => {
         </div>
 
         {/* Modal Footer */}
-        <div className="p-6 border-t sticky bottom-0 bg-white">
-          <button
-            onClick={onClose}
-            className="w-full py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+        <div className="p-6 border-t flex justify-end items-center">
+          <button 
+            onClick={onClose} 
+            className="bg-gray-200 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-300 transition-colors"
           >
-            Done
+            Close
           </button>
         </div>
       </div>

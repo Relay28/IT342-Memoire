@@ -19,12 +19,34 @@ const SearchResult = () => {
   const queryParams = new URLSearchParams(location.search);
   const searchQuery = queryParams.get('q') || '';
 
+  const processProfilePicture = (profilePicture) => {
+    alert(profilePicture)
+    if (!profilePicture) return ProfilePictureSample;
+    
+    let imageUrl;
+    if (typeof profilePicture === 'string') {
+      imageUrl = profilePicture.startsWith('data:image') 
+        ? profilePicture 
+        : `data:image/jpeg;base64,${profilePicture}`;
+    } else if (Array.isArray(profilePicture)) {
+      const binaryString = String.fromCharCode.apply(null, profilePicture);
+      imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+    } else {
+      return ProfilePictureSample;
+    }
+    return imageUrl;
+  };
+
   useEffect(() => {
     const fetchResults = async () => {
       try {
         setIsLoading(true);
         const response = await apiService.get(`/api/profiles/search?query=${encodeURIComponent(searchQuery)}`);
-        setResults(response.data.results);
+        const processedResults = response.data.results.map(user => ({
+          ...user,
+          processedProfilePicture: processProfilePicture(user.profilePicture)
+        }));
+        setResults(processedResults);
         setError(null);
       } catch (err) {
         console.error('Search error:', err);
@@ -82,7 +104,7 @@ const SearchResult = () => {
                 onClick={() => handleProfileClick(user.userId)}
               >
                 <img 
-                  src={user.profilePicture || ProfilePictureSample} 
+                  src={user.processedProfilePicture} 
                   alt={user.username}
                   className={`w-16 h-16 rounded-full border-2 object-cover ${
                     isDark ? 'border-red-400' : 'border-red-200'

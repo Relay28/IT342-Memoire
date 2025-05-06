@@ -12,6 +12,7 @@ import { useCapsuleContent } from '../context/CapsuleWebContextProvider';
 import CommentServices from "../services/CommentServices";
 import CommentReactionService from "../services/CommentReactionService";
 import MediaCarousel from './MediaShower/MediaCarousel';
+import { profileService } from '../components/ProfileFunctionalities';
 
 const Homepage = () => {
   // Context and hooks
@@ -19,6 +20,8 @@ const Homepage = () => {
   const navigate = useNavigate();
   const { user, logout, isAuthenticated, authToken } = useAuth();
   const { fetchMediaContent } = useCapsuleContent();
+  const [profilePicture, setProfilePicture] = useState(ProfilePictureSample);
+  const [loadingProfile, setLoadingProfile] = useState(true);
   
   // Refs
   const dropdownRef = useRef(null);
@@ -69,6 +72,41 @@ const Homepage = () => {
       [capsuleId]: !prev[capsuleId]
     }));
   };
+
+  useEffect(() => {
+    if (isAuthenticated && authToken) {
+      const fetchProfilePicture = async () => {
+        try {
+          setLoadingProfile(true);
+          const userData = await profileService.getCurrentUser();
+          const picture = userData.profilePicture;
+  
+          if (userData.profilePicture) {
+            let imageUrl;
+            if (typeof userData.profilePicture === 'string') {
+              imageUrl = userData.profilePicture.startsWith('data:image') 
+                ? userData.profilePicture 
+                : `data:image/jpeg;base64,${userData.profilePicture}`;
+            } else if (Array.isArray(userData.profilePicture)) {
+              const binaryString = String.fromCharCode.apply(null, userData.profilePicture);
+              imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+            }
+            if (imageUrl) {
+              setProfilePicture(imageUrl);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching profile picture:', error);
+        } finally {
+          setLoadingProfile(false);
+        }
+      };
+      
+      fetchProfilePicture();
+    } else {
+      setLoadingProfile(false);
+    }
+  }, [isAuthenticated, authToken]);
 
   // Fetch published capsules with media
 const fetchCapsules = useCallback(async () => {
@@ -374,18 +412,6 @@ const commentsWithReactions = await Promise.all(
     }
   };
 
-  const fetchCommentReactions = async (commentId) => {
-    try {
-      const reactions = await CommentReactionService.getReactionsByCommentId(commentId);
-      return {
-        love: reactions.filter(r => r.type === 'love').map(r => r.userId),
-        // Add other reaction types if needed
-      };
-    } catch (error) {
-      console.error(`Error fetching reactions for comment ${commentId}:`, error);
-      return { love: [] }; // Return empty as fallback
-    }
-  };
   // Open report modal
   const openReportModal = (capsuleId) => {
     setCurrentReportCapsuleId(capsuleId);
@@ -510,7 +536,7 @@ return (
           isAuthenticated={isAuthenticated}
         />
 
-        <main className={`flex-1 p-4 md:p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+        <main className={`w-full flex-1 p-4 md:p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-50'} `}>
           {/* Status messages */}
           {reportSuccess && (
             <div className={`mb-4 p-4 rounded-lg border ${isDark ? 'bg-emerald-900/30 border-emerald-700 text-emerald-100' : 'bg-emerald-100 border-emerald-200 text-emerald-800'}`}>
@@ -532,18 +558,33 @@ return (
 
           {/* Content */}
           {loadingCapsules ? (
-            <div className="flex justify-center items-center h-64">
-              <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'border-gray-300' : 'border-gray-600'}`}></div>
-            </div>
+            <div className="flex justify-center items-center h-full w-full"> {/* Changed h-64 to h-full and added w-full */}
+            <div className={`animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 ${isDark ? 'border-gray-300' : 'border-gray-600'}`}></div>
+          </div>
           ) : publishedCapsules.length === 0 ? (
-            <div className={`text-center py-12 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+            <div className={`text-center py-35 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
               <div className="inline-block p-6 rounded-full bg-gray-100 dark:bg-gray-700/50 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-12 w-12 text-gray-400 dark:text-gray-500" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth={1.5} 
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                  />
                 </svg>
               </div>
-              <h3 className="text-xl font-medium mb-2">No published time capsules yet</h3>
-              <p className="max-w-md mx-auto">When time capsules reach their opening date, they'll appear here for you to explore.</p>
+              <h3 className="text-xl font-medium mb-2 text-center">
+                No published time capsules yet
+              </h3>
+              <p className="max-w-md mx-auto text-center">
+                When time capsules reach their opening date, they'll appear here for you to explore.
+              </p>
             </div>
           ) : (
             <div className="space-y-6 max-w-3xl mx-auto">
@@ -560,7 +601,7 @@ return (
                     <div className="p-5 pb-0 flex justify-between items-start">
                       <div className="flex items-center space-x-3">
                         <img 
-                          src={user?.profilePicture || ProfilePictureSample} 
+                          src={profilePicture} 
                           alt="user" 
                           className="h-10 w-10 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-sm"
                           onError={(e) => {
@@ -677,14 +718,14 @@ return (
                         {/* Comment input */}
                         {expandedComments[capsule.id] && (
                           <div className="flex mb-4 mt-3">
-                            <img 
-                              src={userData.profilePicture || ProfilePictureSample} 
-                              alt="Your profile" 
-                              className="h-9 w-9 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
-                              onError={(e) => {
-                                e.target.src = ProfilePictureSample;
-                              }}
-                            />
+                           <img 
+  src={profilePicture} 
+  alt="Your profile" 
+  className="h-8 w-8 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
+  onError={(e) => {
+    e.target.src = ProfilePictureSample;
+  }}
+/>
                             <div className="flex-1 relative">
                               <input
                                 type="text"
@@ -727,13 +768,13 @@ return (
                               return (
                                 <div key={comment.id} className="flex items-start group">
                                   <img
-                                    src={user?.profilePicture || ProfilePictureSample}
-                                    alt={user?.username || "User"}
-                                    className="h-8 w-8 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
-                                    onError={(e) => {
-                                      e.target.src = ProfilePictureSample;
-                                    }}
-                                  />
+  src={profilePicture}
+  alt={user?.username || "User"}
+  className="h-8 w-8 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
+  onError={(e) => {
+    e.target.src = ProfilePictureSample;
+  }}
+/>
                                   
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-baseline">

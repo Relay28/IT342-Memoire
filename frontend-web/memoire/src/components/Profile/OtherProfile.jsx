@@ -147,6 +147,24 @@ const ProfilePageOther = () => {
     }
   };
 
+  const handleUnfriend = async () => {
+    try {
+      setIsLoadingFriendship(true);
+      // First find the friendship ID
+      const response = await apiService.get(`/api/friendships/findByUsers/${profile.userId}`);
+      if (response.data) {
+        await apiService.delete(`/api/friendships/${response.data.id}`);
+        setFriendshipStatus('not_friends');
+        setHasPendingRequest(false);
+      }
+    } catch (error) {
+      console.error('Error unfriending:', error);
+      setError(error.response?.data?.message || 'Failed to unfriend');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
   const renderFriendshipButton = () => {
     if (isLoadingFriendship || !friendshipStatus) {
       return (
@@ -162,10 +180,10 @@ const ProfilePageOther = () => {
           <div className="flex items-center space-x-2">
             <span className={isDark ? 'text-green-400' : 'text-green-600'}>✓ Friends</span>
             <button 
-              onClick={() => navigate(`/friends`)}
+              onClick={handleUnfriend}
               className={`px-4 py-2 ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} rounded-md`}
             >
-              View Friends
+              Unfriend
             </button>
           </div>
         );
@@ -204,9 +222,15 @@ const ProfilePageOther = () => {
         ) : (
           <div className="flex space-x-2">
             <button 
-              className={`px-4 py-2 ${isDark ? 'bg-yellow-800 text-yellow-200' : 'bg-yellow-100 text-yellow-700'} rounded-md`}
+              className={`px-4 py-2 ${isDark ? 'bg-[#AF3535] text-white' : 'bg-#AF3535 text-white'} rounded-md`}
             >
               Request Pending
+            </button>
+            <button 
+              onClick={handleCancelFriendRequest}
+              className={`px-4 py-2 ${isDark ? 'bg-yellow-800 text-yellow-200' : 'bg-yellow-100 text-yellow-700'} rounded-md`}
+            >
+              Cancel
             </button>
           </div>
         );
@@ -251,15 +275,25 @@ const ProfilePageOther = () => {
             <div className="px-6 pb-6 relative">
               <div className="flex justify-between items-start">
                 <div className="flex items-end -mt-16 space-x-4">
-                  <img 
-                    src={profile.profilePicture || ProfilePictureSample} 
-                    alt={profile.username}
-                    className="w-32 h-32 rounded-full border-4 border-white object-cover"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = ProfilePictureSample;
-                    }}
-                  />
+                <img 
+                  src={
+                    profile.profilePicture
+                      ? typeof profile.profilePicture === 'string'
+                        ? profile.profilePicture.startsWith('data:image')
+                          ? profile.profilePicture
+                          : `data:image/jpeg;base64,${profile.profilePicture}`
+                        : Array.isArray(profile.profilePicture)
+                        ? `data:image/jpeg;base64,${btoa(String.fromCharCode.apply(null, profile.profilePicture))}`
+                        : ProfilePictureSample
+                      : ProfilePictureSample
+                  }
+                  alt={profile.username}
+                  className="w-32 h-32 rounded-full border-4 border-white object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = ProfilePictureSample;
+                  }}
+                />
                   <div>
                     <h1 className={`text-2xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{profile.username}</h1>
                     {profile.name && <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>{profile.name}</p>}
