@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
@@ -338,6 +339,8 @@ public class TimeCapsuleService {
     }
 
     // New method to get capsules by status with proper access control
+
+
     public List<TimeCapsuleDTO> getTimeCapsulesByStatus(String status, Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
 
@@ -361,7 +364,9 @@ public class TimeCapsuleService {
                 Optional<CapsuleAccessEntity> accessOptional = capsuleAccessRepository
                         .findByCapsuleIdAndUserId(capsule.getId(), user.getId());
 
-                if (accessOptional.isPresent()) {
+
+                if (accessOptional.isPresent() &&
+                        ("VIEWER".equals(accessOptional.get().getRole()) || "EDITOR".equals(accessOptional.get().getRole()))) {
                     accessibleCapsules.add(capsule);
                 }
             }

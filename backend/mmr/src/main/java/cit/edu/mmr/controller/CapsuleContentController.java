@@ -7,6 +7,7 @@ import cit.edu.mmr.entity.CapsuleContentEntity;
 import cit.edu.mmr.entity.TimeCapsuleEntity;
 import cit.edu.mmr.entity.UserEntity;
 import cit.edu.mmr.repository.CapsuleAccessRepository;
+import cit.edu.mmr.repository.UserRepository;
 import cit.edu.mmr.service.serviceInterfaces.CapsuleContentService;
 import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
@@ -19,6 +20,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,11 +37,13 @@ public class CapsuleContentController {
 
     private final CapsuleContentService capsuleContentService;
     private final CapsuleAccessRepository capsuleAccessRepository;
+    private final UserRepository userRepository;
 
     @Autowired
-    public CapsuleContentController(CapsuleContentService capsuleContentService, CapsuleAccessRepository capsuleAccessRepository) {
+    public CapsuleContentController(CapsuleContentService capsuleContentService, CapsuleAccessRepository capsuleAccessRepository, UserRepository userRepository) {
         this.capsuleContentService = capsuleContentService;
         this.capsuleAccessRepository = capsuleAccessRepository;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/{capsuleId}/upload")
@@ -75,40 +79,38 @@ public class CapsuleContentController {
                     .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected error occurred"));
         }
     }
+    private UserEntity getAuthenticatedUser(Authentication authentication) {
+        String username = authentication.getName();
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
 
     @GetMapping("/{id}/download")
     public ResponseEntity<?> downloadContent(@PathVariable Long id, Authentication authentication) {
         try {
-            logger.info("Attempting to download content with ID: {}", id);
-            byte[] fileContent = capsuleContentService.getFileContent(id, authentication);
+            UserEntity user = getAuthenticatedUser(authentication);
             CapsuleContentEntity content = capsuleContentService.getContentById(id)
                     .orElseThrow(() -> new EntityNotFoundException("Content not found"));
 
+            TimeCapsuleEntity capsule = content.getCapsule();
+            if (!(capsule.getCreatedBy().getId() == user.getId())) {
+                Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
+                if (accessOpt.isEmpty() || !("VIEWER".equals(accessOpt.get().getRole()) || "EDITOR".equals(accessOpt.get().getRole()))) {
+                    throw new AccessDeniedException("You do not have permission to download this content.");
+                }
+            }
+
+            byte[] fileContent = capsuleContentService.getFileContent(id, authentication);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType(content.getContentType()));
             headers.setContentDispositionFormData("attachment", "file");
 
-            logger.info("Successfully downloaded content with ID: {}", id);
             return ResponseEntity.ok().headers(headers).body(fileContent);
-        } catch (EntityNotFoundException e) {
-            logger.warn("Content not found with ID: {}", id);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new ErrorResponse(HttpStatus.NOT_FOUND.value(), e.getMessage()));
-        } catch (AccessDeniedException e) {
-            logger.warn("Access denied for user {} to download content ID: {}", authentication.getName(), id);
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ErrorResponse(HttpStatus.FORBIDDEN.value(), e.getMessage()));
-        } catch (IOException e) {
-            logger.error("File download failed for content ID: {}", id, e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "File download failed"));
         } catch (Exception e) {
-            logger.error("Unexpected error during content download with ID: {}", id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "An unexpected error occurred"));
         }
     }
-
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteContent(@PathVariable Long id, Authentication authentication) {
         try {

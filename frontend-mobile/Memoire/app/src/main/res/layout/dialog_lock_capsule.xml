@@ -77,6 +77,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="All my friends"/>
+        <RadioButton
+            android:id="@+id/radioPublic"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Public"/>
 
         <RadioButton
             android:id="@+id/radioSpecific"

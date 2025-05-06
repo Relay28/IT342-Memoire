@@ -8,14 +8,12 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.DatePicker
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.RadioGroup
 import android.widget.TextView
-import android.widget.TimePicker
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.GrantAccessDialog
@@ -29,6 +27,10 @@ import com.example.memoire.models.UserEntity
 import com.example.memoire.utils.DateUtils
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -42,8 +44,9 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
     private var friendsList: List<UserEntity> = emptyList()
 
     sealed class AccessType {
-        object Private : AccessType()
-        object AllFriends : AccessType()
+        object OnlyMe : AccessType()
+        object Public : AccessType()
+        object Friends : AccessType()
         data class SpecificFriends(val friendIds: List<Long>) : AccessType()
     }
 
@@ -181,7 +184,8 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         val radioPrivate = dialogView.findViewById<View>(R.id.radioPrivate)
         val radioFriends = dialogView.findViewById<View>(R.id.radioFriends)
         val radioSpecific = dialogView.findViewById<View>(R.id.radioSpecific)
-        val accessRadioGroup = dialogView.findViewById<View>(R.id.accessRadioGroup)
+        // Modify this section in TimeCapsuleAdapter's showLockDialog
+        val accessRadioGroup = dialogView.findViewById<RadioGroup>(R.id.accessRadioGroup)
 
         // Initialize with current time + 1 hour as default
         val selectedCalendar = Calendar.getInstance().apply {
@@ -239,15 +243,16 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
 
         // Handle confirm button
         btnConfirm.setOnClickListener {
-            val accessType = when (accessRadioGroup.id) {
-                R.id.radioPrivate -> AccessType.Private
-                R.id.radioFriends -> AccessType.AllFriends
+            val accessType = when (accessRadioGroup.checkedRadioButtonId) { // Use checkedRadioButtonId
+                R.id.radioPrivate -> AccessType.OnlyMe
+                R.id.radioFriends -> AccessType.Friends
+                R.id.radioPublic -> AccessType.Public
                 R.id.radioSpecific -> {
                     showFriendSelectionUI(capsuleId, selectedCalendar.time)
                     dialog.dismiss()
                     return@setOnClickListener
                 }
-                else -> AccessType.Private
+                else -> AccessType.OnlyMe
             }
 
             lockCapsuleWithAccess(capsuleId, selectedCalendar.time, accessType)
@@ -347,19 +352,70 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
             }
         )
     }
-
-    private fun handleAccessAfterLock(capsuleId: Long, accessType: AccessType) {
+    private fun handleAccessAfterLock(capsuleId: Long,accessType: AccessType) {
+        Log.d("TimeCapsule", "Handling access type: $accessType")
         when (accessType) {
-            is AccessType.AllFriends -> {
+            AccessType.OnlyMe -> {
+                Log.d("TimeCapsule", "Calling restrictAccessToOwner API")
+                restrictAccessToOwner(capsuleId)
+            }
+            AccessType.Public -> {
+                Log.d("TimeCapsule", "Calling grantPublicAccess API")
+                grantPublicAccess(capsuleId)
+            }
+           AccessType.Friends -> {
+                Log.d("TimeCapsule", "Calling grantAccessToAllFriends API")
                 grantAccessToAllFriends(capsuleId)
             }
-            is AccessType.SpecificFriends -> {
-                if (accessType.friendIds.isNotEmpty()) {
-                    grantAccessToSpecificFriends(capsuleId, accessType.friendIds)
+            else -> {
+                Log.d("TimeCapsule", "No specific access type to handle")
+            }
+        }
+    }
+
+    private fun restrictAccessToOwner(capsuleId: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.instance.restrictAccessToOwner(capsuleId)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Access restricted to only you", Toast.LENGTH_SHORT)
+                            .show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Failed to restrict access: ${response.code()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
-            else -> {
-                // Private - no action needed
+        }
+    }
+
+    private fun grantPublicAccess(capsuleId: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.instance.grantPublicAccess(capsuleId)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Capsule is now public", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Failed to make capsule public: ${response.code()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -395,7 +451,6 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
                 }
             })
     }
-
     private fun grantAccessToSpecificFriends(capsuleId: Long, friendIds: List<Long>) {
         friendIds.forEach { friendId ->
             val request = GrantAccessRequest(capsuleId, friendId, "VIEWER")

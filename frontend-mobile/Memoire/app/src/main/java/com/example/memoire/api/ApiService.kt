@@ -219,6 +219,17 @@ interface ApiService {
         @Path("capsuleId") capsuleId: Long,
         @Query("role") role: String
     ): Call<List<CapsuleAccessDTO>>
+    @DELETE("api/capsule-access/{capsuleId}/only-me")
+    suspend fun restrictAccessToOwner(
+        @Path("capsuleId") capsuleId: Long
+    ): Response<Void>
+
+    @POST("api/capsule-access/{capsuleId}/public-access")
+    suspend fun grantPublicAccess(
+        @Path("capsuleId") capsuleId: Long
+    ): Response<Void>
+
+
 
     @POST("api/capsule-access")
     fun grantAccessToSpecificFriends(@Body request: GrantAccessRequest): Call<CapsuleAccessDTO>

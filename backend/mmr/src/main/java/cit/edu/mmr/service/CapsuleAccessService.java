@@ -59,6 +59,7 @@ public class  CapsuleAccessService {
         if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
             throw new AccessDeniedException("You do not have permission to modify access for this capsule");
         }
+        capsule.setLocked(false);
 
         capsuleAccessRepository.deleteByCapsuleId(capsuleId); // Delete all access entries
     }
@@ -252,7 +253,7 @@ public class  CapsuleAccessService {
                 access.setCapsule(capsule);
                 access.setUser(friend);
                 access.setUploadedBy(currentUser);
-                access.setRole(role);
+                access.setRole("VIEWER");
 
                 CapsuleAccessEntity savedAccess = capsuleAccessRepository.save(access);
                 createdAccesses.add(savedAccess);
