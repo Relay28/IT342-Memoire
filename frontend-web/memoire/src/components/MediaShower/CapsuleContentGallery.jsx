@@ -84,11 +84,14 @@ const CapsuleContentGallery = ({ capsuleId }) => {
   }, [capsuleId, connectToCapsule, disconnectFromCapsule, loadMedia]);
 
   const onFile = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
     
     try {
-      await uploadContent(capsuleId, file);
+      // Process files sequentially
+      for (const file of files) {
+        await uploadContent(capsuleId, file);
+      }
       loadMedia();
     } catch (err) {
       console.error("Upload failed:", err);
@@ -159,7 +162,7 @@ const CapsuleContentGallery = ({ capsuleId }) => {
         <h2>Capsule Media</h2>
         <div className="flex gap-2">
           <button 
-            className="flex items-center gap-1 px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="flex items-center gap-1 px-2 py-1 bg-[#AF3535] text-white rounded hover:bg-red-700"
             onClick={() => fileInputRef.current.click()}>
             <Plus size={16} /> Upload
           </button>
@@ -175,6 +178,7 @@ const CapsuleContentGallery = ({ capsuleId }) => {
             accept="image/*,video/*"
             onChange={onFile}
             className="hidden"
+            multiple
           />
         </div>
       </div>
