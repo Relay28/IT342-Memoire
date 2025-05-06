@@ -510,7 +510,7 @@ return (
           isAuthenticated={isAuthenticated}
         />
 
-        <main className={`flex-1 p-4 md:p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+        <main className={`w-full flex-1 p-4 md:p-8 overflow-y-auto ${isDark ? 'bg-gray-800' : 'bg-gray-50'} `}>
           {/* Status messages */}
           {reportSuccess && (
             <div className={`mb-4 p-4 rounded-lg border ${isDark ? 'bg-emerald-900/30 border-emerald-700 text-emerald-100' : 'bg-emerald-100 border-emerald-200 text-emerald-800'}`}>

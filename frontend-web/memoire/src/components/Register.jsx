@@ -18,6 +18,7 @@ const Register = () => {
     username: "",
     email: "",
     password: "",
+    name: "",
   });
 
   const [errorMessage, setErrorMessage] = useState("");
@@ -29,8 +30,8 @@ const Register = () => {
   };
 
   const validateForm = () => {
-    const { username, email, password } = formData;
-    if (!username || !email || !password) {
+    const { username, email, password, name } = formData;
+    if (!username || !email || !password || !name) {
       setErrorMessage("All fields are required.");
       return false;
     }
@@ -97,6 +98,21 @@ const Register = () => {
           <h2 className="text-[28px] text-[#b22222] mb-5 text-center font-bold">REGISTER</h2>
           
           <form onSubmit={handleFormSubmit} className="flex flex-col items-start w-full">
+          <TextField
+              id="name"
+              label="Full Name"
+              placeholder="Enter your full name"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={formData.name}
+              onChange={handleInputChange}
+              sx={{
+                '& .MuiOutlinedInput-root': { borderRadius: '8px' },
+                mb: 2
+              }}
+            />
+
             <TextField
               id="username"
               label="Username"

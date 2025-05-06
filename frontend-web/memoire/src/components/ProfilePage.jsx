@@ -1,8 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import mmrlogo from '../assets/mmrlogo.png';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
-import { FaSearch, FaMoon, FaBell, FaPlus, FaHome, FaStar, FaShareAlt, FaEdit, FaTimes, FaLock, FaUserSlash, FaCheck } from 'react-icons/fa';
-import { Link, useNavigate } from "react-router-dom";
+import { FaTimes, FaCheck, FaEdit, FaLock, FaUserSlash } from 'react-icons/fa';
+import { useNavigate } from "react-router-dom";
 import { useAuth } from './AuthProvider';
 import { profileService } from '../components/ProfileFunctionalities';
 import Header from '../components/Header';
@@ -12,8 +11,40 @@ import ChangePasswordModal from './ChangePasswordModal';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 
+// Helper function to get profile image URL from different possible formats
+const getProfileImageUrl = (profileData) => {
+  if (!profileData) return null;
+  
+  // Case 1: Already a complete data URL
+  if (typeof profileData === 'string' && profileData.startsWith('data:image')) {
+    return profileData;
+  }
+  
+  // Case 2: Base64 string without prefix
+  if (typeof profileData === 'string') {
+    return `data:image/jpeg;base64,${profileData}`;
+  }
+  
+  // Case 3: Profile picture data is available as profilePictureData
+  if (profileData.profilePictureData) {
+    return `data:image/jpeg;base64,${profileData.profilePictureData}`;
+  }
+  
+  // Case 4: Array of bytes (binary data)
+  if (Array.isArray(profileData)) {
+    try {
+      const binaryString = String.fromCharCode.apply(null, profileData);
+      return `data:image/jpeg;base64,${btoa(binaryString)}`;
+    } catch (error) {
+      console.error('Error converting binary data to image:', error);
+      return null;
+    }
+  }
+  
+  return null;
+};
+
 const ProfilePage = () => {
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { user, updateUserProfile, uploadProfileImage, logout } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -40,7 +71,7 @@ const ProfilePage = () => {
     message: '',
     severity: 'success'
   });
-  let profilePic=null;
+
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
   };
@@ -55,28 +86,30 @@ const ProfilePage = () => {
       try {
         setIsLoading(true);
         const userData = await profileService.getCurrentUser();
-        
+        console.log('User data from API:', userData);
         setFormData({
           biography: userData.biography || '',
           email: userData.email || '',
-          name: userData.name || '',
+          name: userData.name || userData.username || '',
           username: userData.username || ''
         });
 
         setOriginalData({
           biography: userData.biography || '',
           email: userData.email || '',
-          name: userData.name || '',
+          name: userData.name || userData.username || '',
           username: userData.username || ''
         });
-        alert(userData.profilePicture)
-       
-      if (userData.profilePicture) {
-    
+
+        // Process profile picture from any format
+        const imageUrl = getProfileImageUrl(userData.profilePictureData) || 
+                        getProfileImageUrl(userData.profilePicture);
+        
         if (imageUrl) {
-          setPreviewImage(user.profilePicture);
+          setPreviewImage(imageUrl);
+        } else {
+          setPreviewImage(ProfilePictureSample);
         }
-      }
         
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -86,49 +119,63 @@ const ProfilePage = () => {
       }
     };
 
-    if (!user?.name) {
+    if (!user?.username) {
       fetchUserData();
     } else {
       setFormData({
         biography: user.biography || '',
         email: user.email || '',
-        name: user.name || '',
+        name: user.name || user.username || '',
         username: user.username || ''
       });
       setOriginalData({
         biography: user.biography || '',
         email: user.email || '',
-        name: user.name || '',
+        name: user.name || user.username || '',
         username: user.username || ''
       });
 
-      if (user.profilePicture) {
-    
-        if (imageUrl) {
-          setPreviewImage(user.profilePicture);
-        }
-      }
-      if (!previewImage || previewImage === ProfilePictureSample & user.profilePicture!=null) {
-     
-        if (typeof user.profilePicture === 'string') {
-          profilePic = `data:image/jpeg;base64,${user.profilePicture}`;
-          setProfileImage(profilePic)
-        }  
+      // Process profile picture from auth context
+      const imageUrl = getProfileImageUrl(user.profilePicture) || 
+                      getProfileImageUrl(user.profilePictureData);
+      
+      if (imageUrl) {
+        setPreviewImage(imageUrl);
+      } else {
+        setPreviewImage(ProfilePictureSample);
       }
     }
-  }, [user,originalData,profileImage]);
+  }, [user]);
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
     if (isEditMode) {
-      // If exiting edit mode, revert any unsaved changes
+      // Revert any unsaved changes when exiting edit mode
       setFormData(originalData);
+      // Revert profile image changes
+      const imageUrl = getProfileImageUrl(user?.profilePicture) || 
+                     getProfileImageUrl(user?.profilePictureData) ||
+                     ProfilePictureSample;
+      setPreviewImage(imageUrl);
+      setProfileImage(null);
     }
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // Validate file type
+      if (!file.type.match('image.*')) {
+        showSnackbar('Please select an image file', 'error');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        showSnackbar('Image size should be less than 5MB', 'error');
+        return;
+      }
+      
       setProfileImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -152,28 +199,35 @@ const ProfilePage = () => {
       const userData = {
         biography: formData.biography,
         email: formData.email,
-        name: formData.name,
+        name: formData.name, // Make sure name is included
         username: formData.username
       };
-
+  
+      // First update profile picture if changed
       if (profileImage) {
         await uploadProfileImage(profileImage);
       }
       
-      const { success } = await updateUserProfile(userData);
-
-      if (success) {
-        setProfileImage(null);
-        setOriginalData(formData);
+      // Then update other profile data and wait for response
+      const result = await updateUserProfile(userData);
+      
+      if (result.success) {
+        // Update local states with the returned user data
+        setFormData(prev => ({
+          ...prev,
+          ...result.user // Spread the updated user data
+        }));
+        setOriginalData(prev => ({
+          ...prev,
+          ...result.user // Keep original data in sync
+        }));
+        
         setIsEditMode(false);
         showSnackbar('Profile updated successfully!');
       }
     } catch (error) {
-      console.error('Failed to update profile:', {
-        error: error,
-        response: error.response?.data
-      });
-      showSnackbar(`Failed to update profile: ${error.response?.data?.message || error.message}`, 'error');
+      console.error('Failed to update profile:', error);
+      showSnackbar(`Failed to update profile: ${error.message}`, 'error');
     } finally {
       setIsLoading(false);
     }
@@ -200,38 +254,14 @@ const ProfilePage = () => {
   };
 
   const handlePasswordChangeSubmit = async (currentPassword, newPassword) => {
-    console.log('Attempting password change with:', {
-      currentPassword,
-      newPassword
-    });
-    
     try {
-      const result = await profileService.changePassword(currentPassword, newPassword);
-      console.log('Change password result:', result);
+      await profileService.changePassword(currentPassword, newPassword);
       showSnackbar('Password changed successfully!');
       setIsPasswordModalOpen(false);
-      
-      // Immediately test the new password
-      try {
-        console.log('Attempting to login with new password...');
-        // Add your login API call here using the new password
-      } catch (loginError) {
-        console.error('Login with new password failed:', loginError);
-      }
     } catch (error) {
-      console.error('Password change error:', {
-        message: error.message,
-        response: error.response?.data
-      });
+      console.error('Password change error:', error);
       throw error;
     }
-  };
-
-  const userData = user || {
-    username: "",
-    email: "",
-    biography: "",
-    profilePicture: ProfilePictureSample
   };
 
   if (isLoading) {
@@ -263,27 +293,17 @@ const ProfilePage = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="relative">
-                    <img 
-  src={
-    previewImage
-      ? typeof previewImage === 'string'
-        ?  previewImage.startsWith('data:image')
-          ?  previewImage
-          : `data:image/jpeg;base64,${previewImage}`
-        : Array.isArray(previewImage)
-        ? `data:image/jpeg;base64,${btoa(String.fromCharCode.apply(null, previewImage))}`
-        : ProfilePictureSample
-      : ProfilePictureSample
-  }
-  alt="Profile"
-  className={`h-24 w-24 rounded-full object-cover border-2 ${
-    isDark ? 'border-[#AF3535]' : 'border-[#AF3535]'
-  }`}
-  onError={(e) => {
-    e.target.onerror = null;
-    e.target.src = ProfilePictureSample;
-  }}
-/>
+                      <img 
+                        src={previewImage || ProfilePictureSample}
+                        alt="Profile"
+                        className={`h-24 w-24 rounded-full object-cover border-2 ${
+                          isDark ? 'border-[#AF3535]' : 'border-[#AF3535]'
+                        }`}
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = ProfilePictureSample;
+                        }}
+                      />
                       {isEditMode && (
                         <button 
                           className={`absolute bottom-0 right-0 ${
@@ -310,32 +330,32 @@ const ProfilePage = () => {
                     <div>
                       <h1 className={`text-2xl font-bold ${
                         isDark ? 'text-white' : 'text-gray-900'
-                      }`}>{formData.name || user?.username || "Loading..."}</h1>
-                      <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>@{user?.username || "loading"}</p>
+                      }`}>{formData.name ||  "Loading..."}</h1>
+                      <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>@{formData.username || "loading"}</p>
                     </div>
                   </div>
                   
                   {isEditMode ? (
                     <div className="flex gap-2">
-                    <button 
-                      className={`p-2 rounded-full transition-colors ${
-                        isDark ? 'text-gray-400 hover:text-red-500 hover:bg-gray-700' : 'text-gray-500 hover:text-red-600 hover:bg-gray-200'
-                      }`}
-                      onClick={toggleEditMode}
-                      aria-label="Cancel editing"
-                    >
-                      <FaTimes className="text-2xl" />
-                    </button>
-                    <button 
-                      className={`p-2 rounded-full transition-colors ${
-                        isDark ? 'text-[#AF3535] hover:text-red-400 hover:bg-gray-700' : 'text-[#AF3535] hover:text-red-600 hover:bg-gray-200'
-                      }`}
-                      onClick={handleSaveChanges}
-                      aria-label="Save changes"
-                    >
-                      <FaCheck className="text-2xl"/>
-                    </button>
-                  </div>
+                      <button 
+                        className={`p-2 rounded-full transition-colors ${
+                          isDark ? 'text-gray-400 hover:text-red-500 hover:bg-gray-700' : 'text-gray-500 hover:text-red-600 hover:bg-gray-200'
+                        }`}
+                        onClick={toggleEditMode}
+                        aria-label="Cancel editing"
+                      >
+                        <FaTimes className="text-2xl" />
+                      </button>
+                      <button 
+                        className={`p-2 rounded-full transition-colors ${
+                          isDark ? 'text-[#AF3535] hover:text-red-400 hover:bg-gray-700' : 'text-[#AF3535] hover:text-red-600 hover:bg-gray-200'
+                        }`}
+                        onClick={handleSaveChanges}
+                        aria-label="Save changes"
+                      >
+                        <FaCheck className="text-2xl"/>
+                      </button>
+                    </div>
                   ) : (
                     <button 
                       className={`p-5 rounded-full transition-colors ${
@@ -351,7 +371,7 @@ const ProfilePage = () => {
 
               <div className="p-6">
                 <div className="space-y-6">
-                  <div>
+                <div>
                     <label className={`block text-sm font-medium mb-1 ${
                       isDark ? 'text-gray-300' : 'text-gray-700'
                     }`}>Full Name</label>
@@ -372,6 +392,31 @@ const ProfilePage = () => {
                         isDark ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-800'
                       }`}>
                         {formData.name}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>Username</label>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        name="username"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                          isDark 
+                            ? 'bg-gray-700 border-gray-600 text-white focus:ring-red-500' 
+                            : 'border-gray-300 focus:ring-[#AF3535]'
+                        }`}
+                        value={formData.username}
+                        onChange={handleInputChange}
+                      />
+                    ) : (
+                      <div className={`px-3 py-2 rounded-md ${
+                        isDark ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-800'
+                      }`}>
+                        {formData.username}
                       </div>
                     )}
                   </div>
@@ -426,70 +471,67 @@ const ProfilePage = () => {
                     )}
                   </div>
 
-                  
-                    
-                    <div className={`pt-6 mt-6 border-t ${
-                  isDark ? 'border-gray-700' : 'border-gray-200'
-                }`}>
-                  <h3 className={`text-lg font-medium mb-4 ${
-                    isDark ? 'text-gray-300' : 'text-gray-900'
+                  <div className={`pt-6 mt-6 border-t ${
+                    isDark ? 'border-gray-700' : 'border-gray-200'
                   }`}>
-                    Account Actions
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 gap-3">
-                    <button 
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                        isDark 
-                          ? 'bg-gray-700 hover:bg-gray-600' 
-                          : 'bg-gray-100 hover:bg-gray-200'
-                      }`}
-                      onClick={handleChangePassword}
-                    >
-                      <FaLock className={`text-lg ${
-                        isDark ? 'text-[#AF3535]' : 'text-[#AF3535]'
-                      }`} />
-                      <div className="text-left">
-                        <div className={`font-medium ${
-                          isDark ? 'text-white' : 'text-gray-900'
-                        }`}>
-                          Change Password
-                        </div>
-                        <p className={`text-sm ${
-                          isDark ? 'text-gray-400' : 'text-gray-500'
-                        }`}>
-                          Update your account password
-                        </p>
-                      </div>
-                    </button>
+                    <h3 className={`text-lg font-medium mb-4 ${
+                      isDark ? 'text-gray-300' : 'text-gray-900'
+                    }`}>
+                      Account Actions
+                    </h3>
                     
-                    <button 
-                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                        isDark 
-                          ? 'bg-red-900/30 hover:bg-red-900/40' 
-                          : 'bg-red-50 hover:bg-red-100'
-                      }`}
-                      onClick={handleDeactivateAccount}
-                    >
-                      <FaUserSlash className={`text-lg ${
-                        isDark ? 'text-red-400' : 'text-red-600'
-                      }`} />
-                      <div className="text-left">
-                        <div className={`font-medium ${
-                          isDark ? 'text-red-200' : 'text-red-600'
-                        }`}>
-                          Deactivate Account
+                    <div className="grid grid-cols-1 gap-3">
+                      <button 
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                          isDark 
+                            ? 'bg-gray-700 hover:bg-gray-600' 
+                            : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
+                        onClick={handleChangePassword}
+                      >
+                        <FaLock className={`text-lg ${
+                          isDark ? 'text-[#AF3535]' : 'text-[#AF3535]'
+                        }`} />
+                        <div className="text-left">
+                          <div className={`font-medium ${
+                            isDark ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            Change Password
+                          </div>
+                          <p className={`text-sm ${
+                            isDark ? 'text-gray-400' : 'text-gray-500'
+                          }`}>
+                            Update your account password
+                          </p>
                         </div>
-                        <p className={`text-sm ${
-                          isDark ? 'text-red-300' : 'text-red-500'
-                        }`}>
-                          Hide your profile and content
-                        </p>
-                      </div>
-                    </button>
+                      </button>
+                      
+                      <button 
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                          isDark 
+                            ? 'bg-red-900/30 hover:bg-red-900/40' 
+                            : 'bg-red-50 hover:bg-red-100'
+                        }`}
+                        onClick={handleDeactivateAccount}
+                      >
+                        <FaUserSlash className={`text-lg ${
+                          isDark ? 'text-red-400' : 'text-red-600'
+                        }`} />
+                        <div className="text-left">
+                          <div className={`font-medium ${
+                            isDark ? 'text-red-200' : 'text-red-600'
+                          }`}>
+                            Deactivate Account
+                          </div>
+                          <p className={`text-sm ${
+                            isDark ? 'text-red-300' : 'text-red-500'
+                          }`}>
+                            Hide your profile and content
+                          </p>
+                        </div>
+                      </button>
+                    </div>
                   </div>
-                </div>
-                 
                 </div>
               </div>
             </div>
