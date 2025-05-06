@@ -173,6 +173,7 @@ class EditProfileActivity : AppCompatActivity() {
         RetrofitClient.instance.getCurrentUser().enqueue(object : Callback<UserDTO> {
             override fun onResponse(call: Call<UserDTO>, response: Response<UserDTO>) {
                 showLoading(false)
+
                 if (response.isSuccessful) {
                     response.body()?.let { user ->
                         currentUser = user
@@ -199,22 +200,14 @@ class EditProfileActivity : AppCompatActivity() {
         nameField.setText(user.name ?: "")
         bioField.setText(user.biography ?: "")
 
-        loadProfileImage()
+        loadProfileImage(user)
     }
 
-    private fun loadProfileImage() {
-        val token = sessionManager.getUserSession()["token"] ?: return
-
+    private fun loadProfileImage(user: UserDTO) {
         try {
-            val glideUrl = GlideUrl(
-                "$API_BASE_URL/api/users/profile-picture/${currentUser.id}",
-                LazyHeaders.Builder()
-                    .addHeader("Authorization", "Bearer $token")
-                    .build()
-            )
 
             Glide.with(this)
-                .load(glideUrl)
+                .load(user.getProfilePictureBytes())
                 .placeholder(R.drawable.default_profile)
                 .error(R.drawable.default_profile)
                 .circleCrop()
@@ -247,7 +240,7 @@ class EditProfileActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = RetrofitClient.instance.updateUser("Bearer $token", profile)
+                val response = RetrofitClient.instance.updateUser(profile)
                 withContext(Dispatchers.Main) {
                     showLoading(false)
                     if (response.isSuccessful) {

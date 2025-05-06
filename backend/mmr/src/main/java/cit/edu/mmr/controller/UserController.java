@@ -114,7 +114,7 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
             }
             UserEntity currentUser = getAuthenticatedUser(authentication);
-            UserEntity updatedUser = userService.updateUserDetails(currentUser.getId(), newUserDetails, null);
+            UserDTO updatedUser = userService.updateUserDetails(currentUser.getId(), newUserDetails, null);
             return ResponseEntity.ok(updatedUser);
         } catch (IOException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
