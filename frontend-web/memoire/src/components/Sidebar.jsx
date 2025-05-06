@@ -1,19 +1,81 @@
 // src/components/Sidebar.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FaPlus, FaHome, FaStar, FaShareAlt, FaHourglassHalf } from 'react-icons/fa';
 import { useTimeCapsule } from '../hooks/useTimeCapsule';
 import { useThemeMode } from '../context/ThemeContext';
+import  FriendshipService  from '../services/FriendshipService';
+import { useAuth } from './AuthProvider';
+import ProfilePictureSample from '../assets/ProfilePictureSample.png';
+import { profileService } from '../components/ProfileFunctionalities';
 
 const Sidebar = () => {
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(false);
   const [isSecondModalOpen, setIsSecondModalOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [friends, setFriends] = useState([]);
+  const [loadingFriends, setLoadingFriends] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { createTimeCapsule, loading, error } = useTimeCapsule();
   const { mode, isDark } = useThemeMode();
+  const { authToken, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        const friendsList = await FriendshipService.getFriendsList(authToken);
+        setFriends(friendsList.slice(0, 4)); // Get first 4 friends
+      } catch (error) {
+        console.error('Error fetching friends:', error);
+      } finally {
+        setLoadingFriends(false);
+      }
+    };
+
+    if (authToken) {
+      fetchFriends();
+    }
+  }, [authToken]);
+
+useEffect(() => {
+    // Only fetch if the user is authenticated
+    if (isAuthenticated && authToken) {
+      // Fetch profile picture
+      const fetchProfilePicture = async () => {
+        try {
+          setIsLoading(true);
+            const userData = await profileService.getCurrentUser();
+          const picture = userData.profilePicture;;;
+  
+
+          if (userData.profilePicture) {
+            let imageUrl;
+            if (typeof userData.profilePicture === 'string') {
+              imageUrl = userData.profilePicture.startsWith('data:image') 
+                ? userData.profilePicture 
+                : `data:image/jpeg;base64,${userData.profilePicture}`;
+            } else if (Array.isArray(userData.profilePicture)) {
+              const binaryString = String.fromCharCode.apply(null, userData.profilePicture);
+              imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+            }
+            if (imageUrl)
+              setProfilePicture(imageUrl);
+          }
+         
+        } catch (error) {
+          console.error('Error fetching profile picture:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      
+      fetchProfilePicture();
+    } else {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated, authToken]); 
 
   const handleCreateClick = () => {
     setIsFirstModalOpen(true);
@@ -42,7 +104,6 @@ const Sidebar = () => {
     <>
       <aside className={`w-72 h-full p-6 border-r ${isDark ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'}`}>
         
-
         {/* Create Capsule Button */}
         <button
           onClick={handleCreateClick}
@@ -102,20 +163,67 @@ const Sidebar = () => {
         <hr className={`my-6 ${isDark ? 'border-gray-800' : 'border-gray-100'}`} />
 
         {/* Friends Section */}
-        <div className="mt-6">
-          <div className="flex justify-between items-center mb-3 px-2">
-            <h4 className={`text-sm font-semibold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>YOUR FRIENDS</h4>
-            <Link 
-              to="/friends" 
-              className={`text-xs font-medium ${isDark ? 'text-[#AF3535] hover:text-[#d15e5e]' : 'text-[#AF3535] hover:text-[#8a2a2a]'} transition-colors`}
-            >
-              View all
-            </Link>
+        {/* Friends Section */}
+<div className="mt-6">
+  <div className="flex justify-between items-center mb-3 px-2">
+    <h4 className={`text-sm font-semibold ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>YOUR FRIENDS</h4>
+    <Link 
+      to="/friends" 
+      className={`text-xs font-medium ${isDark ? 'text-[#AF3535] hover:text-[#d15e5e]' : 'text-[#AF3535] hover:text-[#8a2a2a]'} transition-colors`}
+    >
+      View all
+    </Link>
+  </div>
+  
+  {loadingFriends ? (
+    <div className={`p-4 rounded-lg ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'} text-center`}>Loading friends...</p>
+    </div>
+  ) : friends.length > 0 ? (
+    <div className="space-y-2">
+      {friends.map(friend => (
+        <Link 
+          key={friend.id} 
+          to={`/profile/${friend.id}`}
+          className={`flex items-center p-3 rounded-lg transition-all ${isDark ? 'hover:bg-gray-800' : 'hover:bg-gray-50'}`}
+        >
+          <div className="relative mr-3">
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#AF3535]">
+              {friend.profilePicture ? (
+                <img 
+                  src={
+                    typeof friend.profilePicture === 'string' && friend.profilePicture.startsWith('data:image') 
+                      ? friend.profilePicture 
+                      : `data:image/jpeg;base64,${friend.profilePicture}`
+                  }
+                  alt={friend.username}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = ProfilePictureSample;
+                  }}
+                />
+              ) : (
+                <img 
+                  src={ProfilePictureSample}
+                  alt={friend.username}
+                  className="w-full h-full object-cover"
+                />
+              )}
+            </div>
           </div>
-          <div className={`p-4 rounded-lg text-center ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
-            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>No friends added yet</p>
+          <div>
+            <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>{friend.username}</p>
           </div>
-        </div>
+        </Link>
+      ))}
+    </div>
+  ) : (
+    <div className={`p-4 rounded-lg text-center ${isDark ? 'bg-gray-800' : 'bg-gray-50'}`}>
+      <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>No friends added yet</p>
+    </div>
+  )}
+</div>
       </aside>
 
       {/* First Modal - Confirmation */}

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { FiSearch, FiX } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
 import ProfilePictureSample from '../assets/ProfilePictureSample.png';
 import { useAuth } from './AuthProvider';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { useThemeMode } from '../context/ThemeContext';
-import friendshipService from '../services/FriendshipService';
+import FriendshipService from '../services/FriendshipService';
 
 const FriendsPage = () => {
   const { isDark } = useThemeMode();
-  const { user, token } = useAuth();
+  const { user, authToken } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,25 +18,24 @@ const FriendsPage = () => {
   useEffect(() => {
     const fetchFriends = async () => {
       try {
-        const friendsList = await friendshipService.getFriendsList(token);
-        setFriends(friendsList);
-      } catch (err) {
-        console.error('Error fetching friends:', err);
+        const friendsList = await FriendshipService.getFriendsList(authToken);
+        setFriends(friendsList); // Get ALL friends, not just first 4
+      } catch (error) {
+        console.error('Error fetching friends:', error);
       } finally {
-        setLoading(false);
+        setLoading(false); // Fixed: Changed from setLoadingFriends to setLoading
       }
     };
 
-    fetchFriends();
-  }, [token]);
+    if (authToken) {
+      fetchFriends();
+    }
+  }, [authToken]);
 
   const handleRemoveFriend = async (friendId) => {
     try {
-      const friendship = await friendshipService.findByUsers(friendId, token);
-      if (friendship) {
-        await friendshipService.deleteFriendship(friendship.id, token);
-        setFriends(friends.filter(f => f.id !== friendId));
-      }
+      await FriendshipService.deleteFriendship(friendId, authToken);
+      setFriends(friends.filter(f => f.id !== friendId));
     } catch (err) {
       console.error('Error removing friend:', err);
     }
@@ -94,63 +94,76 @@ const FriendsPage = () => {
               </div>
 
               {/* Friends List */}
-              
-              <div className="max-w-6xl mx-auto">
-                {filteredFriends.length === 0 ? (
-                  <div className={`text-center py-16 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                    <div className="inline-block p-6 rounded-full bg-gray-100 dark:bg-gray-700/50 mb-4">
-                      <svg 
-                        xmlns="http://www.w3.org/2000/svg" 
-                        className="h-12 w-12 text-gray-400 dark:text-gray-500" 
-                        fill="none" 
-                        viewBox="0 0 24 24" 
-                        stroke="currentColor"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-xl font-medium mb-2">No friends yet</h3>
-                    <p className="max-w-md mx-auto">
-                      {searchQuery ? 'No friends match your search' : 'Add some friends to see them here'}
-                    </p>
-                  </div>
-                ) : (
+              <div className="space-y-2">
+                {filteredFriends.length > 0 ? (
                   filteredFriends.map(friend => (
                     <div 
                       key={friend.id} 
-                      className={`rounded-xl p-4 transition-all ${isDark ? 'bg-gray-700/50 border border-gray-600' : 'bg-white border border-gray-200'}`}
+                      className={`flex items-center justify-between p-3 rounded-lg transition-all ${
+                        isDark 
+                          ? 'bg-gray-700/50 hover:bg-gray-700' 
+                          : 'bg-white hover:bg-gray-50'
+                      }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                          <img 
-                            src={friend.profilePicture || ProfilePictureSample} 
-                            alt={friend.username}
-                            className="h-12 w-12 rounded-full border-2 border-white dark:border-gray-600 shadow-sm"
-                          />
-                          <div>
-                            <h3 className={`font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                              {friend.username}
-                            </h3>
-                            <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                              {friend.email}
-                            </p>
+                      <Link 
+                        to={`/profile/${friend.id}`}
+                        className="flex items-center flex-1"
+                      >
+                        <div className="relative mr-3">
+                          <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#AF3535]">
+                            {friend.profilePicture ? (
+                              <img 
+                                src={
+                                  typeof friend.profilePicture === 'string' && friend.profilePicture.startsWith('data:image') 
+                                    ? friend.profilePicture 
+                                    : `data:image/jpeg;base64,${friend.profilePicture}`
+                                }
+                                alt={friend.username}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.onerror = null;
+                                  e.target.src = ProfilePictureSample;
+                                }}
+                              />
+                            ) : (
+                              <img 
+                                src={ProfilePictureSample}
+                                alt={friend.username}
+                                className="w-full h-full object-cover"
+                              />
+                            )}
                           </div>
+                
                         </div>
-                        
-                        <button 
-                          className={`px-4 py-2 rounded-full text-sm flex items-center ${
-                            isDark 
-                              ? 'bg-red-600 hover:bg-red-700 text-white' 
-                              : 'bg-red-500 hover:bg-red-600 text-white'
-                          }`}
-                          onClick={() => handleRemoveFriend(friend.id)}
-                        >
-                          <FiX className="mr-2 h-4 w-4" />
-                          Remove
-                        </button>
-                      </div>
+                        <div>
+                          <p className={`font-medium ${isDark ? 'text-gray-200' : 'text-gray-800'}`}>
+                            {friend.username}
+                          </p>
+                          <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {friend.email || 'No email provided'}
+                          </p>
+                        </div>
+                      </Link>
+                      
+                      <button 
+                        onClick={() => handleRemoveFriend(friend.id)}
+                        className={`ml-4 p-2 rounded-full transition-colors ${
+                          isDark 
+                            ? 'text-red-400 hover:text-red-300 hover:bg-gray-600' 
+                            : 'text-red-500 hover:text-red-600 hover:bg-gray-100'
+                        }`}
+                        aria-label="Remove friend"
+                      >
+                        <FiX className="h-4 w-4" />
+                      </button>
                     </div>
                   ))
+                ) : (
+                  <div className={`p-4 text-center rounded-lg ${
+                    isDark ? 'bg-gray-700/50 text-gray-300' : 'bg-white text-gray-500'
+                  }`}>
+                    {searchQuery ? 'No friends match your search' : 'You have no friends yet'}
+                  </div>
                 )}
               </div>
             </div>
