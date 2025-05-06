@@ -54,7 +54,6 @@ interface ApiService {
     // Update user details
     @PUT("api/users")
     suspend fun updateUser(
-        @Header("Authorization") authToken: String,
         @Body profile: ProfileDTO
     ): Response<UserEntity>
 
@@ -204,7 +203,7 @@ interface ApiService {
         ): Call<Map<String, Any>>
 
     @POST("api/auth/logout")
-    fun logout(@Header("Authorization") authToken: String): Call<ResponseBody>
+    fun logout(): Call<ResponseBody>
 
     // Add this to your ApiService interface
     // Add to ApiService interface
