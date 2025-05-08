@@ -117,10 +117,8 @@ public class CommentReactionServiceImpl implements CommentReactionService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = "contentMetadata", key = "'commentReactions_' + #reaction.comment.id"),
-            @CacheEvict(value = "contentMetadata", key = "'reaction_' + #reactionId")
-    })
+    @Transactional
+    @CacheEvict(value = "contentMetadata", allEntries = true)  // This will clear all related caches
     public void deleteReaction(Long reactionId, Authentication auth) {
         logger.info("Deleting reactionId: {} by user: {}", reactionId, auth.getName());
 
@@ -133,10 +131,12 @@ public class CommentReactionServiceImpl implements CommentReactionService {
             throw new AccessDeniedException("You are not the creator of this reaction");
         }
 
-        reactionRepository.deleteById(reactionId);
-        logger.debug("Reaction deleted with id: {}", reactionId);
-    }
+        // Store the comment ID before deletion for logging
+        Long commentId = reaction.getComment() != null ? reaction.getComment().getId() : null;
 
+        reactionRepository.deleteById(reactionId);
+        logger.debug("Reaction deleted with id: {} for comment: {}", reactionId, commentId);
+    }
     @Override
     @Cacheable(value = "contentMetadata", key = "'reaction_' + #reactionId")
     public Optional<CommentReactionEntity> getReactionById(Long reactionId) {
