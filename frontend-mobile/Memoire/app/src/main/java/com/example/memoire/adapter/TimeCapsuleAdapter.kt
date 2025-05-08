@@ -243,8 +243,8 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
 
         // Handle confirm button
         btnConfirm.setOnClickListener {
-            val accessType = when (accessRadioGroup.checkedRadioButtonId) { // Use checkedRadioButtonId
-                R.id.radioPrivate -> AccessType.OnlyMe
+            val accessType = when (accessRadioGroup.checkedRadioButtonId) { // Use checkedRadioButtonId\
+                //                R.id.radioPrivate -> AccessType.OnlyMe
                 R.id.radioFriends -> AccessType.Friends
                 R.id.radioPublic -> AccessType.Public
                 R.id.radioSpecific -> {

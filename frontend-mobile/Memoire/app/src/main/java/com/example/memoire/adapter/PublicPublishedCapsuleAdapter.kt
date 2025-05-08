@@ -62,7 +62,9 @@ class PublicPublishedCapsulesAdapter(
             // Fetch and display owner profile
             val ownerImageView = itemView.findViewById<ImageView>(R.id.ivOwnerProfilePicture)
             val ownerNameTextView = itemView.findViewById<TextView>(R.id.tvOwnerName)
-
+            itemView.findViewById<ImageView>(R.id.ivComment).setOnClickListener {
+                onCommentClick(capsule)
+            }
             capsule.createdById?.let { ownerId ->
                 RetrofitClient.instance.getPublicProfile(ownerId).enqueue(object : Callback<ProfileDTO> {
                     override fun onResponse(call: Call<ProfileDTO>, response: Response<ProfileDTO>) {
@@ -196,7 +198,7 @@ class PublicPublishedCapsulesAdapter(
                 // Load image using downloadContent endpoint
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        Log.e("PUBLIC PUBLISHER", "REPSONSE CONTENT for IDD"+content.id.toString())
+                        Log.e("PUBLIC PUBLISHER", "REPSONSE CONTENT for IDD "+content.id.toString())
                         val response = RetrofitClient.capsuleContentInstance.downloadPublicContent(content.id!!
                         )
                         Log.e("PUBLIC PUBLISHER", "REPSONSE CONTENT"+response.toString())

@@ -13,9 +13,12 @@ data class CommentEntity(
     val id: Long,
     val text: String,
     val timeCapsule: TimeCapsuleDTO,
-    val user: UserEntity,
+    val userId: Long,
+    val username: String,
+    val userProfileImage: String?,
     val reactions: List<CommentReactionEntity> = emptyList(),
     val createdAt: Date,
+    var reactionCount: Int,
     val updatedAt: String?
 )
 

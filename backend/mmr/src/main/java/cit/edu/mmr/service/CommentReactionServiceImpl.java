@@ -50,8 +50,27 @@ public class CommentReactionServiceImpl implements CommentReactionService {
     }
 
     @Override
+    @Cacheable(value = "contentMetadata", key = "'commentReactionsCount_' + #commentId")
+    public int getReactionCountByCommentId(Long commentId) {
+        logger.info("Fetching reaction count for commentId: {}", commentId);
+        return reactionRepository.findByCommentId(commentId).size();
+    }
+    @Override
+    public boolean isReacted(Long commentId, Authentication auth) {
+        logger.info("Checking if user has reacted to commentId: {}", commentId);
+
+        UserEntity user = getAuthenticatedUser(auth);
+        logger.debug("Authenticated user ID: {}", user.getId());
+        CommentEntity comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new EntityNotFoundException("Comment not found with id " + commentId));
+        boolean exists = reactionRepository.existsByUserAndComment(user, comment);
+        logger.debug("Reaction exists for commentId: {} and userId: {}: {}", commentId, user.getId(), exists);
+
+        return exists;
+    }
+    @Override
     @CacheEvict(value = "contentMetadata", key = "'commentReactions_' + #commentId")
-    public CommentReactionEntity addReaction(Long commentId, String type, Authentication auth) {
+    public int addReaction(Long commentId, String type, Authentication auth) {
         logger.info("Adding reaction to commentId: {} by user: {}", commentId, auth.getName());
 
         CommentEntity comment = commentRepository.findById(commentId)
@@ -65,12 +84,10 @@ public class CommentReactionServiceImpl implements CommentReactionService {
         reaction.setType(type);
         reaction.setReactedAt(new Date());
 
-        comment.getReactions().add(reaction); // Optional
+        reactionRepository.save(reaction);
 
-        CommentReactionEntity savedReaction = reactionRepository.save(reaction);
-        logger.debug("Reaction added: {}", savedReaction);
-
-        return savedReaction;
+        // Return the updated count of reactions for the comment
+        return reactionRepository.findByCommentId(commentId).size();
     }
 
     @Override

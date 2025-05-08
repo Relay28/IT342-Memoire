@@ -55,6 +55,9 @@ class PublishedCapsulesAdapter(
             val openDate = capsule.openDate?.let { dateFormat.format(it) } ?: "Not specified"
             itemView.findViewById<TextView>(R.id.tvCreatedDate).text = "Created on: $createdAt"
             itemView.findViewById<TextView>(R.id.tvOpenedDate).text = "Opened on: $openDate"
+            itemView.findViewById<ImageView>(R.id.ivComment).setOnClickListener {
+                onCommentClick(capsule)
+            }
 
             // Fetch and display owner profile
             val ownerImageView = itemView.findViewById<ImageView>(R.id.ivOwnerProfilePicture)

@@ -87,9 +87,25 @@ class CommentsDialog(
                             val fetchedComments = response.body() ?: emptyList()
                             comments.clear()
                             comments.addAll(fetchedComments)
-                            commentsAdapter.updateComments(comments)
 
-                            // Update empty state visibility
+                            // Fetch reaction count for each comment
+                            comments.forEach { comment ->
+                                RetrofitClient.commentInstance.getReactionCountByCommentId(comment.id)
+                                    .enqueue(object : Callback<Int> {
+                                        override fun onResponse(call: Call<Int>, response: Response<Int>) {
+                                            if (response.isSuccessful) {
+                                                comment.reactionCount = response.body() ?: 0
+                                                commentsAdapter.updateComments(comments)
+                                            }
+                                        }
+
+                                        override fun onFailure(call: Call<Int>, t: Throwable) {
+                                            // Handle failure
+                                        }
+                                    })
+                            }
+
+                            commentsAdapter.updateComments(comments)
                             dialog.findViewById<TextView>(R.id.tvNoComments)?.visibility =
                                 if (comments.isEmpty()) View.VISIBLE else View.GONE
                         } else {
