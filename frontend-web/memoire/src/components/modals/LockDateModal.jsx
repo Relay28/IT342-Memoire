@@ -15,7 +15,7 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
 
   // Calculate minimum date (tomorrow)
   const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate());
+  tomorrow.setDate(tomorrow.getDate() + 1); // Fixed: actually set to tomorrow
   const minDate = tomorrow.toISOString().split('T')[0];
 
   const handleSubmit = async (e) => {
@@ -39,27 +39,52 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
       // First lock the time capsule
       await lockTimeCapsule(timeCapsuleId, dateObj.toISOString());
 
-      // Then set the access level
-      try {
-        if (accessLevel === 'public') {
-          await capsuleAccessService.grantPublicAccess(timeCapsuleId, authToken);
-        } else if (accessLevel === 'friends-only') {
-          await capsuleAccessService.grantAccessToAllFriends(timeCapsuleId, 'VIEWER', authToken);
-        } else if (accessLevel === 'only-me') {
-          await capsuleAccessService.restrictAccessToOwner(timeCapsuleId, authToken);
+      // Then set the access level with retry logic
+      let accessError = null;
+      let retryCount = 0;
+      const maxRetries = 2;
+      
+      while (retryCount < maxRetries) {
+        try {
+          if (accessLevel === 'public') {
+            await capsuleAccessService.grantPublicAccess(timeCapsuleId, authToken);
+          } else if (accessLevel === 'friends-only') {
+            await capsuleAccessService.grantAccessToAllFriends(timeCapsuleId, 'VIEWER', authToken);
+          } else if (accessLevel === 'only-me') {
+            await capsuleAccessService.restrictAccessToOwner(timeCapsuleId, authToken);
+          }
+          accessError = null;
+          break;
+        } catch (err) {
+          accessError = err;
+          retryCount++;
+          if (retryCount < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // wait 1 second before retry
+          }
         }
-      } catch (accessError) {
+      }
+
+      if (accessError) {
         console.error('Error setting access level:', accessError);
-        setError('Time capsule was locked but there was an error setting the access level');
+        setError({
+          title: 'Partial Success',
+          message: 'Time capsule was locked successfully, but there was an error setting the access level.',
+          details: 'You can try changing the access level later in the capsule settings.',
+          isWarning: true
+        });
+        if (onSuccess) onSuccess(); // Still consider this a success since the capsule is locked
+        onClose();
         return;
       }
 
-      if (onSuccess) {
-        onSuccess();
-      }
+      if (onSuccess) onSuccess();
       onClose();
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to lock time capsule');
+      setError({
+        title: 'Error',
+        message: err.response?.data?.message || 'Failed to lock time capsule',
+        isWarning: false
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -143,8 +168,18 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
             </div>
 
             {error && (
-              <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-sm text-red-600">{error}</p>
+              <div className={`mb-4 p-3 rounded-md ${error.isWarning ? 'bg-yellow-50 border border-yellow-200' : 'bg-red-50 border border-red-200'}`}>
+                <h3 className={`text-sm font-medium ${error.isWarning ? 'text-yellow-800' : 'text-red-800'}`}>
+                  {error.title}
+                </h3>
+                <p className={`text-sm ${error.isWarning ? 'text-yellow-600' : 'text-red-600'} mt-1`}>
+                  {error.message}
+                </p>
+                {error.details && (
+                  <p className={`text-xs ${error.isWarning ? 'text-yellow-600' : 'text-red-600'} mt-1`}>
+                    {error.details}
+                  </p>
+                )}
               </div>
             )}
 
