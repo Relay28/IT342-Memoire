@@ -42,11 +42,6 @@ interface ApiCommentService {
 
 
     // -------- Comment Reactions --------
-    @POST("api/comment-reactions/comment/{commentId}")
-    fun addReaction(
-        @Path("commentId") commentId: Long,
-        @Body reactionRequest: ReactionRequest,
-    ): Call<CommentReactionEntity>
 
     @PUT("api/comment-reactions/{reactionId}")
     fun updateReaction(
@@ -68,4 +63,20 @@ interface ApiCommentService {
     fun getReactionsByCommentId(
         @Path("commentId") commentId: Long
     ): Call<List<CommentReactionEntity>>
+
+    @POST("api/comment-reactions/comment/{commentId}")
+    fun addReaction(
+        @Path("commentId") commentId: Long,
+        @Body reactionRequest: ReactionRequest
+    ): Call<Int>
+
+    @GET("api/comment-reactions/comment/{commentId}/count")
+    fun getReactionCountByCommentId(
+        @Path("commentId") commentId: Long
+    ): Call<Int>
+
+    @GET("api/comment-reactions/comment/{commentId}/is-reacted")
+    fun isReacted(
+        @Path("commentId") commentId: Long
+    ): Call<Boolean>
 }

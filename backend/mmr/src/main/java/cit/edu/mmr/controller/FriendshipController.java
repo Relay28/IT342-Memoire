@@ -31,6 +31,7 @@ public class FriendshipController {
     private final FriendShipService friendShipService;
     private final UserRepository userRepository;
 
+
     public FriendshipController(FriendShipService friendShipService, UserRepository userRepository) {
         this.friendShipService = friendShipService;
         this.userRepository = userRepository;
@@ -56,6 +57,17 @@ public class FriendshipController {
         } catch (Exception e) {
             logger.error("Error checking friendship status: {}", e.getMessage(), e);
             return new ResponseEntity<>(new ErrorResponse(HttpStatus.BAD_REQUEST.value(), e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/friends/count/{userId}")
+    public ResponseEntity<Long> getUserFriendsCount(@PathVariable Long userId, Authentication auth) {
+        try {
+            long count = friendShipService.getUserFriendsCount(userId);
+            return ResponseEntity.ok(count);
+        } catch (Exception e) {
+            logger.error("Error retrieving friends count: {}", e.getMessage(), e);
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

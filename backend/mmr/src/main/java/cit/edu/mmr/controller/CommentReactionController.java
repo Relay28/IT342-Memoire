@@ -34,8 +34,8 @@ public class CommentReactionController {
             @RequestBody ReactionRequest reactionRequest,
             Authentication auth) {
         try {
-            CommentReactionEntity reaction = commentReactionService.addReaction(commentId, reactionRequest.getType(), auth);
-            return ResponseEntity.status(HttpStatus.CREATED).body(reaction);
+            int reactionCount = commentReactionService.addReaction(commentId, reactionRequest.getType(), auth);
+            return ResponseEntity.status(HttpStatus.CREATED).body(reactionCount);
         } catch (EntityNotFoundException ex) {
             logger.warn("Add reaction failed: {}", ex.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ErrorResponse(404, ex.getMessage()));
@@ -43,6 +43,30 @@ public class CommentReactionController {
             logger.error("Unexpected error while adding reaction", ex);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse(500, "Failed to add reaction"));
+        }
+    }
+
+    @GetMapping("/comment/{commentId}/count")
+    public ResponseEntity<?> getReactionCountByCommentId(@PathVariable Long commentId) {
+        try {
+            int reactionCount = commentReactionService.getReactionCountByCommentId(commentId);
+            return ResponseEntity.ok(reactionCount);
+        } catch (Exception ex) {
+            logger.error("Failed to fetch reaction count for commentId: {}", commentId, ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(500, "Failed to fetch reaction count"));
+        }
+    }
+
+    @GetMapping("/comment/{commentId}/is-reacted")
+    public ResponseEntity<?> isReacted(@PathVariable Long commentId, Authentication auth) {
+        try {
+            boolean reacted = commentReactionService.isReacted(commentId, auth);
+            return ResponseEntity.ok(reacted);
+        } catch (Exception ex) {
+            logger.error("Failed to check if user reacted to commentId: {}", commentId, ex);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse(500, "Failed to check reaction status"));
         }
     }
 

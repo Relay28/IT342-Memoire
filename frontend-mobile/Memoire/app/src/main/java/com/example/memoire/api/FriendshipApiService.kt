@@ -20,6 +20,10 @@ data class FriendshipRequest(
 
 interface FriendshipApiService {
 
+
+    @GET("/api/friendships/friends/count/{userId}")
+    suspend fun getUserFriendsCount(@Path("userId") userId: Long): Response<Long>
+
     @PUT("/api/friendships/{id}/accept")
     suspend fun acceptFriendship(@Path("id") id: Long): Response<FriendshipEntity>
     @GET("/api/friendships/friends")

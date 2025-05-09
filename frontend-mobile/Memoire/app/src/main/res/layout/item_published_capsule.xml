@@ -5,36 +5,47 @@
     android:padding="8dp">
 
     <!-- Owner Section -->
+
+    <!-- Title -->
     <LinearLayout
         android:id="@+id/ownerSection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="4dp"
-        android:gravity="center_vertical">
+        android:gravity="center_vertical"
+        android:padding="4dp">
 
-        <!-- Profile Picture with Red Border -->
+        <!-- Profile Picture -->
         <ImageView
             android:id="@+id/ivOwnerProfilePicture"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:src="@drawable/ic_placeholder"
             android:layout_marginEnd="8dp"
+            android:background="@drawable/profile_picture_border"
             android:contentDescription="Owner Profile Picture"
             android:scaleType="centerCrop"
-            android:background="@drawable/profile_picture_border" />
+            android:src="@drawable/ic_placeholder" />
 
         <!-- Owner Name -->
         <TextView
             android:id="@+id/tvOwnerName"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_weight="1"
             android:text="Owner Name"
             android:textSize="16sp"
             android:textStyle="bold" />
+
+        <!-- Three Dots Icon -->
+        <ImageView
+            android:id="@+id/ivThreeDots"
+            android:layout_width="42dp"
+            android:layout_height="35dp"
+            android:src="@drawable/three_dots"
+            android:contentDescription="Options"
+            android:padding="8dp" />
     </LinearLayout>
 
-    <!-- Title -->
     <TextView
         android:id="@+id/tvCapsuleTitle"
         android:layout_width="match_parent"

@@ -17,7 +17,6 @@ public class ReportRequest {
     @NotBlank
     private String itemType;
 
-    @NotBlank
     private String status;
 
 

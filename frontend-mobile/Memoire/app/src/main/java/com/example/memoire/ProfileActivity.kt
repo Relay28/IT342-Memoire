@@ -48,6 +48,8 @@ class ProfileActivity : AppCompatActivity() {
     private lateinit var progressIndicator: CircularProgressIndicator
     private lateinit var gridView: GridView
     private lateinit var capsuleAdapter: CapsuleGridAdapter
+    private lateinit var tvOwnedCount: TextView
+    private lateinit var tvFriendsCount: TextView
 
 
     private lateinit var recyclerView: RecyclerView
@@ -69,6 +71,8 @@ class ProfileActivity : AppCompatActivity() {
         tvBio = findViewById(R.id.tv_bio)
         ivProfile = findViewById(R.id.iv_profile)
         progressIndicator = findViewById(R.id.progress_indicator)
+        tvOwnedCount = findViewById(R.id.tv_owned_count)
+        tvFriendsCount = findViewById(R.id.tv_friends_count)
 
         // Back button functionality
         setupCapsuleGrid()
@@ -94,37 +98,69 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun fetchUserProfile() {
         val sessionManager = SessionManager(this)
-        val token = sessionManager.getUserSession()["token"].toString()
-       // Toast.makeText(this@ProfileActivity, token, Toast.LENGTH_SHORT).show()
-        val s = sessionManager.getUserSession()["userId"]
+        val userId = sessionManager.getUserSession()["userId"] as Long?: return
         showLoading(true)
-
-        // First get the current user details
+        Log.d(TAG, "Fetching user profile for userId: $userId")
+        // Fetch user profile
         RetrofitClient.instance.getCurrentUser().enqueue(object : Callback<UserDTO> {
+
             override fun onResponse(call: Call<UserDTO>, response: Response<UserDTO>) {
                 if (response.isSuccessful) {
                     val user = response.body()
-
-
                     if (user != null) {
-
-
                         displayUserData(user)
+
                         loadProfileImage(user)
+                        fetchUserFriendsCount(user.id)
+                        fetchPublishedCapsuleCount(user.id)
                     }
                 } else {
                     showLoading(false)
                     handleApiError(response.code(), "Failed to fetch profile")
                 }
-
             }
 
             override fun onFailure(call: Call<UserDTO>, t: Throwable) {
                 showLoading(false)
-                Log.e(TAG, "Network error", t)
                 Toast.makeText(this@ProfileActivity, "Network Error: ${t.message}", Toast.LENGTH_SHORT).show()
             }
         })
+    }
+
+    private fun fetchPublishedCapsuleCount(userId: Long) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.instance.getPublicPublishedTimeCapsuleCountForUser(userId)
+                Toast.makeText(this@ProfileActivity, "What"+response.body(), Toast.LENGTH_SHORT).show()
+                if (response.isSuccessful) {
+                    val publishedCount = response.body() ?: 0
+                    tvOwnedCount.text = publishedCount.toString()
+                } else {
+                    tvOwnedCount.text = "0"
+                    Log.e(TAG, "Failed to fetch published capsule count: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                tvOwnedCount.text = "0"
+                Log.e(TAG, "Error fetching published capsule count", e)
+            }
+        }
+    }
+    private fun fetchUserFriendsCount(userId: Long) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.friendInstance.getUserFriendsCount(userId)
+                if (response.isSuccessful) {
+                    val friendCount = response.body() ?: 0
+                    tvFriendsCount.text = friendCount.toString()
+                } else {
+                    tvFriendsCount.text = "0"
+                    Log.e(TAG, "Failed to fetch friends count: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                tvFriendsCount.text = "0"
+                Log.e(TAG, "Error fetching friends count", e)
+            }
+        }
     }
 
     fun showMenu(v: View) {
@@ -215,37 +251,20 @@ class ProfileActivity : AppCompatActivity() {
     }
 
 
-    private fun fetchPublishedCapsules(onComplete: (List<TimeCapsuleDTO>) -> Unit) {
+    fun fetchPublishedCapsules(onComplete: (List<TimeCapsuleDTO>) -> Unit) {
         showLoading(true)
-        Log.d(TAG, "Fetching published capsules")
-
-        RetrofitClient.instance.getPublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
-            override fun onResponse(
-                call: Call<List<TimeCapsuleDTO>>,
-                response: Response<List<TimeCapsuleDTO>>
-            ) {
-                Log.d(TAG, "Response received: ${response.isSuccessful}")
+        RetrofitClient.instance.getMyPublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
+            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+                showLoading(false)
                 if (response.isSuccessful) {
-                    val capsules = response.body() ?: emptyList()
-                    Log.d(TAG, "Capsules received: ${capsules.size}")
-                    capsules.forEach { Log.d(TAG, "Capsule: $it") }
-                    fetchContentsForCapsules(capsules, onComplete)
+                    onComplete(response.body() ?: emptyList())
                 } else {
-                    Log.e(TAG, "Failed to fetch capsules: ${response.code()} - ${response.message()}")
-                    showLoading(false)
-                    handleApiError(response.code(), "Failed to fetch capsules")
                     onComplete(emptyList())
                 }
             }
 
             override fun onFailure(call: Call<List<TimeCapsuleDTO>>, t: Throwable) {
-                Log.e(TAG, "Failed to fetch capsules", t)
                 showLoading(false)
-                Toast.makeText(
-                    this@ProfileActivity,
-                    "Failed to load capsules: ${t.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
                 onComplete(emptyList())
             }
         })

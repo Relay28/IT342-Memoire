@@ -84,6 +84,17 @@ public class FriendShipService {
         return convertToDTO(savedFriendship);
     }
 
+    public long getUserFriendsCount(Long userId) {
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+        // Count friendships where the user is either the sender or receiver
+        long countAsUser = friendShipRepository.countByUserAndStatus(user, "Friends");
+        long countAsFriend = friendShipRepository.countByFriendAndStatus(user, "Friends");
+
+        return countAsUser + countAsFriend;
+    }
+
     @Transactional
     public List<FriendshipDTO> getReceivedFriendRequests(Authentication auth) {
         logger.info("Retrieving received friend requests for user: {}", auth.getName());

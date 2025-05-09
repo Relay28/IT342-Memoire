@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Service;
 
@@ -337,7 +338,51 @@ public class TimeCapsuleService {
                 .collect(Collectors.toList());
     }
 
+    public long getPublicPublishedTimeCapsuleCountForUser(Long userId) {
+        return tcRepo.countByCreatedByIdAndStatusAndIsPublicTrue(userId, "PUBLISHED");
+    }
+
     // New method to get capsules by status with proper access control
+
+    public List<TimeCapsuleDTO> getMyTimeCapsulesByStatus(String status, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+
+        // Get all capsules with the specified status
+        List<TimeCapsuleEntity> statusCapsules = tcRepo.findByStatus(status);
+
+        // Filter based on access rights
+        List<TimeCapsuleEntity> accessibleCapsules = new ArrayList<>();
+
+        for (TimeCapsuleEntity capsule : statusCapsules) {
+            boolean isOwner = capsule.getCreatedBy().getId() == user.getId();
+
+            // For PUBLISHED status, include all capsules the user has access to
+            if ("PUBLISHED".equals(status)) {
+                if (isOwner) {
+                    accessibleCapsules.add(capsule);
+                    continue;
+                }
+
+                // Check if user has viewer or editor access
+
+            }
+            // For non-PUBLISHED statuses, only include if user is owner or has editor access
+            else {
+                if (isOwner) {
+                    accessibleCapsules.add(capsule);
+                    continue;
+                }
+
+            }
+        }
+
+        // Convert to DTOs
+        return accessibleCapsules.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+
     public List<TimeCapsuleDTO> getTimeCapsulesByStatus(String status, Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
 
@@ -361,7 +406,9 @@ public class TimeCapsuleService {
                 Optional<CapsuleAccessEntity> accessOptional = capsuleAccessRepository
                         .findByCapsuleIdAndUserId(capsule.getId(), user.getId());
 
-                if (accessOptional.isPresent()) {
+
+                if (accessOptional.isPresent() &&
+                        ("VIEWER".equals(accessOptional.get().getRole()) || "EDITOR".equals(accessOptional.get().getRole()))) {
                     accessibleCapsules.add(capsule);
                 }
             }
@@ -398,11 +445,14 @@ public class TimeCapsuleService {
         }
 
         // Only allow archiving of published capsules
-        if (!"PUBLISHED".equals(capsule.getStatus())) {
-            throw new IllegalStateException("Only published capsules can be archived");
+//        if ("CLOSED".equals(capsule.getStatus())||"UNPUBLISHED".equals(capsule.getStatus())) {
+//            throw new IllegalStateException("Only published capsules can be archived");
+//        }
+        if(capsule.getStatus()!="ARCHIVED")
+                capsule.setStatus("ARCHIVED");
+        else{
+             capsule.setStatus("PUBLISHED");
         }
-
-        capsule.setStatus("ARCHIVED");
         tcRepo.save(capsule);
     }
     // Add this to your TimeCapsuleService.java
