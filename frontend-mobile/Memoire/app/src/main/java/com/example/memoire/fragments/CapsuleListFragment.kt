@@ -79,10 +79,9 @@ class CapsuleListFragment : Fragment() {
                 hideLoading()
                 if (response.isSuccessful) {
                     val allCapsules = response.body() ?: emptyList()
-                    // Filter out closed capsules
+                    // Include archived capsules
                     val filteredCapsules = allCapsules.filter {
-                        it.status?.uppercase(Locale.getDefault()) != "CLOSED" &&
-                                it.status?.uppercase(Locale.getDefault()) != "ARCHIVED"
+                        it.status?.uppercase(Locale.getDefault()) != "CLOSED"
                     }
                     updateUI(filteredCapsules)
                 } else {
@@ -102,6 +101,7 @@ class CapsuleListFragment : Fragment() {
         val apiCall = when (status) {
             "PUBLISHED" -> RetrofitClient.instance.getPublishedTimeCapsules()
             "UNPUBLISHED" -> RetrofitClient.instance.getUnpublishedTimeCapsules()
+            "ARCHIVED" -> RetrofitClient.instance.getArchivedTimeCapsules()
             else -> RetrofitClient.instance.getUserTimeCapsules()
         }
 

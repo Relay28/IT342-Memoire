@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -18,179 +17,101 @@
         android:background="@android:color/white"
         android:padding="16dp">
 
-        <!-- Header Row: Status + Actions -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <!-- Status -->
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:drawableStart="@drawable/ic_unpublishedv2"
-                android:drawablePadding="6dp"
-                android:textSize="14sp"
-                android:textColor="@color/MemoireRed"
-                android:fontFamily="sans-serif-medium"
-                tools:text="UNPUBLISHED" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-
-            <!-- Share + Delete -->
-            <ImageButton
-                android:id="@+id/ivShare"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Share"
-                android:src="@drawable/ic_share"
-                app:tint="?attr/colorOnSurface" />
-
-            <ImageButton
-                android:id="@+id/ivDelete"
-                android:layout_width="36dp"
-                android:layout_height="36dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Delete"
-                android:src="@drawable/ic_delete"
-                app:tint="?attr/colorOnSurface" />
-        </LinearLayout>
-
         <!-- Title -->
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textColor="#212121"
             android:fontFamily="sans-serif-medium"
-            tools:text="Summer Vacation 2025" />
+            tools:text="Capsule Title" />
 
         <!-- Description -->
         <TextView
             android:id="@+id/tvDescription"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:maxLines="2"
             android:textSize="14sp"
             android:textColor="#616161"
             android:fontFamily="sans-serif"
-            tools:text="Memories from our beach trip to Hawaii. Photos, videos, and thoughts to remember this special time." />
+            tools:text="Capsule description goes here." />
 
         <!-- Date Row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:orientation="horizontal">
 
-            <!-- ✅ Use layout_weight for spacing -->
-
-
-            <!-- Created -->
-            <LinearLayout
-                android:layout_width="0dp"
+            <!-- Created Date -->
+            <TextView
+                android:id="@+id/tvCreatedDate"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:textSize="12sp"
+                android:textColor="#9E9E9E"
+                android:fontFamily="sans-serif"
+                tools:text="Created: Apr 15, 2025" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Created"
-                    android:textSize="12sp"
-                    android:textColor="#9E9E9E"
-                    android:fontFamily="sans-serif-medium" />
-
-                <TextView
-                    android:id="@+id/tvCreatedDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="14sp"
-                    android:textColor="#424242"
-                    android:fontFamily="sans-serif"
-                    tools:text="Apr 15, 2025" />
-            </LinearLayout>
-
-            <!-- Unlocks -->
-            <LinearLayout
+            <View
                 android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <!-- Status -->
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Unlocks"
-                    android:textSize="12sp"
-                    android:textColor="#9E9E9E"
-                    android:fontFamily="sans-serif-medium" />
-
-                <TextView
-                    android:id="@+id/tvUnlockDate"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="14sp"
-                    android:textColor="#424242"
-                    android:fontFamily="sans-serif"
-                    tools:text="Jul 20, 2026" />
-            </LinearLayout>
+                android:textSize="12sp"
+                android:textColor="#9E9E9E"
+                android:fontFamily="sans-serif"
+                tools:text="Status: Archived" />
         </LinearLayout>
 
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginVertical="12dp"
-            android:background="#EEEEEE" />
-
-        <!-- Button Bar -->
+        <!-- Action Buttons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
             android:orientation="horizontal"
-            android:gravity="center"
-            android:weightSum="3">
+            android:gravity="end">
 
+            <!-- Share Button -->
             <ImageButton
-                android:id="@+id/btnEdit"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
+                android:id="@+id/btnShare"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_edit"
-                android:contentDescription="Edit"
-                app:tint="@color/MemoireRed" />
+                android:contentDescription="Share"
+                android:src="@drawable/ic_share"
+                android:tint="@color/black" />
 
+            <!-- Lock Button -->
             <ImageButton
-                android:id="@+id/btnPublish"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
+                android:id="@+id/btnLock"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_publish"
-                android:contentDescription="Publish"
-                app:tint="@color/MemoireRed" />
+                android:contentDescription="Lock"
+                android:src="@drawable/ic_locked"
+                android:tint="@color/black"
+                android:layout_marginStart="8dp" />
 
+            <!-- Delete Button -->
             <ImageButton
-                android:id="@+id/btnViewDetails"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
+                android:id="@+id/btnDelete"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/ic_view_details"
-                android:contentDescription="View Details"
-                app:tint="@color/MemoireRed" />
+                android:contentDescription="Delete"
+                android:src="@drawable/ic_delete"
+                android:tint="@color/black"
+                android:layout_marginStart="8dp" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

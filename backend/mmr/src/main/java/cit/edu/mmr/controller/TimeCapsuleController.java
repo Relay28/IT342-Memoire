@@ -110,6 +110,18 @@ public class TimeCapsuleController {
         }
     }
 
+    @GetMapping("/status/published/mine")
+    public ResponseEntity<List<TimeCapsuleDTO>> getMyPublishedTimeCapsules(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getMyTimeCapsulesByStatus("PUBLISHED", auth));
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     // Get all ARCHIVED time capsules
     @GetMapping("/status/archived")
     public ResponseEntity<List<TimeCapsuleDTO>> getArchivedTimeCapsules(Authentication auth) {

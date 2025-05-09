@@ -219,7 +219,7 @@ class ProfileActivity : AppCompatActivity() {
         showLoading(true)
         Log.d(TAG, "Fetching published capsules")
 
-        RetrofitClient.instance.getPublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
+        RetrofitClient.instance.getMyPublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
             override fun onResponse(
                 call: Call<List<TimeCapsuleDTO>>,
                 response: Response<List<TimeCapsuleDTO>>

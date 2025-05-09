@@ -55,14 +55,10 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         val title: TextView = view.findViewById(R.id.tvTitle)
         val description: TextView = view.findViewById(R.id.tvDescription)
         val createdDate: TextView = view.findViewById(R.id.tvCreatedDate)
-        val unlockDate: TextView = view.findViewById(R.id.tvUnlockDate)
         val status: TextView = view.findViewById(R.id.tvStatus)
-        val editButton: ImageButton = view.findViewById(R.id.btnEdit)
-        val publishButton: ImageButton = view.findViewById(R.id.btnPublish)
-        val deleteButton: ImageView = view.findViewById(R.id.ivDelete)
-        val statusIcon: TextView = view.findViewById(R.id.tvStatus)
-        val viewDetailsButton: ImageButton = view.findViewById(R.id.btnViewDetails)
-        val shareButton: ImageButton = view.findViewById(R.id.ivShare)
+        val shareButton: ImageButton = view.findViewById(R.id.btnShare)
+        val lockButton: ImageButton = view.findViewById(R.id.btnLock)
+        val deleteButton: ImageButton = view.findViewById(R.id.btnDelete)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CapsuleViewHolder {
@@ -80,35 +76,24 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         // Format dates using DateUtils
         holder.createdDate.text = "Created: ${capsule.createdAt?.let { DateUtils.formatDateForDisplay(it) } ?: "N/A"}"
 
-        if (capsule.openDate != null) {
-            holder.unlockDate.visibility = View.VISIBLE
-            holder.unlockDate.text = "Scheduled to open: ${DateUtils.formatDateForDisplay(capsule.openDate)} at ${DateUtils.formatTimeForDisplay(capsule.openDate)}"
-        } else {
-            holder.unlockDate.visibility = View.GONE
-        }
-
         // Set status and icon
         holder.status.text = capsule.status
         when (capsule.status?.uppercase(Locale.getDefault())) {
             "UNPUBLISHED" -> {
                 holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_unpublishedv2, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.isEnabled = true
             }
             "CLOSED" -> {
                 holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_locked, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.isEnabled = false
             }
             "PUBLISHED" -> {
                 holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_published, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.isEnabled = false
             }
             "ARCHIVED" -> {
                 holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_archived, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.isEnabled = false
             }
         }
 
@@ -117,34 +102,19 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
             openCapsuleDetail(capsule.id)
         }
 
-        holder.editButton.setOnClickListener {
-            if (capsule.locked) {
-                Toast.makeText(context, "Cannot edit locked capsules", Toast.LENGTH_SHORT).show()
-            } else {
-                openCapsuleDetail(capsule.id)
-            }
-        }
-
-        holder.publishButton.setOnClickListener {
-            when (capsule.status?.uppercase(Locale.getDefault())) {
-                "UNPUBLISHED" -> showLockDialog(capsule.id!!.toLong())
-                else -> Toast.makeText(context, "This capsule is already ${capsule.status?.lowercase()}", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        holder.viewDetailsButton.setOnClickListener {
-            openCapsuleDetail(capsule.id)
-        }
-
-        holder.deleteButton.setOnClickListener {
-            showDeleteConfirmationDialog(capsule, position)
-        }
-
         holder.shareButton.setOnClickListener {
             val context = holder.itemView.context
             GrantAccessDialog(context, capsule.id!!) {
                 // Optional: refresh the list if needed
             }.show()
+        }
+
+        holder.lockButton.setOnClickListener {
+            showLockDialog(capsule.id!!)
+        }
+
+        holder.deleteButton.setOnClickListener {
+            showDeleteConfirmationDialog(capsule, position)
         }
     }
 

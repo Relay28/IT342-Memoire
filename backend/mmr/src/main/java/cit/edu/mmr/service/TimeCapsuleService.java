@@ -340,6 +340,44 @@ public class TimeCapsuleService {
 
     // New method to get capsules by status with proper access control
 
+    public List<TimeCapsuleDTO> getMyTimeCapsulesByStatus(String status, Authentication authentication) {
+        UserEntity user = getAuthenticatedUser(authentication);
+
+        // Get all capsules with the specified status
+        List<TimeCapsuleEntity> statusCapsules = tcRepo.findByStatus(status);
+
+        // Filter based on access rights
+        List<TimeCapsuleEntity> accessibleCapsules = new ArrayList<>();
+
+        for (TimeCapsuleEntity capsule : statusCapsules) {
+            boolean isOwner = capsule.getCreatedBy().getId() == user.getId();
+
+            // For PUBLISHED status, include all capsules the user has access to
+            if ("PUBLISHED".equals(status)) {
+                if (isOwner) {
+                    accessibleCapsules.add(capsule);
+                    continue;
+                }
+
+                // Check if user has viewer or editor access
+
+            }
+            // For non-PUBLISHED statuses, only include if user is owner or has editor access
+            else {
+                if (isOwner) {
+                    accessibleCapsules.add(capsule);
+                    continue;
+                }
+
+            }
+        }
+
+        // Convert to DTOs
+        return accessibleCapsules.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
 
     public List<TimeCapsuleDTO> getTimeCapsulesByStatus(String status, Authentication authentication) {
         UserEntity user = getAuthenticatedUser(authentication);
