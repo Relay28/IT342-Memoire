@@ -38,7 +38,6 @@ public class ReportController {
 
         // Validate itemType handler exists (throws if invalid)
         entityFactory.getHandler(request.getItemType());
-
         ReportDTO report = reportService.createReport(
                 request.getReportedID(),
                 request.getItemType(),

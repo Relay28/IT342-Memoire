@@ -9,15 +9,19 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.R
 import com.example.memoire.api.RetrofitClient
+import com.example.memoire.models.ReportDTO
+import com.example.memoire.models.ReportRequest
+import com.example.memoire.utils.SessionManager
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
+
 class CommentsAdapter(
     private var comments: List<CommentEntity>,
     private val currentUserId: Long,
@@ -31,19 +35,14 @@ class CommentsAdapter(
         val username: TextView = itemView.findViewById(R.id.tvUsername)
         val commentText: TextView = itemView.findViewById(R.id.tvCommentText)
         val commentDate: TextView = itemView.findViewById(R.id.tvCommentDate)
-        val heartIcon: ImageView = itemView.findViewById(R.id.ivHeartIcon) // Add this
-        val reactionCount: TextView = itemView.findViewById(R.id.tvReactionCount) // Add this
-
+        val heartIcon: ImageView = itemView.findViewById(R.id.ivHeartIcon)
+        val reactionCount: TextView = itemView.findViewById(R.id.tvReactionCount)
 
         fun bindComment(comment: CommentEntity) {
             username.text = comment.username ?: "Unknown User"
             commentText.text = comment.text
 
-            val formattedDate = if (comment.createdAt != null) {
-                dateFormat.format(comment.createdAt)
-            } else {
-                "Unknown date"
-            }
+            val formattedDate = comment.createdAt?.let { dateFormat.format(it) } ?: "Unknown date"
             commentDate.text = formattedDate
 
             // Decode and render the user profile image
@@ -54,7 +53,7 @@ class CommentsAdapter(
                         val bitmap = android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size)
                         avatar.setImageBitmap(bitmap)
                     } catch (e: IllegalArgumentException) {
-                        avatar.setImageResource(R.drawable.ic_placeholder) // Fallback for invalid data
+                        avatar.setImageResource(R.drawable.ic_placeholder)
                     }
                 } else {
                     avatar.setImageResource(R.drawable.ic_placeholder)
@@ -63,29 +62,67 @@ class CommentsAdapter(
                 avatar.setImageResource(R.drawable.ic_placeholder)
             }
 
-            // Long press to delete own comments
-            if (comment.userId == currentUserId) {
-                itemView.setOnLongClickListener {
-                    showDeleteDialog(itemView.context, comment.id)
-                    true
-                }
-            } else {
-                itemView.setOnLongClickListener(null)
+            // Long press to show options
+            itemView.setOnLongClickListener {
+                showOptionsDialog(itemView.context, comment)
+                true
             }
         }
-        private fun showDeleteDialog(context: Context, commentId: Long) {
-            AlertDialog.Builder(context)
-                .setTitle("Delete Comment")
-                .setMessage("Are you sure you want to delete this comment?")
-                .setPositiveButton("Delete") { dialog, _ ->
-                    onDeleteComment(commentId)
-                    dialog.dismiss()
+
+        private fun showOptionsDialog(context: Context, comment: CommentEntity) {
+            val options = mutableListOf<String>()
+
+            // Add "Delete" option only if the comment belongs to the current user
+            if (comment.userId == currentUserId) {
+                options.add("Delete")
+            }
+
+            // Add "Report" option for all comments
+            options.add("Report")
+
+            val builder = AlertDialog.Builder(context)
+            builder.setTitle("Choose an action")
+            builder.setItems(options.toTypedArray()) { dialog, which ->
+                when (options[which]) {
+                    "Delete" -> {
+                        onDeleteComment(comment.id)
+                        dialog.dismiss()
+                    }
+                    "Report" -> {
+                        reportComment(context, comment)
+                        dialog.dismiss()
+                    }
                 }
-                .setNegativeButton("Cancel") { dialog, _ ->
-                    dialog.dismiss()
+            }
+            builder.create().show()
+        }
+
+        private fun reportComment(context: Context, comment: CommentEntity) {
+            val sessionManager = SessionManager(context)
+            val reporterId = sessionManager.getUserSession()["userId"] as? Long ?: return
+
+            // Create the ReportRequest with the required values
+            val reportRequest = ReportRequest(
+                reporterId = reporterId,
+                reportedID = comment.id,
+                itemType = "Comment",
+                status = "" // Leave status as an empty string
+            )
+
+            // Use the provided endpoint to send the report
+            RetrofitClient.instance.createReport(reportRequest).enqueue(object : Callback<ReportDTO> {
+                override fun onResponse(call: Call<ReportDTO>, response: Response<ReportDTO>) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Comment reported successfully", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(context, "Failed to report comment", Toast.LENGTH_SHORT).show()
+                    }
                 }
-                .create()
-                .show()
+
+                override fun onFailure(call: Call<ReportDTO>, t: Throwable) {
+                    Toast.makeText(context, "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
         }
     }
 
@@ -98,59 +135,11 @@ class CommentsAdapter(
     override fun onBindViewHolder(holder: CommentViewHolder, position: Int) {
         val comment = comments[position]
         holder.bindComment(comment)
-
-        // Fetch reaction data
         fetchReactionData(holder, comment)
-
-        // Handle heart icon click
-        holder.heartIcon.setOnClickListener {
-            RetrofitClient.commentInstance.isReacted(comment.id).enqueue(object : Callback<Boolean> {
-                override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
-                    if (response.isSuccessful) {
-                        val isReacted = response.body() ?: false
-                        if (isReacted) {
-                            // Delete reaction
-                            RetrofitClient.commentInstance.deleteReaction(comment.id).enqueue(object : Callback<Void> {
-                                override fun onResponse(call: Call<Void>, response: Response<Void>) {
-                                    if (response.isSuccessful) {
-                                        // Update UI to show unliked state
-                                        holder.heartIcon.setImageResource(R.drawable.ic_heart1)
-                                        fetchReactionData(holder, comment)
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<Void>, t: Throwable) {
-                                    // Handle failure
-                                }
-                            })
-                        } else {
-                            // Add reaction
-                            RetrofitClient.commentInstance.addReaction(comment.id, ReactionRequest("Like")).enqueue(object : Callback<Int> {
-                                override fun onResponse(call: Call<Int>, response: Response<Int>) {
-                                    if (response.isSuccessful) {
-                                        // Update UI to show liked state
-                                        holder.heartIcon.setImageResource(R.drawable.ic_heart2)
-                                        fetchReactionData(holder, comment)
-                                    }
-                                }
-
-                                override fun onFailure(call: Call<Int>, t: Throwable) {
-                                    // Handle failure
-                                }
-                            })
-                        }
-                    }
-                }
-
-                override fun onFailure(call: Call<Boolean>, t: Throwable) {
-                    // Handle failure
-                }
-            })
-        }
+        handleHeartIconClick(holder, comment)
     }
 
     private fun fetchReactionData(holder: CommentViewHolder, comment: CommentEntity) {
-        // Fetch reaction count
         RetrofitClient.commentInstance.getReactionCountByCommentId(comment.id).enqueue(object : Callback<Int> {
             override fun onResponse(call: Call<Int>, response: Response<Int>) {
                 if (response.isSuccessful) {
@@ -163,7 +152,6 @@ class CommentsAdapter(
             }
         })
 
-        // Fetch reaction status
         RetrofitClient.commentInstance.isReacted(comment.id).enqueue(object : Callback<Boolean> {
             override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
                 if (response.isSuccessful) {
@@ -177,6 +165,44 @@ class CommentsAdapter(
             }
         })
     }
+
+    private fun handleHeartIconClick(holder: CommentViewHolder, comment: CommentEntity) {
+        holder.heartIcon.setOnClickListener {
+            RetrofitClient.commentInstance.isReacted(comment.id).enqueue(object : Callback<Boolean> {
+                override fun onResponse(call: Call<Boolean>, response: Response<Boolean>) {
+                    if (response.isSuccessful) {
+                        val isReacted = response.body() ?: false
+                        if (isReacted) {
+                            RetrofitClient.commentInstance.deleteReaction(comment.id).enqueue(object : Callback<Void> {
+                                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                                    if (response.isSuccessful) {
+                                        holder.heartIcon.setImageResource(R.drawable.ic_heart1)
+                                        fetchReactionData(holder, comment)
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<Void>, t: Throwable) {}
+                            })
+                        } else {
+                            RetrofitClient.commentInstance.addReaction(comment.id, ReactionRequest("Like")).enqueue(object : Callback<Int> {
+                                override fun onResponse(call: Call<Int>, response: Response<Int>) {
+                                    if (response.isSuccessful) {
+                                        holder.heartIcon.setImageResource(R.drawable.ic_heart2)
+                                        fetchReactionData(holder, comment)
+                                    }
+                                }
+
+                                override fun onFailure(call: Call<Int>, t: Throwable) {}
+                            })
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<Boolean>, t: Throwable) {}
+            })
+        }
+    }
+
     override fun getItemCount(): Int = comments.size
 
     fun updateComments(newComments: List<CommentEntity>) {

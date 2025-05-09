@@ -10,6 +10,8 @@ import com.example.memoire.models.NotificationEntity
 import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.ProfileDTO2
 import com.example.memoire.models.RegisterRequest
+import com.example.memoire.models.ReportDTO
+import com.example.memoire.models.ReportRequest
 import com.example.memoire.models.SearchResponse
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.models.UpdateRoleRequest
@@ -234,6 +236,8 @@ interface ApiService {
     @POST("api/capsule-access")
     fun grantAccessToSpecificFriends(@Body request: GrantAccessRequest): Call<CapsuleAccessDTO>
 
+    @POST("api/reports")
+    fun createReport(@Body reportRequest: ReportRequest): Call<ReportDTO>
 }
 data class AuthenticationRequest(val username: String, val password: String)
 data class GoogleAuthRequest(val idToken: String)
