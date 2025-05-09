@@ -235,6 +235,7 @@ public class UserService {
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
+                user.getName(),
                 user.getProfilePictureData(),
                 user.getRole(),
                 user.getBiography(),

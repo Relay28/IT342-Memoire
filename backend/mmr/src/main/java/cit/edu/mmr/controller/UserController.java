@@ -63,6 +63,7 @@ public class UserController {
                     currentUser.getId(),
                     currentUser.getUsername(),
                     currentUser.getEmail(),
+                    currentUser.getName(),
                     currentUser.getProfilePictureData(),
                     currentUser.getRole(),
                     currentUser.getBiography(),
@@ -100,7 +101,7 @@ public class UserController {
     public List<UserDTO> getAllUsers(Authentication auth) {
         return userService.getAllUsers(auth).stream()
                 .map(user -> new UserDTO(
-                        user.getId(), user.getUsername(), user.getEmail(),
+                        user.getId(), user.getUsername(), user.getEmail(),user.getName(),
                         user.getProfilePictureData(), user.getRole(),
                         user.getBiography(), user.isActive(), user.isOauthUser(), user.getCreatedAt()))
                 .collect(Collectors.toList());
