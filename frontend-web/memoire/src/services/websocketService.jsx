@@ -95,10 +95,11 @@ class WebSocketService {
       conn.endpoint = endpoint;
       
       conn.client = new Client({
-        webSocketFactory: () => new SockJS(conn.fullEndpoint, null, {
-          transports: ["websocket", "xhr-streaming", "xhr-polling"],
-          withCredentials: true 
-        }),
+        webSocketFactory: () => new WebSocket(
+          API_BASE_URL.replace(/^http/, 'ws') + endpoint
+        ),
+  
+      
         reconnectDelay: 5000,
         heartbeatIncoming: 10000,
         heartbeatOutgoing: 10000,
