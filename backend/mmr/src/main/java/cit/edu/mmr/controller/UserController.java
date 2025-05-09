@@ -56,7 +56,8 @@ public class UserController {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
             }
-            UserEntity currentUser = getAuthenticatedUser(authentication);
+            UserEntity currentUser1 = getAuthenticatedUser(authentication);
+            UserEntity currentUser = userService.findById(currentUser1.getId());
 
             // Convert to DTO to avoid exposing sensitive information
             UserDTO userDTO = new UserDTO(
