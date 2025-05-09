@@ -27,8 +27,7 @@
             tools:text="Capsule Title"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toStartOf="@id/tvStatus"
-            />
+            app:layout_constraintEnd_toStartOf="@id/tvStatus" />
 
         <!-- Status -->
         <TextView
@@ -88,8 +87,7 @@
                 android:layout_height="40dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Share"
-                android:src="@drawable/ic_share"
-                />
+                android:src="@drawable/ic_share" />
 
             <!-- Lock Button -->
             <ImageButton
@@ -110,6 +108,17 @@
                 android:contentDescription="Delete"
                 android:src="@drawable/ic_delete"
                 android:layout_marginStart="8dp" />
+
+            <!-- Unarchive Button -->
+            <ImageButton
+                android:id="@+id/btnUnarchive"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Unarchive"
+                android:src="@drawable/ic_unarchive"
+                android:layout_marginStart="8dp"
+                android:visibility="gone" />
         </LinearLayout>
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -445,11 +445,14 @@ public class TimeCapsuleService {
         }
 
         // Only allow archiving of published capsules
-        if (!"PUBLISHED".equals(capsule.getStatus())) {
-            throw new IllegalStateException("Only published capsules can be archived");
+//        if ("CLOSED".equals(capsule.getStatus())||"UNPUBLISHED".equals(capsule.getStatus())) {
+//            throw new IllegalStateException("Only published capsules can be archived");
+//        }
+        if(capsule.getStatus()!="ARCHIVED")
+                capsule.setStatus("ARCHIVED");
+        else{
+             capsule.setStatus("PUBLISHED");
         }
-
-        capsule.setStatus("ARCHIVED");
         tcRepo.save(capsule);
     }
     // Add this to your TimeCapsuleService.java

@@ -85,8 +85,9 @@ class CapsuleListFragment : Fragment() {
                 hideLoading()
                 if (response.isSuccessful) {
                     val allCapsules = response.body() ?: emptyList()
+                    // Filter capsules to only include "Unpublished" and "Archived"
                     val filteredCapsules = allCapsules.filter {
-                        it.status?.uppercase(Locale.getDefault()) in listOf("UNPUBLISHED", "ARCHIVED")
+                        it.status?.uppercase(Locale.getDefault()) in listOf("UNPUBLISHED")
                     }
                     updateUI(filteredCapsules)
                 } else {

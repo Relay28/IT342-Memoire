@@ -14,6 +14,7 @@ import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.GrantAccessDialog
@@ -25,6 +26,7 @@ import com.example.memoire.models.LockRequest
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.models.UserEntity
 import com.example.memoire.utils.DateUtils
+import com.example.memoire.utils.SessionManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.CoroutineScope
@@ -92,8 +94,14 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
             }
             "ARCHIVED" -> {
-                holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_archived, 0, 0, 0)
+                holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_locked, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
+
+                // Add long-press listener for archived capsules
+                holder.cardView.setOnLongClickListener {
+                    showUnarchivePopupMenu(holder.cardView, capsule, position)
+                    true
+                }
             }
         }
 
@@ -116,6 +124,46 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         holder.deleteButton.setOnClickListener {
             showDeleteConfirmationDialog(capsule, position)
         }
+    }
+
+    private fun showUnarchivePopupMenu(view: View, capsule: TimeCapsuleDTO, position: Int) {
+        val popupMenu = PopupMenu(context, view)
+        popupMenu.menu.add("Unarchive Capsule")
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            if (menuItem.title == "Unarchive Capsule") {
+                toggleArchiveStatus(capsule, position)
+                true
+            } else {
+                false
+            }
+        }
+        popupMenu.show()
+    }
+
+    private fun toggleArchiveStatus(capsule: TimeCapsuleDTO, position: Int) {
+        val sessionManager = SessionManager(context)
+        val currentUserId = sessionManager.getUserSession()["userId"] as? Long
+
+        if (capsule.createdById != currentUserId) {
+            Toast.makeText(context, "You are not authorized to unarchive this capsule", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        RetrofitClient.instance.archiveTimeCapsule(capsule.id!!).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (response.isSuccessful) {
+                    // Refresh the list after successful status update
+                    fetchUpdatedCapsules2()
+                    Toast.makeText(context, "Capsule status updated successfully", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Failed to update capsule status", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                Toast.makeText(context, "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     override fun getItemCount() = capsules.size
@@ -453,6 +501,22 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
     private fun fetchUpdatedCapsules() {
         // Call the API to get the updated list of capsules
         RetrofitClient.instance.getUnpublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
+            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+                if (response.isSuccessful) {
+                    val newCapsules = response.body() as? MutableList<TimeCapsuleDTO> ?: mutableListOf()
+                    updateData(newCapsules)
+                }
+            }
+
+            override fun onFailure(call: Call<List<TimeCapsuleDTO>>, t: Throwable) {
+                Toast.makeText(context, "Failed to refresh capsules: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun fetchUpdatedCapsules2() {
+        // Call the API to get the updated list of capsules
+        RetrofitClient.instance.getArchivedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
             override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
                 if (response.isSuccessful) {
                     val newCapsules = response.body() as? MutableList<TimeCapsuleDTO> ?: mutableListOf()

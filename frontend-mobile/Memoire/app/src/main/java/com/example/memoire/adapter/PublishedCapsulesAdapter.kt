@@ -20,6 +20,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.bumptech.glide.Glide
 import com.example.memoire.ProfileActivity
 import com.example.memoire.R
+import com.example.memoire.SinglePublishedCapsuleActivity
 import com.example.memoire.activities.UserProfileActivity
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.CapsuleContentEntity
@@ -247,18 +248,42 @@ class PublishedCapsulesAdapter(
     }
 
     private fun showOptionsMenu(context: Context, capsule: TimeCapsuleDTO) {
-        val options = arrayOf("Report")
+        val options = if (isOwner(context,capsule)) arrayOf("Report", "Archive") else arrayOf("Report")
         val builder = AlertDialog.Builder(context)
         builder.setTitle("Choose an action")
         builder.setItems(options) { dialog, which ->
             when (options[which]) {
-                "Report" -> {
-                    reportCapsule(context, capsule)
-                    dialog.dismiss()
-                }
+                "Report" -> reportCapsule(context, capsule)
+                "Archive" -> archiveCapsule(context, capsule)
             }
+            dialog.dismiss()
         }
         builder.create().show()
+    }
+
+    private fun isOwner(context: Context,capsule: TimeCapsuleDTO): Boolean {
+        val sessionManager = SessionManager(context)
+        val userId = sessionManager.getUserSession()["userId"] as? Long
+        return capsule.createdById == userId
+    }
+
+    private fun archiveCapsule(context: Context, capsule: TimeCapsuleDTO) {
+        capsule.id?.let { id ->
+            RetrofitClient.instance.archiveTimeCapsule(id).enqueue(object : Callback<Void> {
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Capsule archived successfully", Toast.LENGTH_SHORT).show()
+                        (context as? SinglePublishedCapsuleActivity)?.finish()
+                    } else {
+                        Toast.makeText(context, "Failed to archive capsule", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<Void>, t: Throwable) {
+                    Toast.makeText(context, "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
     }
 
     private fun reportCapsule(context: Context, capsule: TimeCapsuleDTO) {

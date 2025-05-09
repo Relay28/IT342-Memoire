@@ -8,7 +8,10 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.Toast
+import androidx.appcompat.widget.PopupMenu
 import com.bumptech.glide.Glide
+import com.example.memoire.ProfileActivity
 import com.example.memoire.R
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.CapsuleContentEntity
@@ -17,6 +20,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
 class CapsuleGridAdapter(
     private val context: Context,
@@ -65,7 +71,46 @@ class CapsuleGridAdapter(
             Log.d(TAG, "Capsule clicked: ID = ${capsule.id}, Title = ${capsule.title}")
             onCapsuleClick(capsule)
         }
+
+        view.setOnLongClickListener {
+            showArchivePopup(view, capsule)
+            true
+        }
         return view
+    }
+
+
+    private fun showArchivePopup(view: View, capsule: TimeCapsuleDTO) {
+        val popup = PopupMenu(context, view)
+        popup.menu.add("Archive")
+        popup.setOnMenuItemClickListener { item ->
+            if (item.title == "Archive") {
+                archiveCapsule(capsule)
+            }
+            true
+        }
+        popup.show()
+    }
+
+    private fun archiveCapsule(capsule: TimeCapsuleDTO) {
+        capsule.id?.let { id ->
+            RetrofitClient.instance.archiveTimeCapsule(id).enqueue(object : Callback<Void> {
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Capsule archived successfully", Toast.LENGTH_SHORT).show()
+                        (context as? ProfileActivity)?.fetchPublishedCapsules { updatedCapsules ->
+                            updateData(updatedCapsules)
+                        }
+                    } else {
+                        Toast.makeText(context, "Failed to archive capsule", Toast.LENGTH_SHORT).show()
+                    }
+                }
+
+                override fun onFailure(call: Call<Void>, t: Throwable) {
+                    Toast.makeText(context, "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+                }
+            })
+        }
     }
 
     private fun renderContent(content: CapsuleContentEntity, imgCapsule: ImageView, progressBar: ProgressBar) {

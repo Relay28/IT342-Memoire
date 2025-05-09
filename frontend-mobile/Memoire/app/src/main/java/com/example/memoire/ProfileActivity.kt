@@ -251,37 +251,20 @@ class ProfileActivity : AppCompatActivity() {
     }
 
 
-    private fun fetchPublishedCapsules(onComplete: (List<TimeCapsuleDTO>) -> Unit) {
+    fun fetchPublishedCapsules(onComplete: (List<TimeCapsuleDTO>) -> Unit) {
         showLoading(true)
-        Log.d(TAG, "Fetching published capsules")
-
         RetrofitClient.instance.getMyPublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
-            override fun onResponse(
-                call: Call<List<TimeCapsuleDTO>>,
-                response: Response<List<TimeCapsuleDTO>>
-            ) {
-                Log.d(TAG, "Response received: ${response.isSuccessful}")
+            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+                showLoading(false)
                 if (response.isSuccessful) {
-                    val capsules = response.body() ?: emptyList()
-                    Log.d(TAG, "Capsules received: ${capsules.size}")
-                    capsules.forEach { Log.d(TAG, "Capsule: $it") }
-                    fetchContentsForCapsules(capsules, onComplete)
+                    onComplete(response.body() ?: emptyList())
                 } else {
-                    Log.e(TAG, "Failed to fetch capsules: ${response.code()} - ${response.message()}")
-                    showLoading(false)
-                    handleApiError(response.code(), "Failed to fetch capsules")
                     onComplete(emptyList())
                 }
             }
 
             override fun onFailure(call: Call<List<TimeCapsuleDTO>>, t: Throwable) {
-                Log.e(TAG, "Failed to fetch capsules", t)
                 showLoading(false)
-                Toast.makeText(
-                    this@ProfileActivity,
-                    "Failed to load capsules: ${t.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
                 onComplete(emptyList())
             }
         })
