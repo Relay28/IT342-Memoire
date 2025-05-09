@@ -1,14 +1,17 @@
-// components/LockDateModal.jsx
 import React, { useState } from 'react';
 import { FaLock, FaCalendarAlt, FaClock } from 'react-icons/fa';
 import { useTimeCapsule } from '../../hooks/useTimeCapsule';
+import capsuleAccessService from '../../services/capsuleAccessService';
+import { useAuth } from '../AuthProvider';
 
 const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
   const [openDate, setOpenDate] = useState('');
   const [openTime, setOpenTime] = useState('12:00');
+  const [accessLevel, setAccessLevel] = useState('only-me');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const { lockTimeCapsule } = useTimeCapsule();
+  const { authToken } = useAuth();
 
   // Calculate minimum date (tomorrow)
   const tomorrow = new Date();
@@ -17,7 +20,7 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!openDate) {
       setError('Please select an unlock date');
       return;
@@ -25,16 +28,32 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
 
     setIsSubmitting(true);
     setError(null);
-    
+
     try {
       // Combine date and time into a single ISO string
       const [hours, minutes] = openTime.split(':');
       const dateObj = new Date(openDate);
       dateObj.setHours(parseInt(hours, 10));
       dateObj.setMinutes(parseInt(minutes, 10));
-      
+
+      // First lock the time capsule
       await lockTimeCapsule(timeCapsuleId, dateObj.toISOString());
-      
+
+      // Then set the access level
+      try {
+        if (accessLevel === 'public') {
+          await capsuleAccessService.grantPublicAccess(timeCapsuleId, authToken);
+        } else if (accessLevel === 'friends-only') {
+          await capsuleAccessService.grantAccessToAllFriends(timeCapsuleId, 'VIEWER', authToken);
+        } else if (accessLevel === 'only-me') {
+          await capsuleAccessService.restrictAccessToOwner(timeCapsuleId, authToken);
+        }
+      } catch (accessError) {
+        console.error('Error setting access level:', accessError);
+        setError('Time capsule was locked but there was an error setting the access level');
+        return;
+      }
+
       if (onSuccess) {
         onSuccess();
       }
@@ -56,14 +75,14 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
           <FaLock className="mr-2" />
           <h2 className="text-xl font-semibold">Lock Time Capsule</h2>
         </div>
-        
+
         {/* Body */}
         <div className="p-6">
           <p className="text-gray-600 mb-4">
             Once locked, this time capsule will be sealed until the specified date and time. 
             You won't be able to modify its contents until it's automatically unlocked.
           </p>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
               <label htmlFor="openDate" className="block text-sm font-medium text-gray-700 mb-1">
@@ -106,13 +125,29 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
                 Select a future date and time when the time capsule should be unlocked.
               </p>
             </div>
-            
+
+            <div className="mb-4">
+              <label htmlFor="accessLevel" className="block text-sm font-medium text-gray-700 mb-1">
+                Access Level
+              </label>
+              <select
+                id="accessLevel"
+                className="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
+                value={accessLevel}
+                onChange={(e) => setAccessLevel(e.target.value)}
+              >
+                <option value="only-me">Only Me</option>
+                <option value="friends-only">Friends Only</option>
+                <option value="public">Public</option>
+              </select>
+            </div>
+
             {error && (
               <div className="mb-4 p-2 bg-red-50 border border-red-200 rounded-md">
                 <p className="text-sm text-red-600">{error}</p>
               </div>
             )}
-            
+
             <div className="mt-6 flex justify-end space-x-3">
               <button
                 type="button"
