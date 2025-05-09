@@ -15,8 +15,7 @@ import com.example.memoire.R
 import com.example.memoire.adapter.TimeCapsuleAdapter
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.TimeCapsuleDTO
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
+import com.google.android.material.tabs.TabLayout
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -27,7 +26,7 @@ class CapsuleListFragment : Fragment() {
     private lateinit var adapter: TimeCapsuleAdapter
     private lateinit var progressBar: ProgressBar
     private lateinit var emptyStateView: TextView
-    private lateinit var chipGroup: ChipGroup
+    private lateinit var tabLayout: TabLayout
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -44,31 +43,38 @@ class CapsuleListFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recyclerViewCapsules)
         progressBar = view.findViewById(R.id.progressBar)
         emptyStateView = view.findViewById(R.id.emptyStateText)
-        chipGroup = view.findViewById(R.id.chipGroup)
+        tabLayout = view.findViewById(R.id.tabLayout)
 
         // Setup RecyclerView
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         adapter = TimeCapsuleAdapter(requireContext(), mutableListOf())
         recyclerView.adapter = adapter
 
-        // Setup filter chips
-        setupFilterChips()
+        // Setup tabs
+        setupTabs()
 
-        // Load user's time capsules by default
-        loadUserTimeCapsules()
+        // Load "All" capsules by default
+        loadAllCapsules()
     }
 
-    private fun setupFilterChips() {
-        val chipAll = requireView().findViewById<Chip>(R.id.chipAll)
-        val chipPublished = requireView().findViewById<Chip>(R.id.chipPublished)
-        val chipUnpublished = requireView().findViewById<Chip>(R.id.chipUnpublished)
+    private fun setupTabs() {
+        tabLayout.addTab(tabLayout.newTab().setText("Unpublished"))
+        tabLayout.addTab(tabLayout.newTab().setText("Archived"))
 
-        chipAll.setOnClickListener { loadUserTimeCapsules() }
-        chipPublished.setOnClickListener { loadCapsulesByStatus("PUBLISHED") }
-        chipUnpublished.setOnClickListener { loadCapsulesByStatus("UNPUBLISHED") }
+        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.text) {
+                    "Unpublished" -> loadCapsulesByStatus("UNPUBLISHED")
+                    "Archived" -> loadCapsulesByStatus("ARCHIVED")
+                }
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab?) {}
+            override fun onTabReselected(tab: TabLayout.Tab?) {}
+        })
     }
 
-    private fun loadUserTimeCapsules() {
+    private fun loadAllCapsules() {
         showLoading()
         RetrofitClient.instance.getUserTimeCapsules().enqueue(object :
             Callback<List<TimeCapsuleDTO>> {
@@ -79,9 +85,8 @@ class CapsuleListFragment : Fragment() {
                 hideLoading()
                 if (response.isSuccessful) {
                     val allCapsules = response.body() ?: emptyList()
-                    // Include archived capsules
                     val filteredCapsules = allCapsules.filter {
-                        it.status?.uppercase(Locale.getDefault()) != "CLOSED"
+                        it.status?.uppercase(Locale.getDefault()) in listOf("UNPUBLISHED", "ARCHIVED")
                     }
                     updateUI(filteredCapsules)
                 } else {
@@ -99,7 +104,6 @@ class CapsuleListFragment : Fragment() {
     private fun loadCapsulesByStatus(status: String) {
         showLoading()
         val apiCall = when (status) {
-            "PUBLISHED" -> RetrofitClient.instance.getPublishedTimeCapsules()
             "UNPUBLISHED" -> RetrofitClient.instance.getUnpublishedTimeCapsules()
             "ARCHIVED" -> RetrofitClient.instance.getArchivedTimeCapsules()
             else -> RetrofitClient.instance.getUserTimeCapsules()

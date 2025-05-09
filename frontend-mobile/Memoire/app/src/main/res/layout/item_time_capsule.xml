@@ -10,27 +10,42 @@
     app:strokeWidth="1dp"
     app:strokeColor="#E0E0E0">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:background="@android:color/white"
         android:padding="16dp">
 
         <!-- Title -->
         <TextView
             android:id="@+id/tvTitle"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:textSize="18sp"
             android:textColor="#212121"
             android:fontFamily="sans-serif-medium"
-            tools:text="Capsule Title" />
+            tools:text="Capsule Title"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/tvStatus"
+            />
+
+        <!-- Status -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="12sp"
+            android:textColor="#9E9E9E"
+            android:fontFamily="sans-serif"
+            tools:text="Status: Archived"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- Description -->
         <TextView
             android:id="@+id/tvDescription"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:ellipsize="end"
@@ -38,48 +53,33 @@
             android:textSize="14sp"
             android:textColor="#616161"
             android:fontFamily="sans-serif"
-            tools:text="Capsule description goes here." />
+            tools:text="Capsule description goes here."
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvTitle"
+            app:layout_constraintEnd_toEndOf="parent" />
 
         <!-- Date Row -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:id="@+id/tvCreatedDate"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:orientation="horizontal">
-
-            <!-- Created Date -->
-            <TextView
-                android:id="@+id/tvCreatedDate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textColor="#9E9E9E"
-                android:fontFamily="sans-serif"
-                tools:text="Created: Apr 15, 2025" />
-
-            <View
-                android:layout_width="0dp"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-
-            <!-- Status -->
-            <TextView
-                android:id="@+id/tvStatus"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textColor="#9E9E9E"
-                android:fontFamily="sans-serif"
-                tools:text="Status: Archived" />
-        </LinearLayout>
+            android:textSize="12sp"
+            android:textColor="#9E9E9E"
+            android:fontFamily="sans-serif"
+            tools:text="Created: Apr 15, 2025"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvDescription" />
 
         <!-- Action Buttons -->
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:orientation="horizontal"
-            android:gravity="end">
+            android:gravity="end"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvCreatedDate">
 
             <!-- Share Button -->
             <ImageButton
@@ -89,7 +89,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Share"
                 android:src="@drawable/ic_share"
-                android:tint="@color/black" />
+                />
 
             <!-- Lock Button -->
             <ImageButton
@@ -99,7 +99,6 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Lock"
                 android:src="@drawable/ic_locked"
-                android:tint="@color/black"
                 android:layout_marginStart="8dp" />
 
             <!-- Delete Button -->
@@ -110,8 +109,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Delete"
                 android:src="@drawable/ic_delete"
-                android:tint="@color/black"
                 android:layout_marginStart="8dp" />
         </LinearLayout>
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

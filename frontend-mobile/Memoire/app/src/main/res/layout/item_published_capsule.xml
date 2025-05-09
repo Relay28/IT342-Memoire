@@ -39,8 +39,8 @@
         <!-- Three Dots Icon -->
         <ImageView
             android:id="@+id/ivThreeDots"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="42dp"
+            android:layout_height="35dp"
             android:src="@drawable/three_dots"
             android:contentDescription="Options"
             android:padding="8dp" />

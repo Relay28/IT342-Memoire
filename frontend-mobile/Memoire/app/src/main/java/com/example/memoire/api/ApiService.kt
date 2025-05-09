@@ -116,6 +116,11 @@ interface ApiService {
         @Body timeCapsuleDTO: TimeCapsuleDTO
     ): Call<TimeCapsuleDTO>
 
+    @PATCH("api/timecapsules/{id}/archive")
+    fun archiveTimeCapsule(
+        @Path("id") id: Long
+    ): Call<Void>
+
     @DELETE("api/timecapsules/{id}")
     fun deleteTimeCapsule(@Path("id") id: Long): Call<Void>
 
@@ -128,6 +133,8 @@ interface ApiService {
     @PATCH("api/timecapsules/{id}/unlock")
     fun unlockTimeCapsule(@Path("id") id: Long): Call<Void>
 
+    @GET("/api/timecapsules/status/published/user/{userId}/count")
+    suspend fun getPublicPublishedTimeCapsuleCountForUser(@Path("userId") userId: Long): Response<Long>
 
     @GET("api/timecapsules/status/closed")
     fun getClosedTimeCapsules(): Call<List<TimeCapsuleDTO>>

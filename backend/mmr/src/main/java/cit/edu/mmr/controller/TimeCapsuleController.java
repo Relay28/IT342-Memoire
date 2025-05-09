@@ -21,6 +21,7 @@ import java.util.List;
 @RequestMapping("/api/timecapsules")
 public class TimeCapsuleController {
 
+
     @Autowired
     private TimeCapsuleService timeCapsuleService;
 
@@ -117,6 +118,16 @@ public class TimeCapsuleController {
         }
         try {
             return ResponseEntity.ok(timeCapsuleService.getMyTimeCapsulesByStatus("PUBLISHED", auth));
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/status/published/user/{userId}/count")
+    public ResponseEntity<Long> getPublicPublishedTimeCapsuleCountForUser(@PathVariable Long userId) {
+        try {
+            long count = timeCapsuleService.getPublicPublishedTimeCapsuleCountForUser(userId);
+            return ResponseEntity.ok(count);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }

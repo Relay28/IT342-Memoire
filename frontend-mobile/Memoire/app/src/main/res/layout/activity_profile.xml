@@ -109,6 +109,7 @@
                 app:layout_constraintTop_toTopOf="@+id/iv_profile" />
 
             <!-- Stats section - using horizontal chain instead of guidelines -->
+            <!-- Remove the "Shared capsules" section -->
             <LinearLayout
                 android:id="@+id/stats_container"
                 android:layout_width="0dp"
@@ -116,7 +117,7 @@
                 android:layout_marginStart="12dp"
                 android:layout_marginTop="8dp"
                 android:orientation="horizontal"
-                android:weightSum="3"
+                android:weightSum="2"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/iv_profile"
                 app:layout_constraintTop_toBottomOf="@+id/tv_blankname">
@@ -133,13 +134,12 @@
                         android:id="@+id/tv_owned_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="35"
+                        android:text="0"
                         android:textColor="@color/black"
                         android:textSize="15sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/tv_owned_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
@@ -161,46 +161,17 @@
                         android:id="@+id/tv_friends_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="55"
+                        android:text="0"
                         android:textColor="@color/black"
                         android:textSize="15sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/tv_friends_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:ellipsize="end"
                         android:maxLines="1"
                         android:text="friends"
-                        android:textColor="@color/gray"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <!-- Shared capsules -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:id="@+id/tv_shared_count"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="34"
-                        android:textColor="@color/black"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tv_shared_label"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:ellipsize="end"
-                        android:maxLines="1"
-                        android:text="shared"
                         android:textColor="@color/gray"
                         android:textSize="12sp" />
                 </LinearLayout>

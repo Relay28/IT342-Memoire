@@ -338,6 +338,10 @@ public class TimeCapsuleService {
                 .collect(Collectors.toList());
     }
 
+    public long getPublicPublishedTimeCapsuleCountForUser(Long userId) {
+        return tcRepo.countByCreatedByIdAndStatusAndIsPublicTrue(userId, "PUBLISHED");
+    }
+
     // New method to get capsules by status with proper access control
 
     public List<TimeCapsuleDTO> getMyTimeCapsulesByStatus(String status, Authentication authentication) {
