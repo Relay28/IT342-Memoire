@@ -98,6 +98,9 @@ interface ApiService {
     @GET("api/timecapsules/public/published")
     fun getPublicPublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
 
+    @GET("api/timecapsules/public/published/{userId}")
+    fun getUserPublicPublishedTimeCapsules(@Path("userId") id: Long): Call<List<TimeCapsuleDTO>>
+
     @GET("api/timecapsules/public/{id}")
     fun getPublicCapsuleById(@Path("id") id: Long): Call<TimeCapsuleDTO>
 

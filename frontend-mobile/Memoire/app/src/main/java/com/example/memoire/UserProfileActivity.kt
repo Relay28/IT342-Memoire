@@ -184,7 +184,7 @@ class UserProfileActivity : AppCompatActivity() {
 
     private fun loadUserPublicCapsules() {
         showLoading(true)
-        RetrofitClient.instance.getPublicPublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
+        RetrofitClient.instance.getUserPublicPublishedTimeCapsules(userId).enqueue(object : Callback<List<TimeCapsuleDTO>> {
             override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
                 if (response.isSuccessful) {
                     val capsules = response.body()?.filter { it.createdById == userId } ?: emptyList()

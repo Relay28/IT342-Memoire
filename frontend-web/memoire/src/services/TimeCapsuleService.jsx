@@ -184,6 +184,68 @@ async publishTimeCapsule(id, authToken) {
     }
   }
 
+  // Add this method after the other API methods and before handleError
+
+  /**
+   * Gets all public published time capsules
+   * @returns {Promise} - Promise containing public published time capsules
+   */
+  async getPublicPublishedTimeCapsules() {
+    try {
+      const response = await axios.get(`${API_URL}/public/published`);
+      return response.data;
+    } catch (error) {
+      this.handleError('Error fetching public published time capsules', error);
+      throw error;
+    }
+  }
+
+    /**
+   * Gets all public published time capsules
+   * @returns {Promise} - Promise containing public published time capsules
+   */
+    async getUserPublicPublishedTimeCapsules(userId) {
+      try {
+        const response = await axios.get(`${API_URL}/public/published/${userId}`);
+        return response.data;
+      } catch (error) {
+        this.handleError('Error fetching public published time capsules', error);
+        throw error;
+      }
+    }
+  
+  // ...existing code...
+
+  /**
+   * Gets the count of public published time capsules for a specific user
+   * @param {number} userId - The ID of the user
+   * @returns {Promise<number>} - Promise containing the count of public published time capsules
+   */
+  async getPublicPublishedTimeCapsuleCountForUser(userId) {
+    try {
+      const response = await axios.get(`${API_URL}/status/published/user/${userId}/count`);
+      return response.data;
+    } catch (error) {
+      this.handleError(`Error fetching public published time capsule count for user ${userId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+ * Gets the count of friends for a specific user
+ * @param {number} userId - The ID of the user
+ * @returns {Promise<number>} - Promise containing the count of friends
+ */
+async getUserFriendsCount(userId) {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/friendships/friends/count/${userId}`);
+    return response.data;
+  } catch (error) {
+    this.handleError(`Error fetching friends count for user ${userId}`, error);
+    throw error;
+  }
+}
+
   /**
    * Updates an existing time capsule
    * @param {number} id - The ID of the time capsule to update

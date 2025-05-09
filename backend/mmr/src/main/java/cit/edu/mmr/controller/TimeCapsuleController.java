@@ -257,6 +257,16 @@ public class TimeCapsuleController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/public/published/{userId}")
+    public ResponseEntity<List<TimeCapsuleDTO>> getUserPublicPublishedTimeCapsules(@PathVariable Long userId) {
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getUserPublicPublishedTimeCapsules(userId));
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/public/{id}")
     public ResponseEntity<TimeCapsuleDTO> getPublicCapsuleById(@PathVariable Long id) {
         try {
