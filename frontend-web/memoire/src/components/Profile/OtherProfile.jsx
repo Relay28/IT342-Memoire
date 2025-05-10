@@ -19,6 +19,10 @@ const ProfilePageOther = () => {
   const [publicCapsules, setPublicCapsules] = useState([]);
   const [friendsCount, setFriendsCount] = useState(0); // State for friends count
   const [publishedCapsulesCount, setPublishedCapsulesCount] = useState(0); // State for published capsules count
+  const [friendshipStatus, setFriendshipStatus] = useState(null);
+  const [isLoadingFriendship, setIsLoadingFriendship] = useState(true);
+  const [hasPendingRequest, setHasPendingRequest] = useState(false);
+  const [isReceiver, setIsReceiver] = useState(false);
 
   const fetchProfile = async () => {
     try {
@@ -79,13 +83,221 @@ const ProfilePageOther = () => {
     }
   };
 
+  const checkFriendshipStatus = async () => {
+    if (!user || !profile) return;
+
+    try {
+      setIsLoadingFriendship(true);
+      // Check if friends
+      const friendsResponse = await apiService.get(`/api/friendships/areFriends/${profile.userId}`);
+      if (friendsResponse.data) {
+        setFriendshipStatus('friends');
+        return;
+      }
+
+      // Check for pending request
+      const pendingResponse = await apiService.get(`/api/friendships/hasPendingRequest/${profile.userId}`);
+      if (pendingResponse.data) {
+        // Check if current user is the receiver of the request
+        const isReceiverResponse = await apiService.get(`/api/friendships/isReceiver/${profile.userId}`);
+        setIsReceiver(isReceiverResponse.data);
+        setFriendshipStatus('request_pending');
+        setHasPendingRequest(true);
+      } else {
+        setFriendshipStatus('not_friends');
+        setHasPendingRequest(false);
+        setIsReceiver(false);
+      }
+    } catch (error) {
+      console.error('Error checking friendship status:', error);
+      setFriendshipStatus('error');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
   useEffect(() => {
     if (!location.state?.profile) {
       fetchProfile();
     }
     fetchCounts(); // Fetch counts when the component loads
     fetchPublicCapsules();
+    checkFriendshipStatus();
   }, [userId, location.state]);
+
+  const handleSendFriendRequest = async () => {
+    try {
+      setIsLoadingFriendship(true);
+      if (profile.userId !== 0) {
+        await apiService.post('/api/friendships/create', {
+          friendId: profile.userId
+        });
+      }
+      setFriendshipStatus('request_sent');
+      setHasPendingRequest(true);
+      setIsReceiver(false);
+    } catch (error) {
+      console.error('Error sending friend request:', error);
+      setError('Failed to send friend request');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
+  const handleCancelFriendRequest = async () => {
+    try {
+      setIsLoadingFriendship(true);
+      await apiService.delete(`/api/friendships/cancel/${profile.userId}`);
+      setFriendshipStatus('not_friends');
+      setHasPendingRequest(false);
+    } catch (error) {
+      console.error('Error canceling friend request:', error);
+      setError(error.response?.data?.message || 'Failed to cancel friend request');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
+  const handleAcceptFriendRequest = async () => {
+    try {
+      setIsLoadingFriendship(true);
+      const response = await apiService.get(`/api/friendships/findByUsers/${profile.userId}`);
+      if (response.data) {
+        await apiService.put(`/api/friendships/${response.data.id}/accept`);
+        setFriendshipStatus('friends');
+        setHasPendingRequest(false);
+      }
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+      setError(error.response?.data?.message || 'Failed to accept friend request');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
+  const handleDeclineFriendRequest = async () => {
+    try {
+      setIsLoadingFriendship(true);
+      const response = await apiService.get(`/api/friendships/findByUsers/${profile.userId}`);
+      if (response.data) {
+        await apiService.delete(`/api/friendships/${response.data.id}`);
+        setFriendshipStatus('not_friends');
+        setHasPendingRequest(false);
+      }
+    } catch (error) {
+      console.error('Error declining friend request:', error);
+      setError('Failed to decline friend request');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
+  const handleUnfriend = async () => {
+    try {
+      setIsLoadingFriendship(true);
+      const response = await apiService.get(`/api/friendships/findByUsers/${profile.userId}`);
+      if (response.data) {
+        await apiService.delete(`/api/friendships/${response.data.id}`);
+        setFriendshipStatus('not_friends');
+        setHasPendingRequest(false);
+      }
+    } catch (error) {
+      console.error('Error unfriending:', error);
+      setError(error.response?.data?.message || 'Failed to unfriend');
+    } finally {
+      setIsLoadingFriendship(false);
+    }
+  };
+
+  const renderFriendshipButton = () => {
+    if (isLoadingFriendship || !friendshipStatus) {
+      return (
+        <button className={`px-4 py-2 ${isDark ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-600'} rounded-md`}>
+          Loading...
+        </button>
+      );
+    }
+
+    switch (friendshipStatus) {
+      case 'friends':
+        return (
+          <div className="flex items-center space-x-2">
+            <span className={isDark ? 'text-green-400' : 'text-green-600'}>✓ Friends</span>
+            <button 
+              onClick={handleUnfriend}
+              className={`px-4 py-2 ${isDark ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'} rounded-md`}
+            >
+              Unfriend
+            </button>
+          </div>
+        );
+      case 'request_sent':
+        return (
+          <div className="flex space-x-2">
+            <button 
+              className={`px-4 py-2 ${isDark ? 'bg-yellow-800 text-yellow-200' : 'bg-yellow-100 text-yellow-700'} rounded-md`}
+            >
+              Request Sent
+            </button>
+            <button
+              onClick={handleCancelFriendRequest}
+              className={`px-4 py-2 ${isDark ? 'bg-gray-600 text-gray-200 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} rounded-md`}
+            >
+              Cancel
+            </button>
+          </div>
+        );
+      case 'request_pending':
+        return isReceiver ? (
+          <div className="flex space-x-2">
+            <button
+              onClick={handleAcceptFriendRequest}
+              className={`px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700`}
+            >
+              Accept
+            </button>
+            <button
+              onClick={handleDeclineFriendRequest}
+              className={`px-4 py-2 ${isDark ? 'bg-gray-600 text-gray-200 hover:bg-gray-500' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'} rounded-md`}
+            >
+              Decline
+            </button>
+          </div>
+        ) : (
+          <div className="flex space-x-2">
+            <button 
+              className={`px-4 py-2 ${isDark ? 'bg-[#AF3535] text-white' : 'bg-#AF3535 text-white'} rounded-md`}
+            >
+              Request Pending
+            </button>
+            <button 
+              onClick={handleCancelFriendRequest}
+              className={`px-4 py-2 ${isDark ? 'bg-yellow-800 text-yellow-200' : 'bg-yellow-100 text-yellow-700'} rounded-md`}
+            >
+              Cancel
+            </button>
+          </div>
+        );
+      case 'not_friends':
+        return (
+          <button 
+            onClick={handleSendFriendRequest}
+            className={`px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700`}
+          >
+            Add Friend
+          </button>
+        );
+      default:
+        return (
+          <button 
+            onClick={handleSendFriendRequest}
+            className={`px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700`}
+          >
+            Add Friend
+          </button>
+        );
+    }
+  };
 
   return (
     <div className={`min-h-screen ${isDark ? 'bg-gray-900 text-gray-200' : 'bg-gray-50 text-gray-900'}`}>
@@ -130,6 +342,9 @@ const ProfilePageOther = () => {
                     <h1 className={`text-2xl font-bold ${isDark ? 'text-gray-100' : 'text-gray-800'}`}>{profile.username}</h1>
                     {profile.name && <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>{profile.name}</p>}
                   </div>
+                </div>
+                <div className="mt-4">
+                  {renderFriendshipButton()}
                 </div>
               </div>
 
