@@ -15,7 +15,7 @@ const LockDateModal = ({ isOpen, onClose, timeCapsuleId, onSuccess }) => {
 
   // Calculate minimum date (tomorrow)
   const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1); // Fixed: actually set to tomorrow
+  tomorrow.setDate(tomorrow.getDate()); // Fixed: actually set to tomorrow
   const minDate = tomorrow.toISOString().split('T')[0];
 
   const handleSubmit = async (e) => {
