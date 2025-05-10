@@ -53,8 +53,11 @@ const ShareModal = ({ title, onClose, capsuleId }) => {
             if (userData.profilePicture) {
               if (typeof userData.profilePicture === 'string') {
                 profilePicture = `data:image/jpeg;base64,${userData.profilePicture}`;
-              }  
+              } else if (Array.isArray(userData.profilePicture)) {
+                const binaryString = String.fromCharCode.apply(null, userData.profilePicture);
+                profilePicture = `data:image/jpeg;base64,${btoa(binaryString)}`;
             }
+          }
             
             collaboratorsData.push({
               id: userId,
@@ -107,40 +110,74 @@ const ShareModal = ({ title, onClose, capsuleId }) => {
   }, [searchQuery]);
 
   const addCollaborator = async (user) => {
-    const userId = user.userId || user.id;
+    const userId = parseInt(user.userId || user.id, 10); // Ensure userId is a number
     if (collaborators.some(c => c.id === userId)) {
       return; // User already added
     }
-
+  
     try {
+      // Grant access to the user
       const access = await capsuleAccessService.grantAccess({
         capsuleId,
         userId,
         role: 'EDITOR'
       }, authToken);
+  
+      // Fetch user details using the /api/profiles/view/{userId} endpoint
+      const userResponse = await apiService.get(`/api/profiles/view/${userId}`);
+      const userData = userResponse.data;
+  
+      // Convert profile picture if it exists
+      let profilePicture = null;
+      if (userData.profilePicture) {
+        if (typeof userData.profilePicture === 'string') {
+          profilePicture = `data:image/jpeg;base64,${userData.profilePicture}`;
+        } else if (Array.isArray(userData.profilePicture)) {
+          const binaryString = String.fromCharCode.apply(null, userData.profilePicture);
+          profilePicture = `data:image/jpeg;base64,${btoa(binaryString)}`;
+        }
+      }
+  
+      // Update the collaborators list with the fetched user details
       setCollaborators(prev => [...prev, {
-        id: access.user.id,
-        username: access.user.username,
-        name: access.user.name,
-        profilePicture: access.user.profilePicture,
+        id: userData.userId,
+        username: userData.username,
+        name: userData.name,
+        email: userData.email,
+        profilePicture,
         role: access.role,
       }]);
+  
+      // Reset search state
       setSearchQuery('');
       setSearchResults([]);
       setShowSearchResults(false);
     } catch (e) {
-      // handle error
+      console.error('Failed to add collaborator:', e);
+      // Optionally, display an error message to the user
     }
   };
 
   const removeCollaborator = async (userId) => {
+    const userId2 = parseInt(userId,10); 
     const collaborator = collaborators.find(c => c.id === userId);
     if (!collaborator) return;
+  
+    // Allow only the owner to remove collaborators
+    if (collaborators.find(c => c.role === 'Owner').id !== user.id) {
+      console.error('Only the owner can remove this collaborator.');
+      return;
+    }
+  
     try {
+      // Call the removeAccess service
       await capsuleAccessService.removeAccess(collaborator.accessId, authToken);
-      setCollaborators(prev => prev.filter(c => c.id !== userId));
+  
+      // Update the collaborators list by filtering out the removed collaborator
+      setCollaborators(prev => prev.filter(c => c.id !== userId2));
     } catch (e) {
-      // handle error
+      console.error('Failed to remove collaborator:', e);
+      // Optionally, display an error message to the user
     }
   };
 
@@ -216,7 +253,7 @@ const ShareModal = ({ title, onClose, capsuleId }) => {
                 <div className="max-h-60 overflow-y-auto divide-y divide-gray-100">
                   {filteredResults.map((user) => (
                     <div 
-                      key={user.userId || user.id}
+                      key={user.userId}
                       className="flex items-center justify-between p-3 hover:bg-gray-50 cursor-pointer transition-colors"
                       onClick={() => addCollaborator(user)}
                     >

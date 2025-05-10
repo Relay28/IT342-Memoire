@@ -146,8 +146,6 @@ const Header = () => {
       return date.toLocaleDateString();
     }
   };
-
-  console.log("MODE CHECK "+mode)
   // Show connection indicator for debugging - you can remove this in production
   const connectionStatusIndicator = () => {
     if (!isAuthenticated) return null;

@@ -20,7 +20,7 @@ const SearchResult = () => {
   const searchQuery = queryParams.get('q') || '';
 
   const processProfilePicture = (profilePicture) => {
-    alert(profilePicture)
+    //alert(profilePicture)
     if (!profilePicture) return ProfilePictureSample;
     
     let imageUrl;

@@ -10,6 +10,11 @@ const apiService = axios.create({
     'Authorization': `Bearer ${token}` 
   },
 });
+apiService.profiles = {
+  getPublicProfile: (userId) => apiService.get(`/api/profiles/view/${userId}`),
+};
+
+
 
 // Add request interceptor to include auth token
 apiService.interceptors.request.use((config) => {

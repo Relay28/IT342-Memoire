@@ -20,6 +20,12 @@ public interface FriendShipRepository extends JpaRepository<FriendShipEntity, Lo
             @Param("user") UserEntity user,
             @Param("friend") UserEntity friend
     );
+
+    @Query("SELECT COUNT(f) FROM FriendShipEntity f WHERE f.user = :user AND f.Status = :Status")
+    long countByUserAndStatus(@Param("user") UserEntity user, @Param("Status") String Status);
+
+    @Query("SELECT COUNT(f) FROM FriendShipEntity f WHERE f.friend = :friend AND f.Status = :Status")
+    long countByFriendAndStatus(@Param("friend") UserEntity friend, @Param("Status") String Status);
     @Query("SELECT f FROM FriendShipEntity f WHERE " +
             "(f.user.id = :userId AND f.friend.id = :friendId) OR " +
             "(f.user.id = :friendId AND f.friend.id = :userId)")

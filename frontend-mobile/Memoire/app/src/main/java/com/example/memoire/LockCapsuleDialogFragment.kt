@@ -17,6 +17,10 @@ import com.example.memoire.models.GrantAccessRequest
 import com.example.memoire.models.LockRequest
 import com.example.memoire.models.UserEntity
 import com.example.memoire.utils.DateUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -34,11 +38,11 @@ class LockCapsuleDialogFragment(
     private val currentCalendar: Calendar = Calendar.getInstance()
 
     sealed class AccessType {
-        object Private : AccessType()
-        object AllFriends : AccessType()
+        object OnlyMe : AccessType()
+        object Public : AccessType()
+        object Friends : AccessType()
         data class SpecificFriends(val friendIds: List<Long>) : AccessType()
     }
-
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         binding = DialogLockCapsuleBinding.inflate(layoutInflater)
 
@@ -61,13 +65,18 @@ class LockCapsuleDialogFragment(
 
         binding.btnConfirm.setOnClickListener {
             val accessType = when (binding.accessRadioGroup.checkedRadioButtonId) {
-                R.id.radioPrivate -> AccessType.Private
-                R.id.radioFriends -> AccessType.AllFriends
+                R.id.radioPrivate -> AccessType.OnlyMe
+                R.id.radioFriends -> AccessType.Friends
+                R.id.radioPublic -> AccessType.Public // Correct mapping for Public access
                 R.id.radioSpecific -> {
+                    if (friendsList.isEmpty()) {
+                        Toast.makeText(context, "No friends available to select", Toast.LENGTH_SHORT).show()
+                        return@setOnClickListener
+                    }
                     showFriendSelectionDialog()
                     return@setOnClickListener
                 }
-                else -> AccessType.Private
+                else -> AccessType.OnlyMe // Default to OnlyMe
             }
 
             lockCapsuleWithAccess(accessType)
@@ -158,7 +167,8 @@ class LockCapsuleDialogFragment(
 
         val now = Calendar.getInstance()
         if (isSameDay(tempCalendar, now) && tempCalendar.timeInMillis <= now.timeInMillis) {
-            Toast.makeText(context, "Cannot select a past time for today", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Cannot select a past time for today", Toast.LENGTH_SHORT)
+                .show()
             selectedCalendar.set(Calendar.HOUR_OF_DAY, now.get(Calendar.HOUR_OF_DAY))
             selectedCalendar.set(Calendar.MINUTE, now.get(Calendar.MINUTE) + 1)
         } else {
@@ -168,12 +178,15 @@ class LockCapsuleDialogFragment(
 
         updateDateTimeDisplay()
     }
+
     private fun updateDateTimeDisplay() {
-        val dateText = android.text.format.DateFormat.format("MMM dd, yyyy", selectedCalendar.time).toString()
+        val dateText =
+            android.text.format.DateFormat.format("MMM dd, yyyy", selectedCalendar.time).toString()
         binding.btnSelectDate.text = dateText
 
         // Format time as "hh:mm a" (e.g., "02:30 PM")
-        val timeText = android.text.format.DateFormat.format("hh:mm a", selectedCalendar.time).toString()
+        val timeText =
+            android.text.format.DateFormat.format("hh:mm a", selectedCalendar.time).toString()
         binding.btnSelectTime.text = timeText
 
         // Enable confirm button only if date is in future
@@ -181,13 +194,17 @@ class LockCapsuleDialogFragment(
         binding.btnConfirm.isEnabled = selectedCalendar.timeInMillis > now.timeInMillis
 
         if (!binding.btnConfirm.isEnabled) {
-            Toast.makeText(context, "Please select a future date and time", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Please select a future date and time", Toast.LENGTH_SHORT)
+                .show()
         }
     }
 
     private fun loadFriends() {
         RetrofitClient.instance.getFriendsList().enqueue(object : Callback<List<UserEntity>> {
-            override fun onResponse(call: Call<List<UserEntity>>, response: Response<List<UserEntity>>) {
+            override fun onResponse(
+                call: Call<List<UserEntity>>,
+                response: Response<List<UserEntity>>
+            ) {
                 if (response.isSuccessful) {
                     friendsList = response.body() ?: emptyList()
                 } else {
@@ -216,47 +233,94 @@ class LockCapsuleDialogFragment(
         val formattedDate = DateUtils.formatForApi(selectedCalendar.time)
         val lockRequest = LockRequest(openDate = formattedDate)
 
-        Log.d("TimeCapsule", "Local time selected: ${DateUtils.formatDateForDisplay(selectedCalendar.time)} ${DateUtils.formatTimeForDisplay(selectedCalendar.time)}")
-        Log.d("TimeCapsule", "Formatted for API as: $formattedDate")
-
+        Log.d("TimeCapsule", "Locking capsule with access type: $accessType")
+        handleAccessAfterLock(accessType)
         RetrofitClient.instance.lockTimeCapsule(capsuleId, lockRequest).enqueue(
             object : Callback<Void> {
                 override fun onResponse(call: Call<Void>, response: Response<Void>) {
                     if (response.isSuccessful) {
-                        handleAccessAfterLock(accessType)
+                        Log.d("TimeCapsule", "Capsule locked successfully. Proceeding with access setup.")
+
                         onLockSet(selectedCalendar.time)
                         Toast.makeText(context, "Capsule locked successfully", Toast.LENGTH_SHORT).show()
                     } else {
+                        Log.e("TimeCapsule", "Failed to lock capsule: ${response.code()}")
                         Toast.makeText(context, "Failed to lock capsule: ${response.code()}", Toast.LENGTH_SHORT).show()
-                        try {
-                            val errorBody = response.errorBody()?.string()
-                            Log.e("TimeCapsule", "Error body: $errorBody")
-                        } catch (e: Exception) {
-                            Log.e("TimeCapsule", "Could not read error body", e)
-                        }
                     }
                 }
 
                 override fun onFailure(call: Call<Void>, t: Throwable) {
+                    Log.e("TimeCapsule", "Error locking capsule: ${t.message}", t)
                     Toast.makeText(context, "Error: ${t.message}", Toast.LENGTH_SHORT).show()
-                    Log.e("TimeCapsule", "Network error", t)
                 }
             }
         )
     }
 
     private fun handleAccessAfterLock(accessType: AccessType) {
+        Log.d("TimeCapsule", "Handling access type: $accessType")
         when (accessType) {
-            is AccessType.AllFriends -> {
+            is AccessType.OnlyMe -> {
+                Log.d("TimeCapsule", "Calling restrictAccessToOwner API")
+                restrictAccessToOwner()
+            }
+            is AccessType.Public -> {
+                Log.d("TimeCapsule", "Calling grantPublicAccess API")
+                grantPublicAccess()
+            }
+            is AccessType.Friends -> {
+                Log.d("TimeCapsule", "Calling grantAccessToAllFriends API")
                 grantAccessToAllFriends()
             }
-            is AccessType.SpecificFriends -> {
-                if (accessType.friendIds.isNotEmpty()) {
-                    grantAccessToSpecificFriends(accessType.friendIds)
+            else -> {
+                Log.d("TimeCapsule", "No specific access type to handle")
+            }
+        }
+    }
+
+    private fun restrictAccessToOwner() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.instance.restrictAccessToOwner(capsuleId)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Access restricted to only you", Toast.LENGTH_SHORT)
+                            .show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Failed to restrict access: ${response.code()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
-            else -> {
-                // Private - no action needed
+        }
+    }
+
+    private fun grantPublicAccess() {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.instance.grantPublicAccess(capsuleId)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Capsule is now public", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Failed to make capsule public: ${response.code()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -291,34 +355,5 @@ class LockCapsuleDialogFragment(
                     ).show()
                 }
             })
-    }
-
-    private fun grantAccessToSpecificFriends(friendIds: List<Long>) {
-        friendIds.forEach { friendId ->
-            val request = GrantAccessRequest(capsuleId, friendId, "VIEWER")
-            RetrofitClient.instance.grantAccessToSpecificFriends(request)
-                .enqueue(object : Callback<CapsuleAccessDTO> {
-                    override fun onResponse(
-                        call: Call<CapsuleAccessDTO>,
-                        response: Response<CapsuleAccessDTO>
-                    ) {
-                        if (!response.isSuccessful) {
-                            Toast.makeText(
-                                context,
-                                "Failed to grant access to some friends",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        }
-                    }
-
-                    override fun onFailure(call: Call<CapsuleAccessDTO>, t: Throwable) {
-                        Toast.makeText(
-                            context,
-                            "Error: ${t.message}",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                })
-        }
     }
 }

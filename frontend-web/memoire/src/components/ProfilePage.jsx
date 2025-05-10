@@ -11,26 +11,21 @@ import ChangePasswordModal from './ChangePasswordModal';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 
-// Helper function to get profile image URL from different possible formats
 const getProfileImageUrl = (profileData) => {
   if (!profileData) return null;
   
-  // Case 1: Already a complete data URL
   if (typeof profileData === 'string' && profileData.startsWith('data:image')) {
     return profileData;
   }
   
-  // Case 2: Base64 string without prefix
   if (typeof profileData === 'string') {
     return `data:image/jpeg;base64,${profileData}`;
   }
   
-  // Case 3: Profile picture data is available as profilePictureData
   if (profileData.profilePictureData) {
     return `data:image/jpeg;base64,${profileData.profilePictureData}`;
   }
   
-  // Case 4: Array of bytes (binary data)
   if (Array.isArray(profileData)) {
     try {
       const binaryString = String.fromCharCode.apply(null, profileData);
@@ -45,7 +40,7 @@ const getProfileImageUrl = (profileData) => {
 };
 
 const ProfilePage = () => {
-  const { user, updateUserProfile, uploadProfileImage, logout } = useAuth();
+  const { updateUserProfile, uploadProfileImage, logout } = useAuth();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     biography: '',
@@ -80,37 +75,42 @@ const ProfilePage = () => {
     setSnackbar(prev => ({ ...prev, open: false }));
   };
 
-  // Fetch user data and profile picture on component mount
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
         const userData = await profileService.getCurrentUser();
-        console.log('User data from API:', userData);
+        
         setFormData({
           biography: userData.biography || '',
           email: userData.email || '',
           name: userData.name || userData.username || '',
-          username: userData.username || ''
+          username: userData.username || '',
+          profilePicture: userData.profilePictureData || ''
         });
-
+        
         setOriginalData({
           biography: userData.biography || '',
           email: userData.email || '',
           name: userData.name || userData.username || '',
-          username: userData.username || ''
+          username: userData.username || '',
+          profilePicture: userData.profilePicture || ''
         });
 
-        // Process profile picture from any format
-        const imageUrl = getProfileImageUrl(userData.profilePictureData) || 
-                        getProfileImageUrl(userData.profilePicture);
-        
-        if (imageUrl) {
-          setPreviewImage(imageUrl);
-        } else {
-          setPreviewImage(ProfilePictureSample);
+        if (userData.profilePicture) {
+          let imageUrl;
+          if (typeof userData.profilePicture === 'string') {
+            imageUrl = userData.profilePicture.startsWith('data:image') 
+              ? userData.profilePicture
+              : `data:image/jpeg;base64,${userData.profilePicture}`;
+          } else if (Array.isArray(userData.profilePicture)) {
+            const binaryString = String.fromCharCode.apply(null, userData.profilePicture);
+            imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+          }
+          if (imageUrl) {
+            setPreviewImage(imageUrl);
+          }
         }
-        
       } catch (error) {
         console.error('Failed to fetch user data:', error);
         showSnackbar('Failed to load profile data. Please try again.', 'error');
@@ -118,44 +118,15 @@ const ProfilePage = () => {
         setIsLoading(false);
       }
     };
-
-    if (!user?.username) {
-      fetchUserData();
-    } else {
-      setFormData({
-        biography: user.biography || '',
-        email: user.email || '',
-        name: user.name || user.username || '',
-        username: user.username || ''
-      });
-      setOriginalData({
-        biography: user.biography || '',
-        email: user.email || '',
-        name: user.name || user.username || '',
-        username: user.username || ''
-      });
-
-      // Process profile picture from auth context
-      const imageUrl = getProfileImageUrl(user.profilePicture) || 
-                      getProfileImageUrl(user.profilePictureData);
-      
-      if (imageUrl) {
-        setPreviewImage(imageUrl);
-      } else {
-        setPreviewImage(ProfilePictureSample);
-      }
-    }
-  }, [user]);
+    
+    fetchUserData();
+  }, []);
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
     if (isEditMode) {
-      // Revert any unsaved changes when exiting edit mode
       setFormData(originalData);
-      // Revert profile image changes
-      const imageUrl = getProfileImageUrl(user?.profilePicture) || 
-                     getProfileImageUrl(user?.profilePictureData) ||
-                     ProfilePictureSample;
+      const imageUrl = getProfileImageUrl(originalData.profilePicture) || ProfilePictureSample;
       setPreviewImage(imageUrl);
       setProfileImage(null);
     }
@@ -164,13 +135,11 @@ const ProfilePage = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Validate file type
       if (!file.type.match('image.*')) {
         showSnackbar('Please select an image file', 'error');
         return;
       }
       
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         showSnackbar('Image size should be less than 5MB', 'error');
         return;
@@ -199,28 +168,42 @@ const ProfilePage = () => {
       const userData = {
         biography: formData.biography,
         email: formData.email,
-        name: formData.name, // Make sure name is included
+        name: formData.name,
         username: formData.username
       };
   
-      // First update profile picture if changed
       if (profileImage) {
         await uploadProfileImage(profileImage);
       }
       
-      // Then update other profile data and wait for response
       const result = await updateUserProfile(userData);
       
       if (result.success) {
-        // Update local states with the returned user data
-        setFormData(prev => ({
-          ...prev,
-          ...result.user // Spread the updated user data
-        }));
-        setOriginalData(prev => ({
-          ...prev,
-          ...result.user // Keep original data in sync
-        }));
+        // Fetch updated user data after successful update
+        const updatedUser = await profileService.getCurrentUser();
+        
+        setFormData({
+          biography: updatedUser.biography || '',
+          email: updatedUser.email || '',
+          name: updatedUser.name || updatedUser.username || '',
+          username: updatedUser.username || '',
+          profilePicture: updatedUser.profilePictureData || ''
+        });
+        
+        setOriginalData({
+          biography: updatedUser.biography || '',
+          email: updatedUser.email || '',
+          name: updatedUser.name || updatedUser.username || '',
+          username: updatedUser.username || '',
+          profilePicture: updatedUser.profilePictureData || ''
+        });
+        
+        if (updatedUser.profilePictureData) {
+          const imageUrl = updatedUser.profilePictureData.startsWith('data:image') 
+            ? updatedUser.profilePictureData
+            : `data:image/jpeg;base64,${updatedUser.profilePictureData}`;
+          setPreviewImage(imageUrl);
+        }
         
         setIsEditMode(false);
         showSnackbar('Profile updated successfully!');
@@ -278,7 +261,7 @@ const ProfilePage = () => {
   return (
     <div className={`min-h-screen ${isDark ? 'dark bg-gray-800' : 'bg-gray-100'}`}>
       <div className="flex flex-col h-screen overflow-hidden">
-        <Header userData={user} />
+        <Header />
         
         <div className="flex flex-1 h-screen overflow-hidden">
           <Sidebar />
@@ -330,7 +313,7 @@ const ProfilePage = () => {
                     <div>
                       <h1 className={`text-2xl font-bold ${
                         isDark ? 'text-white' : 'text-gray-900'
-                      }`}>{formData.name ||  "Loading..."}</h1>
+                      }`}>{formData.name || "Loading..."}</h1>
                       <p className={isDark ? 'text-gray-400' : 'text-gray-600'}>@{formData.username || "loading"}</p>
                     </div>
                   </div>
@@ -371,7 +354,7 @@ const ProfilePage = () => {
 
               <div className="p-6">
                 <div className="space-y-6">
-                <div>
+                  <div>
                     <label className={`block text-sm font-medium mb-1 ${
                       isDark ? 'text-gray-300' : 'text-gray-700'
                     }`}>Full Name</label>
@@ -397,30 +380,30 @@ const ProfilePage = () => {
                   </div>
 
                   <div>
-  <label className={`block text-sm font-medium mb-1 ${
-    isDark ? 'text-gray-300' : 'text-gray-700'
-  }`}>Username</label>
-  {isEditMode ? (
-    <input
-      type="text"
-      name="username"
-      className={`w-full px-3 py-2 border rounded-md focus:outline-none ${
-        isDark 
-          ? 'bg-gray-700 border-gray-600 text-gray-400' 
-          : 'border-gray-300 bg-gray-100 text-gray-500'
-      }`}
-      value={formData.username}
-      onChange={handleInputChange}
-      readOnly
-    />
-  ) : (
-    <div className={`px-3 py-2 rounded-md ${
-      isDark ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-800'
-    }`}>
-      {formData.username}
-    </div>
-  )}
-</div>
+                    <label className={`block text-sm font-medium mb-1 ${
+                      isDark ? 'text-gray-300' : 'text-gray-700'
+                    }`}>Username</label>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        name="username"
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none ${
+                          isDark 
+                            ? 'bg-gray-700 border-gray-600 text-gray-400' 
+                            : 'border-gray-300 bg-gray-100 text-gray-500'
+                        }`}
+                        value={formData.username}
+                        onChange={handleInputChange}
+                        readOnly
+                      />
+                    ) : (
+                      <div className={`px-3 py-2 rounded-md ${
+                        isDark ? 'bg-gray-800 text-gray-200' : 'bg-gray-50 text-gray-800'
+                      }`}>
+                        {formData.username}
+                      </div>
+                    )}
+                  </div>
 
                   <div>
                     <label className={`block text-sm font-medium mb-1 ${

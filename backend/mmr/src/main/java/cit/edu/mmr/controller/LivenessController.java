@@ -8,7 +8,7 @@ public class LivenessController {
 
     @GetMapping("/")
     public String healthCheck() {
-        return "Service is up and running!";
+        return "Service is up and running! Welcome to Memoire";
     }
 
     @GetMapping("/_ah/health")

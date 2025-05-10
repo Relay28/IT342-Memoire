@@ -21,6 +21,7 @@ import java.util.List;
 @RequestMapping("/api/timecapsules")
 public class TimeCapsuleController {
 
+
     @Autowired
     private TimeCapsuleService timeCapsuleService;
 
@@ -105,6 +106,28 @@ public class TimeCapsuleController {
         }
         try {
             return ResponseEntity.ok(timeCapsuleService.getTimeCapsulesByStatus("PUBLISHED", auth));
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/status/published/mine")
+    public ResponseEntity<List<TimeCapsuleDTO>> getMyPublishedTimeCapsules(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+        }
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getMyTimeCapsulesByStatus("PUBLISHED", auth));
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @GetMapping("/status/published/user/{userId}/count")
+    public ResponseEntity<Long> getPublicPublishedTimeCapsuleCountForUser(@PathVariable Long userId) {
+        try {
+            long count = timeCapsuleService.getPublicPublishedTimeCapsuleCountForUser(userId);
+            return ResponseEntity.ok(count);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
@@ -234,6 +257,16 @@ public class TimeCapsuleController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @GetMapping("/public/published/{userId}")
+    public ResponseEntity<List<TimeCapsuleDTO>> getUserPublicPublishedTimeCapsules(@PathVariable Long userId) {
+        try {
+            return ResponseEntity.ok(timeCapsuleService.getUserPublicPublishedTimeCapsules(userId));
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @GetMapping("/public/{id}")
     public ResponseEntity<TimeCapsuleDTO> getPublicCapsuleById(@PathVariable Long id) {
         try {

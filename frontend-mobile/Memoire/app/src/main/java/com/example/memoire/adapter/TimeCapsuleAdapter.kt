@@ -8,14 +8,13 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.DatePicker
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.RadioGroup
 import android.widget.TextView
-import android.widget.TimePicker
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.PopupMenu
 import androidx.recyclerview.widget.RecyclerView
 import com.example.memoire.CapsuleDetailActivity
 import com.example.memoire.GrantAccessDialog
@@ -27,8 +26,13 @@ import com.example.memoire.models.LockRequest
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.models.UserEntity
 import com.example.memoire.utils.DateUtils
+import com.example.memoire.utils.SessionManager
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -42,8 +46,9 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
     private var friendsList: List<UserEntity> = emptyList()
 
     sealed class AccessType {
-        object Private : AccessType()
-        object AllFriends : AccessType()
+        object OnlyMe : AccessType()
+        object Public : AccessType()
+        object Friends : AccessType()
         data class SpecificFriends(val friendIds: List<Long>) : AccessType()
     }
 
@@ -52,14 +57,10 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         val title: TextView = view.findViewById(R.id.tvTitle)
         val description: TextView = view.findViewById(R.id.tvDescription)
         val createdDate: TextView = view.findViewById(R.id.tvCreatedDate)
-        val unlockDate: TextView = view.findViewById(R.id.tvUnlockDate)
         val status: TextView = view.findViewById(R.id.tvStatus)
-        val editButton: ImageButton = view.findViewById(R.id.btnEdit)
-        val publishButton: ImageButton = view.findViewById(R.id.btnPublish)
-        val deleteButton: ImageView = view.findViewById(R.id.ivDelete)
-        val statusIcon: TextView = view.findViewById(R.id.tvStatus)
-        val viewDetailsButton: ImageButton = view.findViewById(R.id.btnViewDetails)
-        val shareButton: ImageButton = view.findViewById(R.id.ivShare)
+        val shareButton: ImageButton = view.findViewById(R.id.btnShare)
+        val lockButton: ImageButton = view.findViewById(R.id.btnLock)
+        val deleteButton: ImageButton = view.findViewById(R.id.btnDelete)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CapsuleViewHolder {
@@ -77,35 +78,30 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         // Format dates using DateUtils
         holder.createdDate.text = "Created: ${capsule.createdAt?.let { DateUtils.formatDateForDisplay(it) } ?: "N/A"}"
 
-        if (capsule.openDate != null) {
-            holder.unlockDate.visibility = View.VISIBLE
-            holder.unlockDate.text = "Scheduled to open: ${DateUtils.formatDateForDisplay(capsule.openDate)} at ${DateUtils.formatTimeForDisplay(capsule.openDate)}"
-        } else {
-            holder.unlockDate.visibility = View.GONE
-        }
-
         // Set status and icon
         holder.status.text = capsule.status
         when (capsule.status?.uppercase(Locale.getDefault())) {
             "UNPUBLISHED" -> {
                 holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_unpublishedv2, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.isEnabled = true
             }
             "CLOSED" -> {
                 holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_locked, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.isEnabled = false
             }
             "PUBLISHED" -> {
                 holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_published, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.isEnabled = false
             }
             "ARCHIVED" -> {
-                holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_archived, 0, 0, 0)
+                holder.status.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_locked, 0, 0, 0)
                 holder.status.setTextColor(context.getColor(R.color.MemoireRed))
-                holder.publishButton.isEnabled = false
+
+                // Add long-press listener for archived capsules
+                holder.cardView.setOnLongClickListener {
+                    showUnarchivePopupMenu(holder.cardView, capsule, position)
+                    true
+                }
             }
         }
 
@@ -114,35 +110,60 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
             openCapsuleDetail(capsule.id)
         }
 
-        holder.editButton.setOnClickListener {
-            if (capsule.locked) {
-                Toast.makeText(context, "Cannot edit locked capsules", Toast.LENGTH_SHORT).show()
-            } else {
-                openCapsuleDetail(capsule.id)
-            }
-        }
-
-        holder.publishButton.setOnClickListener {
-            when (capsule.status?.uppercase(Locale.getDefault())) {
-                "UNPUBLISHED" -> showLockDialog(capsule.id!!.toLong())
-                else -> Toast.makeText(context, "This capsule is already ${capsule.status?.lowercase()}", Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        holder.viewDetailsButton.setOnClickListener {
-            openCapsuleDetail(capsule.id)
-        }
-
-        holder.deleteButton.setOnClickListener {
-            showDeleteConfirmationDialog(capsule, position)
-        }
-
         holder.shareButton.setOnClickListener {
             val context = holder.itemView.context
             GrantAccessDialog(context, capsule.id!!) {
                 // Optional: refresh the list if needed
             }.show()
         }
+
+        holder.lockButton.setOnClickListener {
+            showLockDialog(capsule.id!!)
+        }
+
+        holder.deleteButton.setOnClickListener {
+            showDeleteConfirmationDialog(capsule, position)
+        }
+    }
+
+    private fun showUnarchivePopupMenu(view: View, capsule: TimeCapsuleDTO, position: Int) {
+        val popupMenu = PopupMenu(context, view)
+        popupMenu.menu.add("Unarchive Capsule")
+        popupMenu.setOnMenuItemClickListener { menuItem ->
+            if (menuItem.title == "Unarchive Capsule") {
+                toggleArchiveStatus(capsule, position)
+                true
+            } else {
+                false
+            }
+        }
+        popupMenu.show()
+    }
+
+    private fun toggleArchiveStatus(capsule: TimeCapsuleDTO, position: Int) {
+        val sessionManager = SessionManager(context)
+        val currentUserId = sessionManager.getUserSession()["userId"] as? Long
+
+        if (capsule.createdById != currentUserId) {
+            Toast.makeText(context, "You are not authorized to unarchive this capsule", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        RetrofitClient.instance.archiveTimeCapsule(capsule.id!!).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (response.isSuccessful) {
+                    // Refresh the list after successful status update
+                    fetchUpdatedCapsules2()
+                    Toast.makeText(context, "Capsule status updated successfully", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Failed to update capsule status", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                Toast.makeText(context, "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     override fun getItemCount() = capsules.size
@@ -181,7 +202,8 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
         val radioPrivate = dialogView.findViewById<View>(R.id.radioPrivate)
         val radioFriends = dialogView.findViewById<View>(R.id.radioFriends)
         val radioSpecific = dialogView.findViewById<View>(R.id.radioSpecific)
-        val accessRadioGroup = dialogView.findViewById<View>(R.id.accessRadioGroup)
+        // Modify this section in TimeCapsuleAdapter's showLockDialog
+        val accessRadioGroup = dialogView.findViewById<RadioGroup>(R.id.accessRadioGroup)
 
         // Initialize with current time + 1 hour as default
         val selectedCalendar = Calendar.getInstance().apply {
@@ -239,15 +261,16 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
 
         // Handle confirm button
         btnConfirm.setOnClickListener {
-            val accessType = when (accessRadioGroup.id) {
-                R.id.radioPrivate -> AccessType.Private
-                R.id.radioFriends -> AccessType.AllFriends
+            val accessType = when (accessRadioGroup.checkedRadioButtonId) { // Use checkedRadioButtonId\
+                //                R.id.radioPrivate -> AccessType.OnlyMe
+                R.id.radioFriends -> AccessType.Friends
+                R.id.radioPublic -> AccessType.Public
                 R.id.radioSpecific -> {
                     showFriendSelectionUI(capsuleId, selectedCalendar.time)
                     dialog.dismiss()
                     return@setOnClickListener
                 }
-                else -> AccessType.Private
+                else -> AccessType.OnlyMe
             }
 
             lockCapsuleWithAccess(capsuleId, selectedCalendar.time, accessType)
@@ -347,19 +370,70 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
             }
         )
     }
-
-    private fun handleAccessAfterLock(capsuleId: Long, accessType: AccessType) {
+    private fun handleAccessAfterLock(capsuleId: Long,accessType: AccessType) {
+        Log.d("TimeCapsule", "Handling access type: $accessType")
         when (accessType) {
-            is AccessType.AllFriends -> {
+            AccessType.OnlyMe -> {
+                Log.d("TimeCapsule", "Calling restrictAccessToOwner API")
+                restrictAccessToOwner(capsuleId)
+            }
+            AccessType.Public -> {
+                Log.d("TimeCapsule", "Calling grantPublicAccess API")
+                grantPublicAccess(capsuleId)
+            }
+           AccessType.Friends -> {
+                Log.d("TimeCapsule", "Calling grantAccessToAllFriends API")
                 grantAccessToAllFriends(capsuleId)
             }
-            is AccessType.SpecificFriends -> {
-                if (accessType.friendIds.isNotEmpty()) {
-                    grantAccessToSpecificFriends(capsuleId, accessType.friendIds)
+            else -> {
+                Log.d("TimeCapsule", "No specific access type to handle")
+            }
+        }
+    }
+
+    private fun restrictAccessToOwner(capsuleId: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.instance.restrictAccessToOwner(capsuleId)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Access restricted to only you", Toast.LENGTH_SHORT)
+                            .show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Failed to restrict access: ${response.code()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
-            else -> {
-                // Private - no action needed
+        }
+    }
+
+    private fun grantPublicAccess(capsuleId: Long) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = RetrofitClient.instance.grantPublicAccess(capsuleId)
+                withContext(Dispatchers.Main) {
+                    if (response.isSuccessful) {
+                        Toast.makeText(context, "Capsule is now public", Toast.LENGTH_SHORT).show()
+                    } else {
+                        Toast.makeText(
+                            context,
+                            "Failed to make capsule public: ${response.code()}",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -395,7 +469,6 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
                 }
             })
     }
-
     private fun grantAccessToSpecificFriends(capsuleId: Long, friendIds: List<Long>) {
         friendIds.forEach { friendId ->
             val request = GrantAccessRequest(capsuleId, friendId, "VIEWER")
@@ -428,6 +501,22 @@ class TimeCapsuleAdapter(private val context: Context, private var capsules: Mut
     private fun fetchUpdatedCapsules() {
         // Call the API to get the updated list of capsules
         RetrofitClient.instance.getUnpublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
+            override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
+                if (response.isSuccessful) {
+                    val newCapsules = response.body() as? MutableList<TimeCapsuleDTO> ?: mutableListOf()
+                    updateData(newCapsules)
+                }
+            }
+
+            override fun onFailure(call: Call<List<TimeCapsuleDTO>>, t: Throwable) {
+                Toast.makeText(context, "Failed to refresh capsules: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
+
+    private fun fetchUpdatedCapsules2() {
+        // Call the API to get the updated list of capsules
+        RetrofitClient.instance.getArchivedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
             override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
                 if (response.isSuccessful) {
                     val newCapsules = response.body() as? MutableList<TimeCapsuleDTO> ?: mutableListOf()

@@ -1,6 +1,7 @@
 package com.example.memoire.adapter
 
 import CommentEntity
+import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.util.Base64
@@ -12,6 +13,8 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
@@ -22,6 +25,8 @@ import com.example.memoire.activities.UserProfileActivity
 import com.example.memoire.api.RetrofitClient
 import com.example.memoire.models.CapsuleContentEntity
 import com.example.memoire.models.ProfileDTO
+import com.example.memoire.models.ReportDTO
+import com.example.memoire.models.ReportRequest
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.utils.SessionManager
 import kotlinx.coroutines.CoroutineScope
@@ -52,7 +57,10 @@ class PublicPublishedCapsulesAdapter(
             // Bind basic info
             itemView.findViewById<TextView>(R.id.tvCapsuleTitle).text = capsule.title ?: "Untitled Memory"
             itemView.findViewById<TextView>(R.id.tvCapsuleDescription).text = capsule.description ?: "No description"
-
+            val threeDots: ImageView = itemView.findViewById(R.id.ivThreeDots)
+            threeDots.setOnClickListener {
+                showOptionsMenu(itemView.context, capsule)
+            }
             // Format dates
             val createdAt = capsule.createdAt?.let { dateFormat.format(it) } ?: "Unknown date"
             val openDate = capsule.openDate?.let { dateFormat.format(it) } ?: "Not specified"
@@ -62,7 +70,9 @@ class PublicPublishedCapsulesAdapter(
             // Fetch and display owner profile
             val ownerImageView = itemView.findViewById<ImageView>(R.id.ivOwnerProfilePicture)
             val ownerNameTextView = itemView.findViewById<TextView>(R.id.tvOwnerName)
-
+            itemView.findViewById<ImageView>(R.id.ivComment).setOnClickListener {
+                onCommentClick(capsule)
+            }
             capsule.createdById?.let { ownerId ->
                 RetrofitClient.instance.getPublicProfile(ownerId).enqueue(object : Callback<ProfileDTO> {
                     override fun onResponse(call: Call<ProfileDTO>, response: Response<ProfileDTO>) {
@@ -188,6 +198,8 @@ class PublicPublishedCapsulesAdapter(
             return CarouselViewHolder(view)
         }
 
+
+
         override fun onBindViewHolder(holder: CarouselViewHolder, position: Int) {
             val content = contents[position]
             holder.progressBar.visibility = View.VISIBLE
@@ -196,7 +208,7 @@ class PublicPublishedCapsulesAdapter(
                 // Load image using downloadContent endpoint
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        Log.e("PUBLIC PUBLISHER", "REPSONSE CONTENT for IDD"+content.id.toString())
+                        Log.e("PUBLIC PUBLISHER", "REPSONSE CONTENT for IDD "+content.id.toString())
                         val response = RetrofitClient.capsuleContentInstance.downloadPublicContent(content.id!!
                         )
                         Log.e("PUBLIC PUBLISHER", "REPSONSE CONTENT"+response.toString())
@@ -247,6 +259,47 @@ class PublicPublishedCapsulesAdapter(
 
     override fun onBindViewHolder(holder: CapsuleViewHolder, position: Int) {
         holder.bind(capsules[position])
+    }
+
+    private fun showOptionsMenu(context: Context, capsule: TimeCapsuleDTO) {
+        val options = arrayOf("Report")
+        val builder = AlertDialog.Builder(context)
+        builder.setTitle("Choose an action")
+        builder.setItems(options) { dialog, which ->
+            when (options[which]) {
+                "Report" -> {
+                    reportCapsule(context, capsule)
+                    dialog.dismiss()
+                }
+            }
+        }
+        builder.create().show()
+    }
+
+    private fun reportCapsule(context: Context, capsule: TimeCapsuleDTO) {
+        val sessionManager = SessionManager(context)
+        val reporterId = sessionManager.getUserSession()["userId"] as? Long ?: return
+
+        val reportRequest = ReportRequest(
+            reporterId = reporterId,
+            reportedID = capsule.id!!,
+            itemType = "TimeCapsule",
+            status = "Pending"
+        )
+
+        RetrofitClient.instance.createReport(reportRequest).enqueue(object : Callback<ReportDTO> {
+            override fun onResponse(call: Call<ReportDTO>, response: Response<ReportDTO>) {
+                if (response.isSuccessful) {
+                    Toast.makeText(context, "Capsule reported successfully", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Failed to report capsule", Toast.LENGTH_SHORT).show()
+                }
+            }
+
+            override fun onFailure(call: Call<ReportDTO>, t: Throwable) {
+                Toast.makeText(context, "Network error: ${t.message}", Toast.LENGTH_SHORT).show()
+            }
+        })
     }
 
     override fun getItemCount(): Int = capsules.size

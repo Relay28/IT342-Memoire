@@ -59,6 +59,7 @@ public class  CapsuleAccessService {
         if (!(capsule.getCreatedBy().getId() ==(user.getId()))) {
             throw new AccessDeniedException("You do not have permission to modify access for this capsule");
         }
+        capsule.setLocked(false);
 
         capsuleAccessRepository.deleteByCapsuleId(capsuleId); // Delete all access entries
     }
@@ -73,9 +74,9 @@ public class  CapsuleAccessService {
         }
 
         // Ensure the capsule is published
-        if (!"PUBLISHED".equals(capsule.getStatus())) {
-            throw new IllegalStateException("Only published capsules can be made public");
-        }
+//        if (!"PUBLISHED".equals(capsule.getStatus())) {
+//            throw new IllegalStateException("Only published capsules can be made public");
+//        }
 
         // Set the capsule as public
         capsule.setPublic(true);
@@ -252,7 +253,7 @@ public class  CapsuleAccessService {
                 access.setCapsule(capsule);
                 access.setUser(friend);
                 access.setUploadedBy(currentUser);
-                access.setRole(role);
+                access.setRole("VIEWER");
 
                 CapsuleAccessEntity savedAccess = capsuleAccessRepository.save(access);
                 createdAccesses.add(savedAccess);
@@ -343,38 +344,45 @@ public class  CapsuleAccessService {
      * @throws EntityNotFoundException if access not found
      * @throws AccessDeniedException if current user is not authorized
      */
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "contentMetadata", key = "'capsuleAccesses_' + #capsule.id"),
+            @CacheEvict(value = "contentMetadata", key = "'userAccesses_' + #access.user.id"),
+            @CacheEvict(value = "contentMetadata", key = "'hasAccess_' + #capsule.id + '_*'", allEntries = true)
+    })
     public void removeAccess(Long accessId, Authentication authentication) {
         logger.info("Removing access for access ID {}", accessId);
 
         if (accessId == null) {
-            logger.warn("Invalid parameter for removeAccess: accessId is null");
             throw new IllegalArgumentException("Access ID must not be null");
         }
 
-        UserEntity currentUser = getAuthenticatedUser(authentication);
-
-        // Get access entity
-        CapsuleAccessEntity access;
         try {
-            access = capsuleAccessRepository.findById(accessId)
+            UserEntity currentUser = getAuthenticatedUser(authentication);
+
+            // Fetch access entity
+            CapsuleAccessEntity access = capsuleAccessRepository.findById(accessId)
                     .orElseThrow(() -> new EntityNotFoundException("Capsule access not found with ID: " + accessId));
-            logger.debug("Found capsule access entry: {}", access.getId());
-        } catch (Exception e) {
-            logger.error("Error retrieving capsule access with ID {}: {}", accessId, e.getMessage());
-            throw new DatabaseOperationException("Error retrieving capsule access", e);
-        }
 
-        // Check authorization
-        if (!access.getUploadedBy().equals(currentUser)) {
-            logger.warn("User {} attempted to remove access {} created by user {}",
-                    currentUser.getUsername(), accessId, access.getUploadedBy().getUsername());
-            throw new AccessDeniedException("Only the user who granted this access can remove it");
-        }
+            TimeCapsuleEntity capsule = timeCapsuleRepository.findById(access.getCapsule().getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Time capsule not found with ID: " + access.getCapsule().getId()));
 
-        // Remove access
-        try {
+            // Check authorization
+            if (!access.getUploadedBy().equals(currentUser) && !currentUser.equals(capsule.getCreatedBy())) {
+                throw new AccessDeniedException("Only the user who granted this access can remove it");
+            }
+
+            // Delete access
             capsuleAccessRepository.deleteById(accessId);
+
+            // Evict caches
+            cacheManager.getCache("contentMetadata").evict("capsuleAccesses_" + capsule.getId());
+            cacheManager.getCache("contentMetadata").evict("userAccesses_" + access.getUser().getId());
+            cacheManager.getCache("contentMetadata").evict("hasAccess_" + capsule.getId() + "_*");
+
             logger.info("Successfully removed access ID {}", accessId);
+        } catch (EntityNotFoundException e) {
+            logger.warn("Access ID {} not found during deletion, possibly already deleted", accessId);
         } catch (Exception e) {
             logger.error("Error removing capsule access: {}", e.getMessage(), e);
             throw new DatabaseOperationException("Error removing capsule access", e);

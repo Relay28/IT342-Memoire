@@ -56,13 +56,15 @@ public class UserController {
             if (authentication == null || !authentication.isAuthenticated()) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
             }
-            UserEntity currentUser = getAuthenticatedUser(authentication);
+            UserEntity currentUser1 = getAuthenticatedUser(authentication);
+            UserEntity currentUser = userService.findById(currentUser1.getId());
 
             // Convert to DTO to avoid exposing sensitive information
             UserDTO userDTO = new UserDTO(
                     currentUser.getId(),
                     currentUser.getUsername(),
                     currentUser.getEmail(),
+                    currentUser.getName(),
                     currentUser.getProfilePictureData(),
                     currentUser.getRole(),
                     currentUser.getBiography(),
@@ -100,7 +102,7 @@ public class UserController {
     public List<UserDTO> getAllUsers(Authentication auth) {
         return userService.getAllUsers(auth).stream()
                 .map(user -> new UserDTO(
-                        user.getId(), user.getUsername(), user.getEmail(),
+                        user.getId(), user.getUsername(), user.getEmail(),user.getName(),
                         user.getProfilePictureData(), user.getRole(),
                         user.getBiography(), user.isActive(), user.isOauthUser(), user.getCreatedAt()))
                 .collect(Collectors.toList());

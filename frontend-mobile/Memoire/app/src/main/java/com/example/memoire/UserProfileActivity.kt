@@ -6,6 +6,7 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.GridView
@@ -13,6 +14,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.memoire.PublicSinglePublishedCapsuleActivity
@@ -70,7 +72,7 @@ class UserProfileActivity : AppCompatActivity() {
         tvUsername = findViewById(R.id.tv_username)
         tvOwnedCount = findViewById(R.id.tv_owned_count)
         tvFriendsCount = findViewById(R.id.tv_friends_count)
-        tvSharedCount = findViewById(R.id.tv_shared_count)
+
 
 
         // Get user ID from intent
@@ -117,12 +119,17 @@ class UserProfileActivity : AppCompatActivity() {
 
     private fun loadUserProfile() {
         val call = RetrofitClient.instance.getPublicProfile(userId)
+
+
         call.enqueue(object : Callback<ProfileDTO> {
             override fun onResponse(call: Call<ProfileDTO>, response: Response<ProfileDTO>) {
                 if (response.isSuccessful) {
                     val profile = response.body()
                     if (profile != null) {
+                        Toast.makeText(this@UserProfileActivity, "What"+userId, Toast.LENGTH_SHORT).show()
                         updateUI(profile)
+                        fetchUserFriendsCount(userId)
+                        fetchPublishedCapsuleCount(userId)
                     } else {
                         showLoading(false)
                         Toast.makeText(this@UserProfileActivity, "Failed to load profile", Toast.LENGTH_SHORT).show()
@@ -140,11 +147,44 @@ class UserProfileActivity : AppCompatActivity() {
         })
     }
 
-
+    private fun fetchPublishedCapsuleCount(userId: Long) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.instance.getPublicPublishedTimeCapsuleCountForUser(userId)
+                if (response.isSuccessful) {
+                    val publishedCount = response.body() ?: 0
+                    tvOwnedCount.text = publishedCount.toString()
+                } else {
+                    tvOwnedCount.text = "0"
+                    Log.e("USER PROFILE ACTIVITY", "Failed to fetch published capsule count: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                tvOwnedCount.text = "0"
+                Log.e("USER PROFILE ACTIVITY", "Error fetching published capsule count", e)
+            }
+        }
+    }
+    private fun fetchUserFriendsCount(userId: Long) {
+        lifecycleScope.launch {
+            try {
+                val response = RetrofitClient.friendInstance.getUserFriendsCount(userId)
+                if (response.isSuccessful) {
+                    val friendCount = response.body() ?: 0
+                    tvFriendsCount.text = friendCount.toString()
+                } else {
+                    tvFriendsCount.text = "0"
+                    Log.e("USER PROFILE ACTIVITY", "Failed to fetch friends count: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                tvFriendsCount.text = "0"
+                Log.e("USER PROFILE ACTIVITY", "Error fetching friends count", e)
+            }
+        }
+    }
 
     private fun loadUserPublicCapsules() {
         showLoading(true)
-        RetrofitClient.instance.getPublicPublishedTimeCapsules().enqueue(object : Callback<List<TimeCapsuleDTO>> {
+        RetrofitClient.instance.getUserPublicPublishedTimeCapsules(userId).enqueue(object : Callback<List<TimeCapsuleDTO>> {
             override fun onResponse(call: Call<List<TimeCapsuleDTO>>, response: Response<List<TimeCapsuleDTO>>) {
                 if (response.isSuccessful) {
                     val capsules = response.body()?.filter { it.createdById == userId } ?: emptyList()
@@ -255,7 +295,6 @@ class UserProfileActivity : AppCompatActivity() {
         // Update stats
         tvOwnedCount.text = "0" // This would be updated from actual data
         tvFriendsCount.text = "0" // This would be updated from actual data
-        tvSharedCount.text = "0" // This would be updated from actual data
       if(profile.profilePicture!=null) {
           // Load profile picture
           val profileImageBytes = Base64.decode(profile.profilePicture, Base64.DEFAULT)

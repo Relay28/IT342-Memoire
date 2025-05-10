@@ -10,6 +10,8 @@ import com.example.memoire.models.NotificationEntity
 import com.example.memoire.models.ProfileDTO
 import com.example.memoire.models.ProfileDTO2
 import com.example.memoire.models.RegisterRequest
+import com.example.memoire.models.ReportDTO
+import com.example.memoire.models.ReportRequest
 import com.example.memoire.models.SearchResponse
 import com.example.memoire.models.TimeCapsuleDTO
 import com.example.memoire.models.UpdateRoleRequest
@@ -90,9 +92,14 @@ interface ApiService {
 
     @GET("api/timecapsules/status/published")
     fun getPublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
+    @GET("api/timecapsules/status/published/mine")
+    fun getMyPublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
 
     @GET("api/timecapsules/public/published")
     fun getPublicPublishedTimeCapsules(): Call<List<TimeCapsuleDTO>>
+
+    @GET("api/timecapsules/public/published/{userId}")
+    fun getUserPublicPublishedTimeCapsules(@Path("userId") id: Long): Call<List<TimeCapsuleDTO>>
 
     @GET("api/timecapsules/public/{id}")
     fun getPublicCapsuleById(@Path("id") id: Long): Call<TimeCapsuleDTO>
@@ -112,6 +119,11 @@ interface ApiService {
         @Body timeCapsuleDTO: TimeCapsuleDTO
     ): Call<TimeCapsuleDTO>
 
+    @PATCH("api/timecapsules/{id}/archive")
+    fun archiveTimeCapsule(
+        @Path("id") id: Long
+    ): Call<Void>
+
     @DELETE("api/timecapsules/{id}")
     fun deleteTimeCapsule(@Path("id") id: Long): Call<Void>
 
@@ -124,6 +136,8 @@ interface ApiService {
     @PATCH("api/timecapsules/{id}/unlock")
     fun unlockTimeCapsule(@Path("id") id: Long): Call<Void>
 
+    @GET("/api/timecapsules/status/published/user/{userId}/count")
+    suspend fun getPublicPublishedTimeCapsuleCountForUser(@Path("userId") userId: Long): Response<Long>
 
     @GET("api/timecapsules/status/closed")
     fun getClosedTimeCapsules(): Call<List<TimeCapsuleDTO>>
@@ -219,10 +233,23 @@ interface ApiService {
         @Path("capsuleId") capsuleId: Long,
         @Query("role") role: String
     ): Call<List<CapsuleAccessDTO>>
+    @DELETE("api/capsule-access/{capsuleId}/only-me")
+    suspend fun restrictAccessToOwner(
+        @Path("capsuleId") capsuleId: Long
+    ): Response<Void>
+
+    @POST("api/capsule-access/{capsuleId}/public-access")
+    suspend fun grantPublicAccess(
+        @Path("capsuleId") capsuleId: Long
+    ): Response<Void>
+
+
 
     @POST("api/capsule-access")
     fun grantAccessToSpecificFriends(@Body request: GrantAccessRequest): Call<CapsuleAccessDTO>
 
+    @POST("api/reports")
+    fun createReport(@Body reportRequest: ReportRequest): Call<ReportDTO>
 }
 data class AuthenticationRequest(val username: String, val password: String)
 data class GoogleAuthRequest(val idToken: String)

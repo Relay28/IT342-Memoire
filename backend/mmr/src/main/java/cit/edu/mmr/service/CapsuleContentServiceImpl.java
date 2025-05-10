@@ -233,30 +233,18 @@ public class CapsuleContentServiceImpl implements CapsuleContentService {
     @Cacheable(value = CAPSULE_CONTENTS_CACHE, key = "#capsuleId")
     @Override
     public List<CapsuleContentEntity> getContentsByCapsuleId(Long capsuleId, Authentication authentication) {
-        try {
-            logger.debug("Fetching contents for capsule ID: {} from DB", capsuleId);
-            UserEntity user = getAuthenticatedUser(authentication);
-            TimeCapsuleEntity capsule = timeCapsuleRepository.findById(capsuleId)
-                    .orElseThrow(() -> {
-                        logger.warn("Capsule not found with ID: {}", capsuleId);
-                        return new EntityNotFoundException("Capsule not found with id " + capsuleId);
-                    });
+        UserEntity user = getAuthenticatedUser(authentication);
+        TimeCapsuleEntity capsule = timeCapsuleRepository.findById(capsuleId)
+                .orElseThrow(() -> new EntityNotFoundException("Capsule not found with id " + capsuleId));
 
-            if (!(capsule.getCreatedBy().getId() == user.getId())) {
-                Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
-                if (accessOpt.isEmpty()) {
-                    logger.warn("User {} attempted unauthorized access to capsule ID: {}", user.getUsername(), capsuleId);
-                    throw new AccessDeniedException("You do not have permission to view this content.");
-                }
+        if (!(capsule.getCreatedBy().getId() == user.getId())) {
+            Optional<CapsuleAccessEntity> accessOpt = capsuleAccessRepository.findByUserAndCapsule(user, capsule);
+            if (accessOpt.isEmpty() || !("VIEWER".equals(accessOpt.get().getRole()) || "EDITOR".equals(accessOpt.get().getRole()))) {
+                throw new AccessDeniedException("You do not have permission to view this content.");
             }
-
-            List<CapsuleContentEntity> contents = capsuleContentRepository.findByCapsuleId(capsuleId);
-            logger.debug("Found {} contents for capsule ID: {}", contents.size(), capsuleId);
-            return contents;
-        } catch (Exception e) {
-            logger.error("Error fetching contents for capsule ID: {}", capsuleId, e);
-            throw e;
         }
+
+        return capsuleContentRepository.findByCapsuleId(capsuleId);
     }
 
     @Cacheable(value = CAPSULE_CONTENTS_CACHE, key = "#capsuleId")
