@@ -13,6 +13,7 @@ import CommentServices from "../services/CommentServices";
 import CommentReactionService from "../services/CommentReactionService";
 import MediaCarousel from './MediaShower/MediaCarousel';
 import { profileService } from '../components/ProfileFunctionalities';
+import apiService from './Profile/apiService';
 
 const Homepage = () => {
   // Context and hooks
@@ -54,7 +55,7 @@ const Homepage = () => {
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [editCommentText, setEditCommentText] = useState('');
   const [commentDropdownOpen, setCommentDropdownOpen] = useState({});
-  
+  const [capsuleOwners, setCapsuleOwners] = useState({});
   // Services
   const reportCapsule = ServiceReportCapsule();
   
@@ -108,6 +109,37 @@ const Homepage = () => {
     }
   }, [isAuthenticated, authToken]);
 
+
+  const fetchCapsuleOwnerProfile = async (userId) => {
+    alert(userId)
+    try {
+    
+      const ownerData = await apiService.get(`/api/profiles/view/${userId}`);
+      alert(JSON.stringify(ownerData.data))
+      // Process profile picture if it exists
+      let profilePictureUrl = ProfilePictureSample; // Default picture
+      if (ownerData.data.profilePicture) {
+        if (typeof ownerData.data.profilePicture === 'string') {
+          profilePictureUrl = ownerData.data.profilePicture.startsWith('data:image')
+            ? ownerData.data.profilePicture
+            : `data:image/jpeg;base64,${ownerData.data.profilePicture}`;
+        } else if (Array.isArray(ownerData.data.profilePicture)) {
+          const binaryString = String.fromCharCode.apply(null, ownerData.data.profilePicture);
+          profilePictureUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+        }
+      }
+  
+      return {
+        ...ownerData.data,
+        profilePicture: profilePictureUrl
+      };
+    } catch (error) {
+      console.error('Error fetching owner profile:', error);
+      return null;
+    }
+  };
+
+
   // Fetch published capsules with media
 const fetchCapsules = useCallback(async () => {
   if (!isAuthenticated || !authToken) return;
@@ -116,9 +148,21 @@ const fetchCapsules = useCallback(async () => {
     setLoadingCapsules(true);
     setError(null);
     
-    const capsules = await TimeCapsuleService.getPublishedTimeCapsules(authToken);
+    const capsules = await TimeCapsuleService.getPublicPublishedTimeCapsules(authToken);
     setPublishedCapsules(capsules || []);
     
+    // Fetch owner profiles for all capsules
+    const ownerProfiles = {};
+    await Promise.all(
+      capsules.map(async (capsule) => {
+        const ownerProfile = await fetchCapsuleOwnerProfile(capsule.createdById);
+        if (ownerProfile) {
+          ownerProfiles[capsule.userId] = ownerProfile;
+        }
+      })
+    );
+    
+    setCapsuleOwners(ownerProfiles);
     // Initialize comments storage for each capsule
     const initialComments = {};
     const initialNewComments = {};
@@ -131,16 +175,19 @@ const fetchCapsules = useCallback(async () => {
       try {
         // Fetch comments for this capsule
         const capsuleComments = await CommentServices.getCommentsByCapsule(capsule.id);
-
+          
         // Fetch reactions for each comment
         // In fetchCapsules function:
+   // First, update the comment state initialization in fetchCapsules:
 const commentsWithReactions = await Promise.all(
   (capsuleComments || []).map(async (comment) => {
     try {
       const reactions = await CommentReactionService.getReactionsByCommentId(comment.id);
       return {
         ...comment,
-        userId: comment.userId, // Ensure userId is included
+        userId: comment.userId,
+        username: comment.username,
+        userProfileImage: comment.userProfileImage,
         reactions: {
           love: reactions.filter(r => r.type === 'love').map(r => r.userId),
         },
@@ -149,7 +196,9 @@ const commentsWithReactions = await Promise.all(
       console.error(`Error fetching reactions for comment ${comment.id}:`, err);
       return {
         ...comment,
-        userId: comment.userId, // Ensure userId is included
+        userId: comment.userId,
+        username: comment.username,
+        userProfileImage: comment.userProfileImage,
         reactions: { love: [] },
       };
     }
@@ -455,6 +504,21 @@ const handleStartEdit = (commentId, currentText) => {
   setEditCommentText(currentText);
 };
 
+const processProfileImage = (profileImage) => {
+  if (!profileImage) return null;
+
+  let imageUrl;
+  if (typeof profileImage === 'string') {
+    imageUrl = profileImage.startsWith('data:image') 
+      ? profileImage 
+      : `data:image/jpeg;base64,${profileImage}`;
+  } else if (Array.isArray(profileImage)) {
+    const binaryString = String.fromCharCode.apply(null, profileImage);
+    imageUrl = `data:image/jpeg;base64,${btoa(binaryString)}`;
+  }
+  return imageUrl;
+};
+
 // Handle canceling edit
 const handleCancelEdit = () => {
   setEditingCommentId(null);
@@ -599,22 +663,24 @@ return (
                   >
                     {/* Capsule header with options */}
                     <div className="p-5 pb-0 flex justify-between items-start">
-                      <div className="flex items-center space-x-3">
-                        <img 
-                          src={profilePicture} 
-                          alt="user" 
-                          className="h-10 w-10 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-sm"
-                          onError={(e) => {
-                            e.target.src = ProfilePictureSample;
-                          }}
-                        />
-                        <div>
-                          <h2 className="font-semibold">{user?.fullName || user?.username || 'Unknown User'}</h2>
-                          <time className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                            Opened on {new Date(capsule.openDate).toLocaleDateString()}
-                          </time>
-                        </div>
-                      </div>
+  <div className="flex items-center space-x-3">
+    <img 
+      src={capsuleOwners[capsule.userId]?.profilePicture || ProfilePictureSample} 
+      alt={capsuleOwners[capsule.userId]?.username || "User"} 
+      className="h-10 w-10 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-sm"
+      onError={(e) => {
+        e.target.src = ProfilePictureSample;
+      }}
+    />
+    <div>
+      <h2 className="font-semibold">
+        {capsuleOwners[capsule.userId]?.name || capsuleOwners[capsule.userId]?.username || 'Unknown User'}
+      </h2>
+      <time className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+        Opened on {new Date(capsule.openDate).toLocaleDateString()}
+      </time>
+    </div>
+  </div>
                       
                       {/* Options dropdown */}
                       <div className="relative">
@@ -767,25 +833,26 @@ return (
                               
                               return (
                                 <div key={comment.id} className="flex items-start group">
-                                  <img
-  src={profilePicture}
-  alt={user?.username || "User"}
-  className="h-8 w-8 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
-  onError={(e) => {
-    e.target.src = ProfilePictureSample;
-  }}
-/>
+                                 <img
+    src={processProfileImage(comment.userProfileImage) || ProfilePictureSample}
+    alt={comment.username || "User"}
+    className="h-8 w-8 rounded-full mr-3 flex-shrink-0 border-2 border-white dark:border-gray-600 shadow-sm"
+    onError={(e) => {
+      e.target.onerror = null;
+      e.target.src = ProfilePictureSample;
+    }}
+  />
                                   
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-baseline">
-                                      <span className={`font-semibold text-sm mr-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                                        {user?.username || "Unknown User"}
-                                      </span>
-                                      <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
-                                        {formatTimeAgo(comment.createdAt)}
-                                        {comment.createdAt !== comment.updatedAt && ' • Edited'}
-                                      </span>
-                                    </div>
+          <div className="flex items-baseline">
+            <span className={`font-semibold text-sm mr-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+              {comment.username || "Unknown User"}
+            </span>
+            <span className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>
+              {formatTimeAgo(comment.createdAt)}
+              {comment.createdAt !== comment.updatedAt && ' • Edited'}
+            </span>
+          </div>
                                     
                                     {editingCommentId === comment.id ? (
                                       <div className="mt-1 relative">

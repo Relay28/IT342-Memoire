@@ -106,10 +106,11 @@ public class TimeCapsuleService {
         if (delay > 0) {
             scheduler.schedule(() -> {
                 // Unlock the capsule when open date arrives
+
                 TimeCapsuleEntity updatedCapsule = tcRepo.findById(capsule.getId())
                         .orElseThrow(() -> new EntityNotFoundException("Time capsule not found"));
-
-                updatedCapsule.setLocked(false);
+                if (capsule.isLocked()){
+                    updatedCapsule.setLocked(false);
                 tcRepo.save(updatedCapsule);
 
                 // Send notification
@@ -120,7 +121,9 @@ public class TimeCapsuleService {
                 notification.setItemType("TIME_CAPSULE");
                 updatedCapsule.setStatus("PUBLISHED");
                 notificationService.sendNotificationToUser(capsule.getCreatedBy().getId(), notification);
+            }
             }, delay, TimeUnit.MILLISECONDS);
+
         } else {
             // If open date is in the past, unlock immediately
             capsule.setLocked(false);

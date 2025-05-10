@@ -74,9 +74,9 @@ public class  CapsuleAccessService {
         }
 
         // Ensure the capsule is published
-        if (!"PUBLISHED".equals(capsule.getStatus())) {
-            throw new IllegalStateException("Only published capsules can be made public");
-        }
+//        if (!"PUBLISHED".equals(capsule.getStatus())) {
+//            throw new IllegalStateException("Only published capsules can be made public");
+//        }
 
         // Set the capsule as public
         capsule.setPublic(true);

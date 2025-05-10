@@ -42,6 +42,19 @@ export const profileService = {
     }
   },
 
+  async getPublicProfile(userId) {
+    try {
+      const response = await axios.get(
+        '${API_BASE_URL}/api/profiles/view/${userId}',
+        getAuthHeaders()
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Failed to fetch user:', error);
+      throw error;
+    }
+  },
+
   // Update user details (with or without profile image)
   async updateProfile(userData) {
       try {

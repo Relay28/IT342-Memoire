@@ -124,40 +124,21 @@ removeAccess: async (accessId, authToken) => {
    */
   grantPublicAccess: async (capsuleId, authToken) => {
     try {
-      // First remove all existing access
-      await fetch(`${API_BASE_URL}/api/capsule-access/${capsuleId}/only-me`, {
-        method: 'DELETE',
-        headers: { 
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      // Then set the capsule as public
-      const res = await fetch(`${API_BASE_URL}/api/capsule-access/${capsuleId}/public-access`, {
-        method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      // Also update the capsule's public status
-      await fetch(`${API_BASE_URL}/api/timecapsules/${capsuleId}/public`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ isPublic: true })
-      });
-      
-      await handleResponse(res);
+        console.log(`Granting public access to capsuleId: ${capsuleId}`);
+        const res = await fetch(`${API_BASE_URL}/api/capsule-access/${capsuleId}/public-access`, {
+            method: 'POST',
+            headers: { 
+                'Authorization': `Bearer ${authToken}`,
+          
+            }
+        });
+        console.log('Response status:', res.status);
+        await handleResponse(res);
     } catch (error) {
-      console.error('Error granting public access:', error);
-      throw error;
+        console.error('Error granting public access:', error);
+        throw error;
     }
-  },
+},
   /**
    * Grant access to all friends
    * @param {string} capsuleId - ID of the time capsule
