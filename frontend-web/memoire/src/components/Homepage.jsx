@@ -111,11 +111,11 @@ const Homepage = () => {
 
 
   const fetchCapsuleOwnerProfile = async (userId) => {
-    alert(userId)
+ 
     try {
     
       const ownerData = await apiService.get(`/api/profiles/view/${userId}`);
-      alert(JSON.stringify(ownerData.data))
+      
       // Process profile picture if it exists
       let profilePictureUrl = ProfilePictureSample; // Default picture
       if (ownerData.data.profilePicture) {

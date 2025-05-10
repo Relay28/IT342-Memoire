@@ -223,7 +223,7 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
                 if (response.isSuccessful) {
                     val capsule = response.body()
                     Log.d("CAPSULE CONTENT ", capsule.toString())
-                    Toast.makeText(this@CapsuleDetailActivity, "Current Id "+capsule, Toast.LENGTH_SHORT).show()
+
                     titleTextView.text = capsule?.title ?: "Untitled"
                     descriptionTextView.text = capsule?.description ?: ""
 
@@ -231,7 +231,6 @@ class CapsuleDetailActivity : AppCompatActivity(), CapsuleContentWebSocketListen
                     val currentUserId = sessionManager.getUserSession()["userId"]
                     isOwner = currentUserId == capsule?.createdById?.toLong()
 
-                    Toast.makeText(this@CapsuleDetailActivity, "Creator Id "+capsule?.createdBy?.id, Toast.LENGTH_SHORT).show()
                     // Set up views based on ownership
                     if (isOwner) {
                         // For owners, make views editable and set up focus change listeners

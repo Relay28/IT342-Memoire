@@ -131,7 +131,6 @@ class ProfileActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.instance.getPublicPublishedTimeCapsuleCountForUser(userId)
-                Toast.makeText(this@ProfileActivity, "What"+response.body(), Toast.LENGTH_SHORT).show()
                 if (response.isSuccessful) {
                     val publishedCount = response.body() ?: 0
                     tvOwnedCount.text = publishedCount.toString()
